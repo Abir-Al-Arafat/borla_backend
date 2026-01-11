@@ -23,7 +23,7 @@ const create = async (payload: User) => {
       },
     });
 
-    payload['password'] = await HashPassword(payload?.password);
+    payload['password'] = await HashPassword(payload?.password as string);
 
     if (isExist) {
       if (isExist.isDeleted) {
