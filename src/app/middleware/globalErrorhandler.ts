@@ -101,24 +101,27 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
     });
     // message = req.t(message);
   }
+
+  // Clean response based on environment
+  const response: any = {
+    success: false,
+    message: message,
+    errorSources: errorSources,
+  };
+
+  // Only include stack trace and error object in development
+  if (config.NODE_ENV === 'development') {
+    response.stack = err?.stack;
+  }
+
   try {
-    res.status(statusCode).json({
-      success: false,
-      message: message,
-      // message: message,
-      errorSources: errorSources,
-      err,
-      stack: config.NODE_ENV === 'development' ? err?.stack : null,
-    });
+    res.status(statusCode).json(response);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (err: any) {
+  } catch (error: any) {
     res.status(statusCode).json({
       success: false,
-      // message: message? req.t(message) : null,
       message: message,
       errorSources,
-      err,
-      stack: config.NODE_ENV === 'development' ? err?.stack : null,
     });
   }
 };
