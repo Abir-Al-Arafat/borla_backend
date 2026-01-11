@@ -2,10 +2,22 @@ import { Router } from 'express';
 import { authControllers } from './auth.controller';
 import auth from '../../middleware/auth';
 import { USER_ROLE } from '../users/user.constants';
+import validateRequest from '../../middleware/validateRequest';
+import { authValidations } from './auth.validation';
 
 const router = Router();
 
-router.post('/login', authControllers.login);
+router.post(
+  '/signup',
+  validateRequest(authValidations.signupZodSchema),
+  authControllers.signup,
+);
+
+router.post(
+  '/login',
+  validateRequest(authValidations.loginZodSchema),
+  authControllers.login,
+);
 
 router.post('/refresh-token', authControllers.refreshToken);
 
@@ -17,10 +29,20 @@ router.patch(
     USER_ROLE.admin,
     USER_ROLE.user,
   ),
+  validateRequest(authValidations.changePasswordZodSchema),
   authControllers.changePassword,
 );
 
-router.patch('/forgot-password', authControllers.forgotPassword);
-router.patch('/reset-password', authControllers.resetPassword);
+router.patch(
+  '/forgot-password',
+  validateRequest(authValidations.forgotPasswordZodSchema),
+  authControllers.forgotPassword,
+);
+
+router.patch(
+  '/reset-password',
+  validateRequest(authValidations.resetPasswordZodSchema),
+  authControllers.resetPassword,
+);
 
 export const authRoutes = router;

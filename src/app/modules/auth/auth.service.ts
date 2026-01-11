@@ -4,6 +4,7 @@ import {
   IJwtPayload,
   ILogin,
   IResetPassword,
+  ISignup,
 } from './auth.interface';
 import prisma from 'app/shared/prisma';
 import AppError from 'app/error/AppError';
@@ -18,6 +19,128 @@ import moment from 'moment';
 import path from 'path';
 import { sendEmail } from 'app/utils/mailSender';
 import fs from 'fs';
+
+const signup = async (payload: ISignup) => {
+  payload.email = payload?.email?.trim().toLowerCase();
+
+  // Check if passwords match
+  if (payload.password !== payload.confirmPassword) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Password and confirm password do not match',
+    );
+  }
+
+  // Check if user already exists
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      email: payload.email,
+    },
+    include: {
+      verification: true,
+    },
+  });
+
+  if (existingUser && existingUser.verification?.status) {
+    throw new AppError(
+      httpStatus.CONFLICT,
+      'User with this email already exists',
+    );
+  }
+
+  // Hash password
+  const hashedPassword = await bcrypt.hash(
+    payload.password,
+    Number(config.bcrypt_salt_rounds),
+  );
+
+  // Generate OTP
+  const otp = generateOtp();
+  const currentTime = new Date();
+  const expiresAt = moment(currentTime).add(10, 'minutes');
+
+  let user;
+
+  // If user exists but not verified, update the user
+  if (existingUser) {
+    user = await prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        name: payload.name,
+        phoneNumber: payload.phoneNumber,
+        location: payload.location ? JSON.parse(payload.location) : null,
+        password: hashedPassword,
+        verification: {
+          update: {
+            otp: Number(otp),
+            expiredAt: expiresAt.toDate(),
+            status: false,
+          },
+        },
+      },
+      include: {
+        verification: true,
+      },
+    });
+  } else {
+    // Create new user
+    user = await prisma.user.create({
+      data: {
+        name: payload.name,
+        email: payload.email,
+        phoneNumber: payload.phoneNumber,
+        location: payload.location ? JSON.parse(payload.location) : null,
+        password: hashedPassword,
+        role: 'user',
+        verification: {
+          create: {
+            otp: Number(otp),
+            expiredAt: expiresAt.toDate(),
+            status: false,
+          },
+        },
+      },
+      include: {
+        verification: true,
+      },
+    });
+  }
+
+  // Send OTP to email
+  const otpEmailPath = path.join(
+    __dirname,
+    '../../../../public/view/signup_otp_mail.html',
+  );
+
+  await sendEmail(
+    user.email,
+    'Verify your account - Borla',
+    fs
+      .readFileSync(otpEmailPath, 'utf8')
+      .replace('{{otp}}', otp)
+      .replace('{{email}}', user.email)
+      .replace('{{name}}', user.name),
+  );
+
+  // Create verification token
+  const jwtPayload = {
+    email: user.email,
+    userId: user.id,
+  };
+
+  const verificationToken = createToken(
+    jwtPayload,
+    config.jwt_access_secret as string,
+    '15m',
+  );
+
+  return {
+    email: user.email,
+    name: user.name,
+    verificationToken,
+    message: 'OTP sent to your email. Please verify to complete signup.',
+  };
+};
 
 const login = async (payload: ILogin, req: Request) => {
   payload.email = payload?.email?.trim().toLowerCase();
@@ -313,6 +436,7 @@ const refreshToken = async (token: string) => {
 };
 
 export const authServices = {
+  signup,
   login,
   changePassword,
   forgotPassword,

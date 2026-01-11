@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      /* Global Styles */
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        width: 100%;
+        padding: 20px;
+        background-color: #ffffff;
+      }
+      .email-body {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border: 1px solid #e5e5e5;
+        padding: 30px;
+        border-radius: 8px;
+      }
+      .logo {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .logo h1 {
+        color: #ffc107;
+        font-size: 36px;
+        margin: 0;
+        font-weight: bold;
+      }
+      .otp-message {
+        font-size: 16px;
+        color: #333333;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      .otp-code {
+        display: inline-block;
+        font-size: 32px;
+        font-weight: bold;
+        color: #ffc107;
+        background-color: #fff8e1;
+        padding: 15px 30px;
+        border-radius: 8px;
+        letter-spacing: 5px;
+        margin: 20px 0;
+      }
+      .cta {
+        text-align: center;
+        margin-top: 30px;
+      }
+      .footer {
+        font-size: 12px;
+        color: #999999;
+        text-align: center;
+        margin-top: 30px;
+      }
+      .footer a {
+        color: #ffc107;
+        text-decoration: none;
+      }
+      .greeting {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="email-body">
+        <div class="logo">
+          <h1>🚮 Borla</h1>
+        </div>
+        <div class="otp-message">
+          <p class="greeting">Hi {{name}}!</p>
+          <p>
+            Welcome to <strong>Borla</strong>! Your One-Time Password (OTP) to
+            verify your account is:
+          </p>
+          <div style="text-align: center">
+            <span class="otp-code">{{otp}}</span>
+          </div>
+          <p style="margin-top: 20px">
+            This code is valid for <strong>10 minutes</strong>. Please do not
+            share this code with anyone for security purposes.
+          </p>
+        </div>
+        <div class="cta">
+          <p style="font-size: 14px; color: #666">
+            Thank you for choosing Borla - Making waste management easier!
+          </p>
+          <p style="font-size: 12px; color: #999; margin-top: 15px">
+            If you didn't create an account, please ignore this email.
+          </p>
+        </div>
+      </div>
+      <div class="footer">
+        <p>
+          Having trouble?
+          <a href="mailto:support@borla.com">Contact support</a>
+        </p>
+        <p style="margin-top: 10px; color: #ccc">{{email}}</p>
+        <p style="margin-top: 15px">© 2026 Borla. All rights reserved.</p>
+      </div>
+    </div>
+  </body>
+</html>

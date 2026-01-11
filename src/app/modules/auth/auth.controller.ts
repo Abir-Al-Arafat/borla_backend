@@ -5,6 +5,17 @@ import sendResponse from '../../utils/sendResponse';
 import httpStatus from 'http-status';
 import config from '../../config';
 
+// signup
+const signup = catchAsync(async (req: Request, res: Response) => {
+  const result = await authServices.signup(req.body);
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: 'Signup successful! Please check your email for OTP verification.',
+    data: result,
+  });
+});
+
 // login
 const login = catchAsync(async (req: Request, res: Response) => {
   const result = await authServices.login(req.body, req);
@@ -123,6 +134,7 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const authControllers = {
+  signup,
   login,
   changePassword,
   forgotPassword,

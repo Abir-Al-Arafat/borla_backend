@@ -3,6 +3,15 @@ export type QueryObject = {
   [key: string]: any;
 };
 
+export type ISignup = {
+  name: string;
+  email: string;
+  phoneNumber: string;
+  location?: string;
+  password: string;
+  confirmPassword: string;
+};
+
 export type ILogin = {
   email: string;
   password: string;
@@ -21,7 +30,6 @@ export interface IJwtPayload {
   userId: string;
   role: string;
 }
-
 
 export interface JwtPayload {
   userId: string;
