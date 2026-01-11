@@ -8,7 +8,11 @@ import handleDuplicateError from '../error/DuplicateError';
 import AppError from '../error/AppError';
 import { MulterError } from 'multer';
 import handelMulterError from '../error/MulterError';
-import { Prisma } from '@prisma/index';
+import { Prisma } from '@prisma/client';
+import {
+  PrismaClientKnownRequestError,
+  PrismaClientValidationError,
+} from '@prisma/client/runtime/library';
 import handlePrismaValidationError from '@app/error/PrismaValidationError';
 import handlePrismaKnownError from '@app/error/PrismaKnownError';
 
@@ -29,19 +33,19 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
     message = simplifiedError?.message;
     errorSources = simplifiedError?.errorSources;
   } else if (
-    err instanceof Prisma.PrismaClientKnownRequestError &&
+    err instanceof PrismaClientKnownRequestError &&
     err.code === 'P2002'
   ) {
     const simplifiedError = handleDuplicateError(err);
     statusCode = simplifiedError.statusCode;
     message = simplifiedError.message;
     errorSources = simplifiedError.errorSources;
-  } else if (err instanceof Prisma.PrismaClientValidationError) {
+  } else if (err instanceof PrismaClientValidationError) {
     const simplifiedError = handlePrismaValidationError(err);
     statusCode = simplifiedError.statusCode;
     message = simplifiedError.message;
     errorSources = simplifiedError.errorSources;
-  } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
+  } else if (err instanceof PrismaClientKnownRequestError) {
     // Duplicate
     if (err.code === 'P2002') {
       const simplifiedError = handleDuplicateError(err);
