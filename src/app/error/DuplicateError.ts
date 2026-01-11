@@ -1,9 +1,10 @@
 // error/PrismaDuplicateError.ts
 import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { TErrorSources, TGenericErrorResponse } from '../interface/error';
 
 const handleDuplicateError = (
-  err: Prisma.PrismaClientKnownRequestError,
+  err: PrismaClientKnownRequestError,
 ): TGenericErrorResponse => {
   // Prisma P2002 duplicate error
   const target = err?.meta?.target;
