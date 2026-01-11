@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= hadeTitle ? hadeTitle :"Success Page" %></title>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        height: 100vh;
+        width: auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        background: linear-gradient(135deg, #ffdd3a, #367f55);
+      }
+
+      .card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 50px 40px;
+        text-align: center;
+        max-width: 500px;
+        width: 100%;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        position: relative;
+        overflow: hidden;
+      }
+
+      h1 {
+        color: #367f55;
+        font-size: 28px;
+        margin: 20px 0 10px;
+      }
+
+      p {
+        color: #333;
+        font-size: 16px;
+        margin-bottom: 30px;
+        line-height: 1.5;
+      }
+
+      a {
+        background-color: #ffdd3a;
+        color: #000;
+        text-decoration: none;
+        padding: 12px 30px;
+        border-radius: 12px;
+        font-weight: bold;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        display: inline-block;
+      }
+
+      a:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .circle {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(54, 127, 85, 0.15);
+        animation: float 6s ease-in-out infinite;
+      }
+
+      .circle.one {
+        width: 100px;
+        height: 100px;
+        top: -30px;
+        left: -30px;
+      }
+      .circle.two {
+        width: 60px;
+        height: 60px;
+        bottom: -20px;
+        right: -20px;
+        animation-delay: 2s;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0) rotate(0deg);
+        }
+        50% {
+          transform: translateY(-15px) rotate(45deg);
+        }
+      }
+
+      /* Optional: responsive */
+      @media (max-width: 500px) {
+        .card {
+          padding: 40px 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="wraper">
+        <div class="circle one"></div>
+        <div class="circle two"></div>
+        <!-- Lottie Animation -->
+        <!-- src="https://assets5.lottiefiles.com/packages/lf20_jbrw3hcz.json" -->
+        <lottie-player
+          src="http://103.186.20.117:6136/ejs/lottie/success.json"
+          background="transparent"
+          speed="1"
+          style="width: 400px; height: 200px; margin: 0 auto"
+          loop
+          autoplay
+        >
+        </lottie-player>
+
+        <h1><%= title %></h1>
+        <p><%= description %></p>
+      </div>
+    </div>
+    <lottie-player
+      src="http://103.186.20.117:6136/ejs/lottie/congratulation.json"
+      background="transparent"
+      speed="1"
+      style="width: 100vh; height: 100vh; margin: 0 auto; position: absolute"
+      autoplay
+    >
+    </lottie-player>
+  </body>
+</html>

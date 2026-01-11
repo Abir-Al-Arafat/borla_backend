@@ -1,0 +1,182 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+
+//contents
+model Contents {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  termsAndCondition String
+  privacyPolicy     String 
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+ @@map("contents")
+}
+
+//user schema
+model User {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  email       String   @unique
+  password    String?
+  status      status   @default(active)
+  role        Role     @default(user)
+  profile     String?
+  phoneNumber String?
+  dateOfBirth DateTime?
+  customerId String?
+  expireAt    DateTime? @default(now())
+  isDeleted   Boolean  @default(false)
+
+  location    Json?    // 👈 GeoJSON Point
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  verification     Verification? 
+  deviceHistory    DeviceHistory[] 
+  documents        Documents[]
+  Participants        Participants[]
+}
+
+model DeviceHistory {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  ip        String?
+  browser   String?
+  os        String?
+  device    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Verification { 
+  userId    String   @map("_id") @db.ObjectId
+  otp       Int
+  expiredAt DateTime?
+  status    Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@id([userId])
+}
+ 
+model Documents {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  document String 
+  status documentStatus @default(pending)
+  type documentType @default(idCard)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Zone {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  zipCode Int 
+  isDeleted Boolean @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+/*
+========================
+Chatting models 
+========================
+*/
+model Chat {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  status chatStatus @default(active)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  participants Participants[]
+}
+
+model Participants {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  chatId String @db.ObjectId
+  userId String @db.ObjectId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  chat Chat @relation(fields: [chatId] , references: [id])
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Messages {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  senderId String @db.ObjectId
+  receiverId String @db.ObjectId
+  chatId String @db.ObjectId
+  text String?
+  seen Boolean @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  images Images[]
+  
+
+}
+
+model Images {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  image String
+  referenceId String @db.ObjectId
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  messages Messages? @relation(fields: [referenceId], references: [id])
+  
+}
+
+
+enum documentType {
+ idCard
+ passport
+ nid
+}
+enum documentStatus {
+  pending
+  verified
+  rejected
+}
+enum status {
+  active
+  blocked
+}
+ 
+enum Role {
+  admin
+  sub_admin
+  supper_admin
+  user
+  rider
+}
+
+ enum chatStatus {
+  active
+  blocked
+ }

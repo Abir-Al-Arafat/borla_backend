@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Hello, World!</title>
+  </head>
+  <body>
+    <h2>Add Facebook Login to your webpage</h2>
+
+    <button onclick="loginWithFacebook()">Login with Facebook</button>
+    <p id="profile"></p>
+
+    <script>
+      window.fbAsyncInit = function () {
+        FB.init({
+          appId: 'YOUR_APP_ID', // Replace this
+          cookie: true,
+          xfbml: true,
+          version: 'v19.0', // Replace this if needed
+        });
+      };
+
+      (function (d, s, id) {
+        var js,
+          fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s);
+        js.id = id;
+        js.src = 'https://connect.facebook.net/en_US/sdk.js';
+        fjs.parentNode.insertBefore(js, fjs);
+      })(document, 'script', 'facebook-jssdk');
+
+      function loginWithFacebook() {
+        FB.login(
+          function (response) {
+            if (response.authResponse) {
+              FB.api('/me', { fields: 'name,email' }, function (response) {
+                document.getElementById('profile').innerHTML =
+                  `Good to see you, ${response.name}. I see your email address is ${response.email}.`;
+              });
+            } else {
+              console.log('User cancelled login or did not fully authorize.');
+            }
+          },
+          { scope: 'email' },
+        );
+      }
+    </script>
+  </body>
+</html>
