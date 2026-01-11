@@ -49,7 +49,7 @@ const login = async (payload: ILogin, req: Request) => {
   //     );
   //   }
 
-  if (!(await isPasswordMatched(payload.password, user.password))) {
+  if (!(await isPasswordMatched(payload.password, user.password as string))) {
     throw new AppError(httpStatus.BAD_REQUEST, 'Password does not match');
   }
 
@@ -125,7 +125,9 @@ const changePassword = async (id: string, payload: IChangePassword) => {
     throw new AppError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  if (!(await isPasswordMatched(payload?.oldPassword, user.password))) {
+  if (
+    !(await isPasswordMatched(payload?.oldPassword, user.password as string))
+  ) {
     throw new AppError(httpStatus.FORBIDDEN, 'Old password does not match');
   }
   if (payload?.newPassword !== payload?.confirmPassword) {
