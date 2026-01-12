@@ -143,11 +143,11 @@ const signup = async (payload: ISignup) => {
 };
 
 const login = async (payload: ILogin, req: Request) => {
-  payload.email = payload?.email?.trim().toLowerCase();
+  payload.phoneNumber = payload?.phoneNumber?.trim();
 
   const user = await prisma.user.findFirst({
     where: {
-      email: payload.email,
+      phoneNumber: payload.phoneNumber,
     },
     include: {
       verification: {

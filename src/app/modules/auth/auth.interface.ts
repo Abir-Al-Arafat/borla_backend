@@ -13,7 +13,7 @@ export type ISignup = {
 };
 
 export type ILogin = {
-  email: string;
+  phoneNumber: string;
   password: string;
 };
 export type IChangePassword = {

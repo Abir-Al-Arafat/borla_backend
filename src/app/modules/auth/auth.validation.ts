@@ -27,10 +27,7 @@ const signupZodSchema = z.object({
 
 const loginZodSchema = z.object({
   body: z.object({
-    email: z
-      .string()
-      .nonempty('Email is required')
-      .email('Invalid email format'),
+    phoneNumber: z.string().nonempty('Phone number is required'),
     password: z.string().nonempty('Password is required'),
   }),
 });
