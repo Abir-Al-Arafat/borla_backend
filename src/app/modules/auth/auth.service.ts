@@ -317,6 +317,7 @@ const forgotPassword = async (email: string) => {
         update: {
           otp: Number(otp),
           expiredAt: expiresAt.toDate(),
+          status: false,
         },
       },
     },
@@ -394,6 +395,7 @@ const resetPassword = async (token: string, payload: IResetPassword) => {
       verification: {
         update: {
           otp: 0,
+          expiredAt: null,
           status: true,
         },
       },
