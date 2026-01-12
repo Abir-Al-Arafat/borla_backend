@@ -34,10 +34,7 @@ const signup = async (payload: ISignup) => {
   // Check if user already exists by email or phoneNumber
   const existingUser = await prisma.user.findFirst({
     where: {
-      OR: [
-        { email: payload.email },
-        { phoneNumber: payload.phoneNumber },
-      ],
+      OR: [{ email: payload.email }, { phoneNumber: payload.phoneNumber }],
     },
     include: {
       verification: true,
@@ -68,7 +65,7 @@ const signup = async (payload: ISignup) => {
   // Generate OTP
   const otp = generateOtp();
   const currentTime = new Date();
-  const expiresAt = moment(currentTime).add(10, 'minutes');
+  const expiresAt = moment(currentTime).add(3, 'minutes');
 
   let user;
 
