@@ -116,6 +116,14 @@ const verifyOtp = async (token: string, otp: string | number) => {
     throw new AppError(httpStatus.BAD_REQUEST, 'Verification record not found');
   }
 
+  // // Check if user is already verified
+  // if (user.verification.status === true) {
+  //   throw new AppError(
+  //     httpStatus.BAD_REQUEST,
+  //     'Your account is already verified',
+  //   );
+  // }
+
   if (!user.verification?.expiredAt) {
     throw new AppError(httpStatus.BAD_REQUEST, 'OTP expiration date missing');
   }
