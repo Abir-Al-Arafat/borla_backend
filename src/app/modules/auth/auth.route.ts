@@ -39,6 +39,7 @@ router.patch(
 
 router.patch(
   '/forgot-password',
+  upload.none(),
   validateRequest(authValidations.forgotPasswordZodSchema),
   authControllers.forgotPassword,
 );
