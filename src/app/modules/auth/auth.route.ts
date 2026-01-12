@@ -23,6 +23,20 @@ router.post(
   authControllers.login,
 );
 
+router.post(
+  '/google',
+  upload.none(),
+  validateRequest(authValidations.socialAuthZodSchema),
+  authControllers.registerWithGoogle,
+);
+
+router.post(
+  '/apple',
+  upload.none(),
+  validateRequest(authValidations.socialAuthZodSchema),
+  authControllers.registerWithApple,
+);
+
 router.post('/refresh-token', authControllers.refreshToken);
 
 router.patch(

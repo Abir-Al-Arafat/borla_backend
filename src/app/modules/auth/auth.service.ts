@@ -5,6 +5,7 @@ import {
   ILogin,
   IResetPassword,
   ISignup,
+  ISocialAuth,
 } from './auth.interface';
 import prisma from 'app/shared/prisma';
 import AppError from 'app/error/AppError';
@@ -445,6 +446,174 @@ const refreshToken = async (token: string) => {
   };
 };
 
+const registerWithGoogle = async (payload: ISocialAuth, req: Request) => {
+  payload.email = payload?.email?.trim().toLowerCase();
+
+  let user = await prisma.user.findFirst({
+    where: { email: payload.email },
+    include: { verification: true },
+  });
+
+  if (!user) {
+    // Create new user with Google OAuth
+    user = await prisma.user.create({
+      data: {
+        name: payload.name,
+        email: payload.email,
+        phoneNumber: payload.phoneNumber,
+        profile: payload.profile,
+        role: 'user',
+        password: null,
+        verification: {
+          create: {
+            otp: 0,
+            expiredAt: null,
+            status: true, // OAuth users are auto-verified
+          },
+        },
+      },
+      include: { verification: true },
+    });
+  }
+
+  if (user?.isDeleted) {
+    throw new AppError(httpStatus.FORBIDDEN, 'This user is deleted');
+  }
+
+  const jwtPayload = {
+    userId: user.id,
+    role: user.role,
+  };
+
+  const accessToken = createToken(
+    jwtPayload,
+    config.jwt_access_secret as string,
+    config.jwt_access_expires_in as string,
+  );
+
+  const refreshToken = createToken(
+    jwtPayload,
+    config.jwt_refresh_secret as string,
+    config.jwt_refresh_expires_in as string,
+  );
+
+  // Track device history
+  const ip =
+    req.headers['x-forwarded-for']?.toString().split(',')[0] ||
+    req.socket.remoteAddress ||
+    '';
+
+  const userAgent = req.headers['user-agent'] || '';
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //@ts-ignore
+  const parser = new UAParser(userAgent);
+  const result = parser.getResult();
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      deviceHistory: {
+        create: {
+          ip,
+          browser: result.browser.name,
+          os: result.os.name,
+          device: result.device.model || 'Desktop',
+        },
+      },
+    },
+  });
+
+  return {
+    user,
+    accessToken,
+    refreshToken,
+  };
+};
+
+const registerWithApple = async (payload: ISocialAuth, req: Request) => {
+  payload.email = payload?.email?.trim().toLowerCase();
+
+  let user = await prisma.user.findFirst({
+    where: { email: payload.email },
+    include: { verification: true },
+  });
+
+  if (!user) {
+    // Create new user with Apple OAuth
+    user = await prisma.user.create({
+      data: {
+        name: payload.name,
+        email: payload.email,
+        phoneNumber: payload.phoneNumber,
+        profile: payload.profile,
+        role: 'user',
+        password: null,
+        verification: {
+          create: {
+            otp: 0,
+            expiredAt: null,
+            status: true, // OAuth users are auto-verified
+          },
+        },
+      },
+      include: { verification: true },
+    });
+  }
+
+  if (user?.isDeleted) {
+    throw new AppError(httpStatus.FORBIDDEN, 'This user is deleted');
+  }
+
+  const jwtPayload = {
+    userId: user.id,
+    role: user.role,
+  };
+
+  const accessToken = createToken(
+    jwtPayload,
+    config.jwt_access_secret as string,
+    config.jwt_access_expires_in as string,
+  );
+
+  const refreshToken = createToken(
+    jwtPayload,
+    config.jwt_refresh_secret as string,
+    config.jwt_refresh_expires_in as string,
+  );
+
+  // Track device history
+  const ip =
+    req.headers['x-forwarded-for']?.toString().split(',')[0] ||
+    req.socket.remoteAddress ||
+    '';
+
+  const userAgent = req.headers['user-agent'] || '';
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //@ts-ignore
+  const parser = new UAParser(userAgent);
+  const result = parser.getResult();
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      deviceHistory: {
+        create: {
+          ip,
+          browser: result.browser.name,
+          os: result.os.name,
+          device: result.device.model || 'Desktop',
+        },
+      },
+    },
+  });
+
+  return {
+    user,
+    accessToken,
+    refreshToken,
+  };
+};
+
 export const authServices = {
   signup,
   login,
@@ -452,6 +621,6 @@ export const authServices = {
   forgotPassword,
   resetPassword,
   refreshToken,
-  //   registerWithGoogle,
-  //   registerWithFacebook,
+  registerWithGoogle,
+  registerWithApple,
 };

@@ -72,10 +72,25 @@ const resetPasswordZodSchema = z.object({
     }),
 });
 
+const socialAuthZodSchema = z.object({
+  body: z.object({
+    email: z
+      .string()
+      .nonempty('Email is required')
+      .email('Invalid email format'),
+    name: z.string().nonempty('Name is required'),
+    socialId: z.string().nonempty('Social ID is required'),
+    provider: z.enum(['google', 'apple']),
+    phoneNumber: z.string().optional(),
+    profile: z.string().optional(),
+  }),
+});
+
 export const authValidations = {
   signupZodSchema,
   loginZodSchema,
   changePasswordZodSchema,
   forgotPasswordZodSchema,
   resetPasswordZodSchema,
+  socialAuthZodSchema,
 };

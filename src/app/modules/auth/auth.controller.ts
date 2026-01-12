@@ -40,50 +40,53 @@ const login = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
-// const registerWithFacebook = catchAsync(async (req: Request, res: Response) => {
-//   const result = await authServices.registerWithFacebook(req.body);
-//   const { refreshToken } = result;
-//   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-//   const cookieOptions: any = {
-//     secure: false,
-//     httpOnly: true,
-//     maxAge: 31536000000,
-//   };
+const registerWithGoogle = catchAsync(async (req: Request, res: Response) => {
+  const result = await authServices.registerWithGoogle(req.body, req);
+  const { refreshToken } = result;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cookieOptions: any = {
+    secure: false,
+    httpOnly: true,
+    maxAge: 31536000000,
+  };
 
-//   if (config.NODE_ENV === 'production') {
-//     cookieOptions.sameSite = 'none';
-//   }
-//   res.cookie('refreshToken', refreshToken, cookieOptions);
+  if (config.NODE_ENV === 'production') {
+    cookieOptions.sameSite = 'none';
+  }
+  res.cookie('refreshToken', refreshToken, cookieOptions);
+  res.cookie('token', refreshToken, cookieOptions);
 
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: 'Logged in successfully',
-//     data: result,
-//   });
-// });
-// const registerWithGoogle = catchAsync(async (req: Request, res: Response) => {
-//   const result = await authServices.registerWithGoogle(req.body);
-//   const { refreshToken } = result;
-//   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-//   const cookieOptions: any = {
-//     secure: false,
-//     httpOnly: true,
-//     maxAge: 31536000000,
-//   };
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Google authentication successful',
+    data: result,
+  });
+});
 
-//   if (config.NODE_ENV === 'production') {
-//     cookieOptions.sameSite = 'none';
-//   }
-//   res.cookie('refreshToken', refreshToken, cookieOptions);
+const registerWithApple = catchAsync(async (req: Request, res: Response) => {
+  const result = await authServices.registerWithApple(req.body, req);
+  const { refreshToken } = result;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cookieOptions: any = {
+    secure: false,
+    httpOnly: true,
+    maxAge: 31536000000,
+  };
 
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: 'Logged in successfully',
-//     data: result,
-//   });
-// });
+  if (config.NODE_ENV === 'production') {
+    cookieOptions.sameSite = 'none';
+  }
+  res.cookie('refreshToken', refreshToken, cookieOptions);
+  res.cookie('token', refreshToken, cookieOptions);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Apple authentication successful',
+    data: result,
+  });
+});
 
 // change password
 const changePassword = catchAsync(async (req: Request, res: Response) => {
@@ -140,6 +143,6 @@ export const authControllers = {
   forgotPassword,
   resetPassword,
   refreshToken,
-  //   registerWithGoogle,
-  //   registerWithFacebook,
+  registerWithGoogle,
+  registerWithApple,
 };

@@ -35,3 +35,12 @@ export interface JwtPayload {
   userId: string;
   role: string;
 }
+
+export type ISocialAuth = {
+  email: string;
+  name: string;
+  socialId: string;
+  provider: 'google' | 'apple';
+  phoneNumber?: string;
+  profile?: string;
+};
