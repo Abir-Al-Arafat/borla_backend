@@ -46,6 +46,7 @@ router.patch(
 
 router.patch(
   '/reset-password',
+  upload.none(),
   validateRequest(authValidations.resetPasswordZodSchema),
   authControllers.resetPassword,
 );

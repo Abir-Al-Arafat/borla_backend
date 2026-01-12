@@ -26,23 +26,28 @@
         text-align: center;
         margin-bottom: 20px;
       }
-      .logo img {
-        width: 120px;
+      .logo h1 {
+        color: #ffc107;
+        font-size: 36px;
+        margin: 0;
+        font-weight: bold;
       }
       .otp-message {
-        font-size: 18px;
+        font-size: 16px;
         color: #333333;
         margin-bottom: 20px;
         text-align: center;
       }
       .otp-code {
         display: inline-block;
-        font-size: 24px;
+        font-size: 32px;
         font-weight: bold;
-        color: #ffb719;
-        background-color: #ffb7191f;
-        padding: 10px 20px;
-        border-radius: 5px;
+        color: #ffc107;
+        background-color: #fff8e1;
+        padding: 15px 30px;
+        border-radius: 8px;
+        letter-spacing: 5px;
+        margin: 20px 0;
       }
       .cta {
         text-align: center;
@@ -55,8 +60,14 @@
         margin-top: 30px;
       }
       .footer a {
-        color: #ffb719;
+        color: #ffc107;
         text-decoration: none;
+      }
+      .greeting {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 20px;
       }
     </style>
   </head>
@@ -64,36 +75,36 @@
     <div class="container">
       <div class="email-body">
         <div class="logo">
-          <img
-            src="https://api.unleakd.com/uploads/logo/logo.png"
-            alt="Unleakd Logo"
-          />
+          <h1>🚮 Borla</h1>
         </div>
         <div class="otp-message">
+          <p class="greeting">Password Reset Request</p>
           <p>Hello {{email}},</p>
           <p>
-            We received a request to reset the password for your Unleakd account. Your One-Time Password (OTP) to reset your password is:
+            We received a request to reset the password for your
+            <strong>Borla</strong> account. Your One-Time Password (OTP) to
+            reset your password is:
           </p>
-          <p class="otp-code">{{otp}}</p>
-          <p>
-            This code is valid for 3 minutes. Please do not share this code with anyone.
+          <div style="text-align: center">
+            <span class="otp-code">{{otp}}</span>
+          </div>
+          <p style="margin-top: 20px">
+            This code is valid for <strong>3 minutes</strong>. Please do not
+            share this code with anyone for security purposes.
           </p>
         </div>
         <div class="cta">
-          <p>If you didn't request a password reset, please ignore this email.</p>
-          <p>Thank you for using Unleakd!</p>
-          <p>
-            <a href="https://unleakd.com/" style="color: #ffb719"
-              >Visit our website</a
-            >
+          <p style="font-size: 14px; color: #666">
+            If you didn't request a password reset, please ignore this email and
+            your password will remain unchanged.
+          </p>
+          <p style="font-size: 14px; color: #666; margin-top: 15px">
+            Thank you for using Borla - Making waste management easier!
           </p>
         </div>
       </div>
       <div class="footer">
-        <p>
-          If you need further assistance, please
-          <a href="mailto:r.e.schirmer1993@gmail.com">contact support</a>.
-        </p>
+        <p>If you need further assistance, please contact our support team.</p>
       </div>
     </div>
   </body>
