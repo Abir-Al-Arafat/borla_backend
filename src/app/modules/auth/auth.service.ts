@@ -31,10 +31,13 @@ const signup = async (payload: ISignup) => {
     );
   }
 
-  // Check if user already exists
+  // Check if user already exists by email or phoneNumber
   const existingUser = await prisma.user.findFirst({
     where: {
-      email: payload.email,
+      OR: [
+        { email: payload.email },
+        { phoneNumber: payload.phoneNumber },
+      ],
     },
     include: {
       verification: true,
@@ -42,10 +45,18 @@ const signup = async (payload: ISignup) => {
   });
 
   if (existingUser && existingUser.verification?.status) {
-    throw new AppError(
-      httpStatus.CONFLICT,
-      'User with this email already exists',
-    );
+    if (existingUser.email === payload.email) {
+      throw new AppError(
+        httpStatus.CONFLICT,
+        'User with this email already exists',
+      );
+    }
+    if (existingUser.phoneNumber === payload.phoneNumber) {
+      throw new AppError(
+        httpStatus.CONFLICT,
+        'User with this phone number already exists',
+      );
+    }
   }
 
   // Hash password
