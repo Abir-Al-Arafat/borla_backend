@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { authControllers } from './auth.controller';
 import auth from '../../middleware/auth';
 import { USER_ROLE } from '../users/user.constants';
@@ -6,15 +7,18 @@ import validateRequest from '../../middleware/validateRequest';
 import { authValidations } from './auth.validation';
 
 const router = Router();
+const upload = multer();
 
 router.post(
   '/signup',
+  upload.none(),
   validateRequest(authValidations.signupZodSchema),
   authControllers.signup,
 );
 
 router.post(
   '/login',
+  upload.none(),
   validateRequest(authValidations.loginZodSchema),
   authControllers.login,
 );
