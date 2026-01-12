@@ -63,7 +63,7 @@ const signup = async (payload: ISignup) => {
   );
 
   // Generate OTP
-  const otp = generateOtp();
+  const otp = generateOtp(4);
   const currentTime = new Date();
   const expiresAt = moment(currentTime).add(3, 'minutes');
 
@@ -307,7 +307,7 @@ const forgotPassword = async (email: string) => {
   );
 
   const currentTime = new Date();
-  const otp = generateOtp();
+  const otp = generateOtp(4);
   const expiresAt = moment(currentTime).add(3, 'minute');
 
   await prisma.user.update({
