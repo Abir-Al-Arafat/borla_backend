@@ -248,7 +248,11 @@ curl -X POST http://localhost:5000/api/v1/auth/signup \
     "name": "Test User",
     "email": "test@example.com",
     "phoneNumber": "+233123456789",
-    "location": "Accra, Ghana",
+    "location": {
+            "type": "Point",
+            "coordinates": [-0.1870, 5.6037]  // Accra coordinates: [longitude, latitude]
+        },
+    "locationName": "Accra, Ghana",
     "password": "password123",
     "confirmPassword": "password123"
   }'
