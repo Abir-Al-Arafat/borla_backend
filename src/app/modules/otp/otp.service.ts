@@ -11,26 +11,32 @@ import fs from 'fs';
 import prisma from '../../shared/prisma';
 
 const resendOtp = async (payload: { email: string }) => {
+  if (!payload?.email) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Email is required');
+  }
+
   try {
-    const user = await prisma.user.findFirst({
+    const user = await prisma.user.findUnique({
       where: {
-        email: payload?.email,
+        email: payload.email.trim().toLowerCase(),
       },
     });
+
+    console.log('User found for email:', user);
 
     if (!user)
       throw new AppError(
         httpStatus.BAD_REQUEST,
-        'you are not registered with this mail',
+        'You are not registered with this email',
       );
 
     if (user?.status === status.blocked)
-      throw new AppError(httpStatus.FORBIDDEN, 'this user has been blocked ');
+      throw new AppError(httpStatus.FORBIDDEN, 'This user has been blocked');
 
     if (user?.isDeleted)
-      throw new AppError(httpStatus.FORBIDDEN, 'this user has been deleted ');
+      throw new AppError(httpStatus.FORBIDDEN, 'This user has been deleted');
 
-    const otp = generateOtp();
+    const otp = generateOtp(4);
     const expiresAt = moment().utc().add(3, 'minute');
 
     const updateOtp = await prisma.verification.upsert({
@@ -40,6 +46,7 @@ const resendOtp = async (payload: { email: string }) => {
       update: {
         otp: Number(otp),
         expiredAt: expiresAt.toDate(),
+        status: false, // Force user to verify OTP again
       },
 
       create: {
@@ -69,6 +76,8 @@ const resendOtp = async (payload: { email: string }) => {
       '../../../../public/view/otp_mail.html',
     );
 
+    console.log('Sending OTP email to:', user?.email);
+
     await sendEmail(
       user?.email,
       'Your One Time OTP',
@@ -81,7 +90,24 @@ const resendOtp = async (payload: { email: string }) => {
     return { token };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
-    throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, error?.message);
+    // If it's already an AppError, throw it as is
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    // Handle Prisma validation errors
+    if (error.message?.includes('Invalid `prisma')) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        'Invalid email format or missing required fields',
+      );
+    }
+
+    // Handle other unexpected errors
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'Failed to resend OTP. Please try again later',
+    );
   }
 };
 
@@ -116,13 +142,13 @@ const verifyOtp = async (token: string, otp: string | number) => {
     throw new AppError(httpStatus.BAD_REQUEST, 'Verification record not found');
   }
 
-  // // Check if user is already verified
-  // if (user.verification.status === true) {
-  //   throw new AppError(
-  //     httpStatus.BAD_REQUEST,
-  //     'Your account is already verified',
-  //   );
-  // }
+  // Check if user is already verified (for signup flow)
+  if (user.verification.status === true && user.verification.otp === 0) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Your account is already verified',
+    );
+  }
 
   if (!user.verification?.expiredAt) {
     throw new AppError(httpStatus.BAD_REQUEST, 'OTP expiration date missing');
