@@ -15,6 +15,7 @@ router.post(
 );
 router.post(
   '/resend-otp',
+  upload.none(),
   validateRequest(resentOtpValidations.resentOtpZodSchema),
   otpControllers.resendOtp,
 );
