@@ -40,7 +40,8 @@ model User {
   expireAt    DateTime? @default(now())
   isDeleted   Boolean   @default(false)
 
-  location Json? // 👈 GeoJSON Point
+  location     Json? // 👈 GeoJSON Point
+  locationName String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
