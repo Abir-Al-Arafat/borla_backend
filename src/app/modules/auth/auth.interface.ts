@@ -7,7 +7,11 @@ export type ISignup = {
   name: string;
   email: string;
   phoneNumber: string;
-  location?: string;
+  location?: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
+  locationName?: string;
   password: string;
   confirmPassword: string;
 };

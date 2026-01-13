@@ -12,7 +12,24 @@ const signupZodSchema = z.object({
         .nonempty('Email is required')
         .email('Invalid email format'),
       phoneNumber: z.string().nonempty('Phone number is required'),
-      location: z.string().optional(),
+      location: z
+        .object({
+          type: z.literal('Point'),
+          coordinates: z
+            .array(z.union([z.number(), z.string()]))
+            .length(2, 'Coordinates must be an array of two numbers')
+            .transform(coords => {
+              return coords.map(c => {
+                const num = typeof c === 'string' ? parseFloat(c) : c;
+                if (isNaN(num)) {
+                  throw new Error('Coordinates must be valid numbers');
+                }
+                return num;
+              });
+            }),
+        })
+        .optional(),
+      locationName: z.string().optional(),
       password: z
         .string()
         .nonempty('Password is required')

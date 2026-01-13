@@ -77,7 +77,8 @@ const signup = async (payload: ISignup) => {
       data: {
         name: payload.name,
         phoneNumber: payload.phoneNumber,
-        location: payload.location ? JSON.parse(payload.location) : null,
+        location: payload.location || null,
+        locationName: payload.locationName || null,
         password: hashedPassword,
         verification: {
           update: {
@@ -98,7 +99,8 @@ const signup = async (payload: ISignup) => {
         name: payload.name,
         email: payload.email,
         phoneNumber: payload.phoneNumber,
-        location: payload.location ? JSON.parse(payload.location) : null,
+        location: payload.location || null,
+        locationName: payload.locationName || null,
         password: hashedPassword,
         role: 'user',
         verification: {
