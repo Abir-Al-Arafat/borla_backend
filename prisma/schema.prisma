@@ -36,6 +36,7 @@ model User {
   profile     String?
   phoneNumber String?   @unique
   dateOfBirth DateTime?
+  ghanaCardId String[]  @default([])
   customerId  String?
   expireAt    DateTime? @default(now())
   isDeleted   Boolean   @default(false)
