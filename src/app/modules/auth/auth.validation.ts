@@ -12,6 +12,7 @@ const signupZodSchema = z.object({
         .nonempty('Email is required')
         .email('Invalid email format'),
       phoneNumber: z.string().nonempty('Phone number is required'),
+      role: z.enum(['user', 'rider']).optional(),
       location: z
         .object({
           type: z.literal('Point'),
@@ -30,6 +31,8 @@ const signupZodSchema = z.object({
         })
         .optional(),
       locationName: z.string().optional(),
+      dateOfBirth: z.string().optional(),
+      ghanaCardId: z.array(z.string()).optional(), // Array of image URLs
       password: z
         .string()
         .nonempty('Password is required')
@@ -39,7 +42,31 @@ const signupZodSchema = z.object({
     .refine(data => data.password === data.confirmPassword, {
       message: "Passwords don't match",
       path: ['confirmPassword'],
-    }),
+    })
+    .refine(
+      data => {
+        if (data.role === 'rider') {
+          return !!data.dateOfBirth;
+        }
+        return true;
+      },
+      {
+        message: 'Date of Birth is required for riders',
+        path: ['dateOfBirth'],
+      },
+    )
+    .refine(
+      data => {
+        if (data.role === 'rider') {
+          return data.ghanaCardId && data.ghanaCardId.length > 0;
+        }
+        return true;
+      },
+      {
+        message: 'At least one Ghana Card image is required for riders',
+        path: ['ghanaCardId'],
+      },
+    ),
 });
 
 const loginZodSchema = z.object({

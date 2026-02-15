@@ -5,13 +5,20 @@ import auth from '../../middleware/auth';
 import { USER_ROLE } from '../users/user.constants';
 import validateRequest from '../../middleware/validateRequest';
 import { authValidations } from './auth.validation';
+import fileUpload from '../../middleware/fileUpload';
+import parseData from '../../middleware/parseData';
+import extractFilePaths from '../../middleware/extractFilePaths';
 
 const router = Router();
 const upload = multer();
 
 router.post(
   '/signup',
-  upload.none(),
+  fileUpload('public/uploads/ghana-cards').fields([
+    { name: 'ghanaCardId', maxCount: 5 },
+  ]),
+  parseData(),
+  extractFilePaths(),
   validateRequest(authValidations.signupZodSchema),
   authControllers.signup,
 );

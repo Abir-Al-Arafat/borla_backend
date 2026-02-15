@@ -70,6 +70,9 @@ const signup = async (payload: ISignup) => {
 
   let user;
 
+  // Determine role (default to 'user' if not provided)
+  const userRole = payload.role || 'user';
+
   // If user exists but not verified, update the user
   if (existingUser) {
     user = await prisma.user.update({
@@ -77,8 +80,11 @@ const signup = async (payload: ISignup) => {
       data: {
         name: payload.name,
         phoneNumber: payload.phoneNumber,
+        role: userRole,
         location: payload.location || null,
         locationName: payload.locationName || null,
+        dateOfBirth: payload.dateOfBirth ? new Date(payload.dateOfBirth) : null,
+        ghanaCardId: payload.ghanaCardId || [],
         password: hashedPassword,
         verification: {
           update: {
@@ -99,10 +105,12 @@ const signup = async (payload: ISignup) => {
         name: payload.name,
         email: payload.email,
         phoneNumber: payload.phoneNumber,
+        role: userRole,
         location: payload.location || null,
         locationName: payload.locationName || null,
+        dateOfBirth: payload.dateOfBirth ? new Date(payload.dateOfBirth) : null,
+        ghanaCardId: payload.ghanaCardId || [],
         password: hashedPassword,
-        role: 'user',
         verification: {
           create: {
             otp: Number(otp),
