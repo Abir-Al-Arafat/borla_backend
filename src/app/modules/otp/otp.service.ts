@@ -122,7 +122,7 @@ const verifyOtp = async (token: string, otp: string | number) => {
       token,
       config.jwt_access_secret as Secret,
     ) as JwtPayload;
-  } catch {
+  } catch (error) {
     throw new AppError(
       httpStatus.FORBIDDEN,
       'Session has expired. Please try to submit OTP within 3 minutes',
