@@ -7,11 +7,14 @@ export type ISignup = {
   name: string;
   email: string;
   phoneNumber: string;
+  role?: 'user' | 'rider';
   location?: {
     type: 'Point';
     coordinates: [number, number];
   };
   locationName?: string;
+  dateOfBirth?: string;
+  ghanaCardId?: string[]; // Array of image URLs
   password: string;
   confirmPassword: string;
 };
