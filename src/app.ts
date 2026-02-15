@@ -25,7 +25,12 @@ app.use(
 
 app.use('/api/v1', router);
 app.get('/', (req: Request, res: Response) => {
-  res.send('server is running');
+  res.status(200).json({
+    success: true,
+    message: 'Borla Backend API is running',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+  });
 });
 
 app.use(globalErrorHandler);
