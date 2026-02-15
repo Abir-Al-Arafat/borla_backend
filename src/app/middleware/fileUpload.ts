@@ -4,11 +4,12 @@ import multer from 'multer';
 import AppError from '../error/AppError';
 import httpStatus from 'http-status';
 const fileUpload = (uploadDirectory: string) => {
-  if (!fs.existsSync(uploadDirectory)) {
-    fs.mkdirSync(uploadDirectory, { recursive: true });
-  }
   const storage = multer.diskStorage({
     destination: function (req: Request, file, cb) {
+      // Create directory if it doesn't exist
+      if (!fs.existsSync(uploadDirectory)) {
+        fs.mkdirSync(uploadDirectory, { recursive: true });
+      }
       cb(null, uploadDirectory);
     },
     filename: function (req: Request, file, cb) {
