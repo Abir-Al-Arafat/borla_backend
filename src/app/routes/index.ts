@@ -16,6 +16,7 @@ import { otpRoutes } from '@app/modules/otp/otp.routes';
 // import { testimonialRoutes } from '@app/modules/testimonial/testimonial.route';
 // import { toolResourceRoutes } from '@app/modules/toolResource/toolResource.route';
 import { userRoutes } from '@app/modules/users/users.routes';
+import { riderVerificationRoutes } from '@app/modules/riderVerification/riderVerification.route';
 // import { whatYourClientGetsRoutes } from '@app/modules/whatYourClientGets/whatYourClientGets.route';
 import { Router } from 'express';
 
@@ -89,6 +90,10 @@ const moduleRoutes = [
   {
     path: '/contents',
     route: contentsRoutes,
+  },
+  {
+    path: '/rider-verification',
+    route: riderVerificationRoutes,
   },
   // {
   //   path: '/services',

@@ -70,10 +70,16 @@ const signupZodSchema = z.object({
 });
 
 const loginZodSchema = z.object({
-  body: z.object({
-    phoneNumber: z.string().nonempty('Phone number is required'),
-    password: z.string().nonempty('Password is required'),
-  }),
+  body: z
+    .object({
+      email: z.string().email('Invalid email format').optional(),
+      phoneNumber: z.string().optional(),
+      password: z.string().nonempty('Password is required'),
+    })
+    .refine(data => data.email || data.phoneNumber, {
+      message: 'Either email or phone number is required',
+      path: ['email'],
+    }),
 });
 
 const changePasswordZodSchema = z.object({

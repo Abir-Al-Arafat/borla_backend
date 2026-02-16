@@ -85,6 +85,7 @@ const signup = async (payload: ISignup) => {
         locationName: payload.locationName || null,
         dateOfBirth: payload.dateOfBirth ? new Date(payload.dateOfBirth) : null,
         ghanaCardId: payload.ghanaCardId || [],
+        riderVerified: userRole === 'rider' ? false : true, // Riders need admin approval
         password: hashedPassword,
         verification: {
           update: {
@@ -93,6 +94,18 @@ const signup = async (payload: ISignup) => {
             status: false,
           },
         },
+        documents:
+          userRole === 'rider' &&
+          payload.ghanaCardId &&
+          payload.ghanaCardId.length
+            ? {
+                create: payload.ghanaCardId.map(path => ({
+                  document: path,
+                  type: 'idCard',
+                  status: 'pending',
+                })),
+              }
+            : undefined,
       },
       include: {
         verification: true,
@@ -110,6 +123,7 @@ const signup = async (payload: ISignup) => {
         locationName: payload.locationName || null,
         dateOfBirth: payload.dateOfBirth ? new Date(payload.dateOfBirth) : null,
         ghanaCardId: payload.ghanaCardId || [],
+        riderVerified: userRole === 'rider' ? false : true, // Riders need admin approval
         password: hashedPassword,
         verification: {
           create: {
@@ -118,6 +132,18 @@ const signup = async (payload: ISignup) => {
             status: false,
           },
         },
+        documents:
+          userRole === 'rider' &&
+          payload.ghanaCardId &&
+          payload.ghanaCardId.length > 0
+            ? {
+                create: payload.ghanaCardId.map(path => ({
+                  document: path,
+                  type: 'idCard',
+                  status: 'pending',
+                })),
+              }
+            : undefined,
       },
       include: {
         verification: true,
@@ -162,12 +188,24 @@ const signup = async (payload: ISignup) => {
 };
 
 const login = async (payload: ILogin, req: Request) => {
-  payload.phoneNumber = payload?.phoneNumber?.trim();
+  // Trim input
+  if (payload.phoneNumber) {
+    payload.phoneNumber = payload.phoneNumber.trim();
+  }
+  if (payload.email) {
+    payload.email = payload.email.trim().toLowerCase();
+  }
+
+  // Build where condition - support email or phoneNumber
+  const whereCondition: any = {};
+  if (payload.email) {
+    whereCondition.email = payload.email;
+  } else if (payload.phoneNumber) {
+    whereCondition.phoneNumber = payload.phoneNumber;
+  }
 
   const user = await prisma.user.findFirst({
-    where: {
-      phoneNumber: payload.phoneNumber,
-    },
+    where: whereCondition,
     include: {
       verification: {
         select: {
@@ -197,6 +235,14 @@ const login = async (payload: ILogin, req: Request) => {
 
   if (!user?.verification?.status) {
     throw new AppError(httpStatus.FORBIDDEN, 'User account is not verified');
+  }
+
+  // Check if rider is approved by admin
+  if (user.role === 'rider' && !user.riderVerified) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'Your rider account is pending admin approval. Please wait for verification.',
+    );
   }
 
   const jwtPayload: { userId: string; role: string } = {

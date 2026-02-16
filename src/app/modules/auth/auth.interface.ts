@@ -20,7 +20,8 @@ export type ISignup = {
 };
 
 export type ILogin = {
-  phoneNumber: string;
+  email?: string;
+  phoneNumber?: string;
   password: string;
 };
 export type IChangePassword = {
