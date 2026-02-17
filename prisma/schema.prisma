@@ -27,20 +27,21 @@ model Contents {
 
 //user schema
 model User {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
   name          String
-  email         String    @unique
+  email         String       @unique
   password      String?
-  status        status    @default(active)
-  role          Role      @default(user)
+  status        status       @default(active)
+  onlineStatus  onlineStatus @default(offline)
+  role          Role         @default(user)
   profile       String?
-  phoneNumber   String?   @unique
+  phoneNumber   String?      @unique
   dateOfBirth   DateTime?
-  ghanaCardId   String[]  @default([])
+  ghanaCardId   String[]     @default([])
   customerId    String?
-  riderVerified Boolean   @default(false) // Admin approval for riders
-  expireAt      DateTime? @default(now())
-  isDeleted     Boolean   @default(false)
+  riderVerified Boolean      @default(false) // Admin approval for riders
+  expireAt      DateTime?    @default(now())
+  isDeleted     Boolean      @default(false)
 
   location     Json? // 👈 GeoJSON Point
   locationName String?
@@ -166,6 +167,11 @@ enum documentStatus {
 enum status {
   active
   blocked
+}
+
+enum onlineStatus {
+  online
+  offline
 }
 
 enum Role {
