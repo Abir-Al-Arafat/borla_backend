@@ -20,6 +20,7 @@ import moment from 'moment';
 import path from 'path';
 import { sendEmail } from 'app/utils/mailSender';
 import fs from 'fs';
+import axios from 'axios';
 
 const signup = async (payload: ISignup) => {
   payload.email = payload?.email?.trim().toLowerCase();
@@ -166,6 +167,12 @@ const signup = async (payload: ISignup) => {
       .replace('{{email}}', user.email)
       .replace('{{name}}', user.name),
   );
+
+  try {
+    await sendTermiiSMS(payload.phoneNumber, otp);
+  } catch (err) {
+    console.error('Failed to send SMS OTP:', err);
+  }
 
   // Create verification token
   const jwtPayload = {
@@ -396,7 +403,6 @@ const forgotPassword = async (email: string) => {
   return { email, token };
 };
 
-// Reset password
 const resetPassword = async (token: string, payload: IResetPassword) => {
   let decode;
   try {
@@ -668,6 +674,38 @@ const registerWithApple = async (payload: ISocialAuth, req: Request) => {
     accessToken,
     refreshToken,
   };
+};
+
+const sendTermiiSMS = async (phoneNumber: string, otp: string) => {
+  try {
+    const data = {
+      api_key: config.TERMII_API_KEY, // Add this to your config/env
+      to: phoneNumber,
+      from: config.TERMII_SENDER_ID, // Or your registered Sender ID
+      channel: config.TERMII_CHANNEL, // e.g., "generic", "dnd", etc.
+      pin_attempts: 3,
+      pin_time_to_live: 5,
+      pin_length: 4,
+      pin_type: 'NUMERIC',
+      message_text: `Your Borla verification code is ${otp}`,
+      pin_placeholder: otp,
+    };
+
+    // Using axios (ensure it's installed)
+    await axios.post('https://api.ng.termii.com/api/sms/otp/send', data);
+  } catch (error: any) {
+    // Check if the error came from Termii's response
+    if (error.response) {
+      console.error('Termii API Error Details:', error.response.data);
+    } else {
+      console.error('Connection Error:', error.message);
+    }
+    // Re-throw with more detail during debugging
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      error.response?.data?.message || 'Failed to send SMS verification',
+    );
+  }
 };
 
 export const authServices = {
