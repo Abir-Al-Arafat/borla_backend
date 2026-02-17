@@ -203,10 +203,44 @@ const deleteUser = async (id: string) => {
 
   return result;
 };
+
+const toggleUserStatus = async (userId: string) => {
+  // Get current user status
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { onlineStatus: true, isDeleted: true },
+  });
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (user.isDeleted) {
+    throw new AppError(httpStatus.FORBIDDEN, 'User is deleted');
+  }
+
+  // Toggle the status
+  const newStatus = user.onlineStatus === 'online' ? 'offline' : 'online';
+
+  const result = await prisma.user.update({
+    where: { id: userId },
+    data: { onlineStatus: newStatus },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      onlineStatus: true,
+    },
+  });
+
+  return result;
+};
+
 export const userService = {
   create,
   update,
   getAll,
   getById,
   deleteUser,
+  toggleUserStatus,
 };
