@@ -107,6 +107,26 @@ const deleteMYAccount = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const toggleUserStatus = catchAsync(async (req: Request, res: Response) => {
+  const result = await userService.toggleUserStatus(req.params.id as string);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: `User status toggled to ${result.onlineStatus} successfully`,
+    data: result,
+  });
+});
+
+const toggleMyStatus = catchAsync(async (req: Request, res: Response) => {
+  const result = await userService.toggleUserStatus(req.user?.userId as string);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: `Your status is now ${result.onlineStatus}`,
+    data: result,
+  });
+});
+
 export const userController = {
   createUser,
   getAllUser,
@@ -116,4 +136,6 @@ export const userController = {
   updateMyProfile,
   deleteUser,
   deleteMYAccount,
+  toggleUserStatus,
+  toggleMyStatus,
 };
