@@ -77,7 +77,7 @@ const getAll = async (query: Record<string, any>) => {
   }
 
   // Add filterQuery conditions
-  if (Object.keys(filtersData).length > 0) {
+  if (Object.keys(filtersData).length) {
     const oldAnd = pipeline.AND;
     const oldAndArray = Array.isArray(oldAnd) ? oldAnd : oldAnd ? [oldAnd] : [];
 
@@ -142,7 +142,7 @@ const getAll = async (query: Record<string, any>) => {
   });
 
   return {
-    data,
+    users: data,
     meta: { page, limit, total },
   };
 };
