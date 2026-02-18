@@ -123,7 +123,7 @@ const getAll = async (query: Record<string, any>) => {
       email: true,
       status: true,
       role: true,
-      profile: true,
+      profilePicture: true,
       phoneNumber: true,
       expireAt: false,
       createdAt: true,
@@ -159,7 +159,7 @@ const getById = async (id: string, includeDeviceHistory = false) => {
       email: true,
       status: true,
       role: true,
-      profile: true,
+      profilePicture: true,
       phoneNumber: true,
       createdAt: true,
       verification: {
@@ -176,6 +176,11 @@ const getById = async (id: string, includeDeviceHistory = false) => {
 
 const update = async (id: string, payload: Partial<User>) => {
   try {
+    // Check if payload has data to update
+    if (!payload || !Object.keys(payload).length) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'No data provided for update');
+    }
+
     const result = await prisma.user.update({
       where: { id },
       data: payload,

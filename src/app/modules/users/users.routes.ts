@@ -3,20 +3,23 @@ import { Router } from 'express';
 import auth from '../../middleware/auth';
 import parseData from '../../middleware/parseData';
 import { USER_ROLE } from './user.constants';
-import multer, { memoryStorage } from 'multer';
 import { userController } from './user.controller';
 import validateRequest from '../../middleware/validateRequest';
 import { userValidation } from './user.validation';
+import fileUpload from '../../middleware/fileUpload';
+import path from 'path';
 
 const router = Router();
-const storage = memoryStorage();
-const upload = multer({ storage });
+
+const upload = fileUpload(
+  path.join(process.cwd(), 'public', 'uploads', 'profile-pictures'),
+);
 
 // All specific paths MUST come before dynamic /:id routes
 
 router.post(
   '/',
-  upload.single('profile'),
+  upload.single('profilePicture'),
   parseData(),
   userController.createUser,
 );
@@ -42,7 +45,7 @@ router.patch(
     USER_ROLE.super_admin,
     USER_ROLE.user,
   ),
-  upload.single('profile'),
+  upload.single('profilePicture'),
   parseData(),
   userController.updateMyProfile,
 );
@@ -91,7 +94,7 @@ router.get('/:id', userController.getUserById);
 router.patch(
   '/:id',
   auth(USER_ROLE.admin, USER_ROLE.sub_admin, USER_ROLE.super_admin),
-  upload.single('profile'),
+  upload.single('profilePicture'),
   parseData(),
   userController.updateUser,
 );
