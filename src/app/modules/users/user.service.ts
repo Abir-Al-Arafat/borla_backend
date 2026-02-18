@@ -147,7 +147,7 @@ const getAll = async (query: Record<string, any>) => {
   };
 };
 
-const getById = async (id: string) => {
+const getById = async (id: string, includeDeviceHistory = false) => {
   const result = await prisma.user.findUniqueOrThrow({
     where: {
       id,
@@ -167,7 +167,7 @@ const getById = async (id: string) => {
           status: true,
         },
       },
-      deviceHistory: true,
+      deviceHistory: includeDeviceHistory,
     },
   });
 

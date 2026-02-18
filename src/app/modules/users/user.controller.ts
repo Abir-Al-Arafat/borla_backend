@@ -34,7 +34,11 @@ const getAllUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getUserById = catchAsync(async (req: Request, res: Response) => {
-  const result = await userService.getById(req.params.id as string);
+  const includeDeviceHistory = req.query.includeDeviceHistory === 'true';
+  const result = await userService.getById(
+    req.params.id as string,
+    includeDeviceHistory,
+  );
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -44,7 +48,11 @@ const getUserById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMyProfile = catchAsync(async (req: Request, res: Response) => {
-  const result = await userService.getById(req?.user?.userId);
+  const includeDeviceHistory = req.query.includeDeviceHistory === 'true';
+  const result = await userService.getById(
+    req?.user?.userId,
+    includeDeviceHistory,
+  );
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
