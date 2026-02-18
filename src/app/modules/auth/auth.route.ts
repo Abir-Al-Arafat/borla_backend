@@ -48,6 +48,7 @@ router.post('/refresh-token', authControllers.refreshToken);
 
 router.patch(
   '/change-password',
+  upload.none(),
   auth(
     USER_ROLE.super_admin,
     USER_ROLE.sub_admin,
