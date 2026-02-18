@@ -53,6 +53,7 @@ model User {
   deviceHistory DeviceHistory[]
   documents     Documents[]
   Participants  Participants[]
+  savedPlaces   SavedPlace[]
 }
 
 model DeviceHistory {
@@ -99,6 +100,24 @@ model Zone {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model SavedPlace {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String    @db.ObjectId
+  placeType  placeType @default(home)
+  placeTitle String
+  placeName  String
+  address    String
+  location   Json // GeoJSON Point
+  isDeleted  Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("saved_places")
 }
 
 /**
@@ -185,4 +204,11 @@ enum Role {
 enum chatStatus {
   active
   blocked
+}
+
+enum placeType {
+  home
+  office
+  shop
+  hotel
 }
