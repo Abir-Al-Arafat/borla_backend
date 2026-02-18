@@ -132,7 +132,7 @@ const socialAuthZodSchema = z.object({
     socialId: z.string().nonempty('Social ID is required'),
     provider: z.enum(['google', 'apple']),
     phoneNumber: z.string().optional(),
-    profile: z.string().optional(),
+    profilePicture: z.string().optional(),
   }),
 });
 

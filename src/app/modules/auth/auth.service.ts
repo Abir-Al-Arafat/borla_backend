@@ -523,7 +523,7 @@ const registerWithGoogle = async (payload: ISocialAuth, req: Request) => {
         name: payload.name,
         email: payload.email,
         phoneNumber: payload.phoneNumber,
-        profile: payload.profile,
+        profilePicture: payload.profilePicture,
         role: 'user',
         password: null,
         verification: {
@@ -607,7 +607,7 @@ const registerWithApple = async (payload: ISocialAuth, req: Request) => {
         name: payload.name,
         email: payload.email,
         phoneNumber: payload.phoneNumber,
-        profile: payload.profile,
+        profilePicture: payload.profilePicture,
         role: 'user',
         password: null,
         verification: {

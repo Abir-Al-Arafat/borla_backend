@@ -22,7 +22,7 @@ const getUserDetailsFromToken = async (token: string) => {
       email: true,
       status: true,
       role: true,
-      profile: true,
+      profilePicture: true,
       phoneNumber: true,
       dateOfBirth: true,
       customerId: true,

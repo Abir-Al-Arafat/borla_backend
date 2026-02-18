@@ -51,4 +51,5 @@ export type ISocialAuth = {
   provider: 'google' | 'apple';
   phoneNumber?: string;
   profile?: string;
+  profilePicture?: string;
 };
