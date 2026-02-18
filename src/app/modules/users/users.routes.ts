@@ -1,9 +1,12 @@
 import { Router } from 'express';
+
 import auth from '../../middleware/auth';
 import parseData from '../../middleware/parseData';
 import { USER_ROLE } from './user.constants';
 import multer, { memoryStorage } from 'multer';
 import { userController } from './user.controller';
+import validateRequest from '../../middleware/validateRequest';
+import { userValidation } from './user.validation';
 
 const router = Router();
 const storage = memoryStorage();
@@ -65,6 +68,21 @@ router.patch(
     USER_ROLE.rider,
   ),
   userController.toggleMyStatus,
+);
+
+router.patch(
+  '/update-my-location',
+  upload.none(),
+  auth(
+    USER_ROLE.admin,
+    USER_ROLE.sub_admin,
+    USER_ROLE.super_admin,
+    USER_ROLE.user,
+    USER_ROLE.rider,
+  ),
+  parseData(),
+  validateRequest(userValidation.updateLocationZodSchema),
+  userController.updateMyLocation,
 );
 
 // Dynamic parameter routes come LAST

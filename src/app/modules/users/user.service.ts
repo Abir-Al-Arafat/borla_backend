@@ -236,6 +236,47 @@ const toggleUserStatus = async (userId: string) => {
   return result;
 };
 
+const updateMyLocation = async (
+  userId: string,
+  payload: { latitude: number; longitude: number; locationName?: string },
+) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isDeleted: true },
+  });
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (user.isDeleted) {
+    throw new AppError(httpStatus.FORBIDDEN, 'User is deleted');
+  }
+
+  // Create GeoJSON Point format
+  const location = {
+    type: 'Point',
+    coordinates: [payload.longitude, payload.latitude],
+  };
+
+  const result = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      location,
+      locationName: payload.locationName || null,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      location: true,
+      locationName: true,
+    },
+  });
+
+  return result;
+};
+
 export const userService = {
   create,
   update,
@@ -243,4 +284,5 @@ export const userService = {
   getById,
   deleteUser,
   toggleUserStatus,
+  updateMyLocation,
 };

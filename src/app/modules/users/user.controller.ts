@@ -127,6 +127,19 @@ const toggleMyStatus = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateMyLocation = catchAsync(async (req: Request, res: Response) => {
+  const result = await userService.updateMyLocation(
+    req.user?.userId as string,
+    req.body,
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Location updated successfully',
+    data: result,
+  });
+});
+
 export const userController = {
   createUser,
   getAllUser,
@@ -138,4 +151,5 @@ export const userController = {
   deleteMYAccount,
   toggleUserStatus,
   toggleMyStatus,
+  updateMyLocation,
 };
