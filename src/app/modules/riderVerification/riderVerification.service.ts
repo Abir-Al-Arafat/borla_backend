@@ -2,6 +2,9 @@ import prisma from 'app/shared/prisma';
 import AppError from 'app/error/AppError';
 import httpStatus from 'http-status';
 import { IRiderVerificationQuery } from './riderVerification.interface';
+import { sendEmail } from 'app/utils/mailSender';
+import path from 'path';
+import fs from 'fs';
 
 // Get all riders for verification (admin only)
 const getPendingRiders = async (query: IRiderVerificationQuery) => {
@@ -160,6 +163,25 @@ const approveRider = async (userId: string) => {
 
     return updatedRider;
   });
+
+  // Send approval email to rider
+  try {
+    const approvalEmailPath = path.join(
+      __dirname,
+      '../../../../public/view/rider_approval_mail.html',
+    );
+
+    await sendEmail(
+      result.email,
+      'Rider Verification Approved - Borla',
+      fs
+        .readFileSync(approvalEmailPath, 'utf8')
+        .replace('{{name}}', result.name),
+    );
+  } catch (emailError) {
+    console.error('Failed to send approval email:', emailError);
+    // Don't throw error - approval was successful even if email fails
+  }
 
   return result;
 };
