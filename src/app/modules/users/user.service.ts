@@ -57,7 +57,15 @@ const create = async (payload: User) => {
 const getAll = async (query: Record<string, any>) => {
   const { filters, pagination } = await pickQuery(query);
 
-  const { searchTerm, ...filtersData } = filters;
+  const {
+    searchTerm,
+    latitude,
+    longitude,
+    radius,
+    locationName,
+    role,
+    ...filtersData
+  } = filters;
 
   // eslint-disable-next-line prefer-const
   let pipeline: Prisma.UserWhereInput = {
@@ -76,6 +84,33 @@ const getAll = async (query: Record<string, any>) => {
     }));
   }
 
+  // Location name search
+  if (locationName) {
+    const oldAnd = pipeline.AND;
+    const oldAndArray = Array.isArray(oldAnd) ? oldAnd : oldAnd ? [oldAnd] : [];
+    pipeline.AND = [
+      ...oldAndArray,
+      {
+        locationName: {
+          contains: locationName,
+          mode: 'insensitive',
+        },
+      },
+    ];
+  }
+
+  // Role filter
+  if (role) {
+    const oldAnd = pipeline.AND;
+    const oldAndArray = Array.isArray(oldAnd) ? oldAnd : oldAnd ? [oldAnd] : [];
+    pipeline.AND = [
+      ...oldAndArray,
+      {
+        role: role as Role,
+      },
+    ];
+  }
+
   // Add filterQuery conditions
   if (Object.keys(filtersData).length) {
     const oldAnd = pipeline.AND;
@@ -92,10 +127,12 @@ const getAll = async (query: Record<string, any>) => {
     ];
   }
 
-  // 🚫 exclude admin users
-  pipeline.NOT = {
-    role: 'admin' as Role, // Cast string to enum Role
-  };
+  // 🚫 exclude admin users (unless explicitly searching for a role)
+  if (!role) {
+    pipeline.NOT = {
+      role: 'admin' as Role, // Cast string to enum Role
+    };
+  }
 
   // Sorting condition
   const { page, limit, skip, sort } =
@@ -112,7 +149,7 @@ const getAll = async (query: Record<string, any>) => {
     });
   }
 
-  const data = await prisma.user.findMany({
+  let data = await prisma.user.findMany({
     where: pipeline,
     skip,
     take: limit,
@@ -134,8 +171,50 @@ const getAll = async (query: Record<string, any>) => {
         },
       },
       deviceHistory: true,
+      location: true,
+      locationName: true,
+      onlineStatus: true,
     },
   });
+
+  // Location-based filtering with radius (if latitude, longitude, and radius are provided)
+  if (latitude && longitude && radius) {
+    const userLat = parseFloat(latitude);
+    const userLon = parseFloat(longitude);
+    const radiusInKm = parseFloat(radius);
+
+    // Filter users within the specified radius using Haversine formula
+    data = data.filter(user => {
+      if (!user.location || typeof user.location !== 'object') return false;
+
+      const location = user.location as any;
+      if (
+        !location.coordinates ||
+        !Array.isArray(location.coordinates) ||
+        location.coordinates.length < 2
+      ) {
+        return false;
+      }
+
+      const userLocLon = parseFloat(location.coordinates[0]);
+      const userLocLat = parseFloat(location.coordinates[1]);
+
+      // Haversine formula to calculate distance
+      const R = 6371; // Earth's radius in kilometers
+      const dLat = ((userLocLat - userLat) * Math.PI) / 180;
+      const dLon = ((userLocLon - userLon) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((userLat * Math.PI) / 180) *
+          Math.cos((userLocLat * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c;
+
+      return distance <= radiusInKm;
+    });
+  }
 
   const total = await prisma.user.count({
     where: pipeline,
@@ -143,7 +222,11 @@ const getAll = async (query: Record<string, any>) => {
 
   return {
     users: data,
-    meta: { page, limit, total },
+    meta: {
+      page,
+      limit,
+      total: latitude && longitude && radius ? data.length : total,
+    },
   };
 };
 
