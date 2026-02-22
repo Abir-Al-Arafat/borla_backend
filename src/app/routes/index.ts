@@ -18,6 +18,8 @@ import { otpRoutes } from '@app/modules/otp/otp.routes';
 import { userRoutes } from '@app/modules/users/users.routes';
 import { riderVerificationRoutes } from '@app/modules/riderVerification/riderVerification.route';
 import { savedPlaceRoutes } from '@app/modules/savedPlaces/savedPlace.route';
+import { bookingRoutes } from '@app/modules/bookings/booking.route';
+import { riderRoutes } from '@app/modules/riders/rider.route';
 // import { whatYourClientGetsRoutes } from '@app/modules/whatYourClientGets/whatYourClientGets.route';
 import { Router } from 'express';
 
@@ -99,6 +101,14 @@ const moduleRoutes = [
   {
     path: '/saved-places',
     route: savedPlaceRoutes,
+  },
+  {
+    path: '/bookings',
+    route: bookingRoutes,
+  },
+  {
+    path: '/riders',
+    route: riderRoutes,
   },
   // {
   //   path: '/services',

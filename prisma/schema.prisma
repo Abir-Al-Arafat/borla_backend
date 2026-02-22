@@ -49,11 +49,13 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  verification  Verification?
-  deviceHistory DeviceHistory[]
-  documents     Documents[]
-  Participants  Participants[]
-  savedPlaces   SavedPlace[]
+  verification    Verification?
+  deviceHistory   DeviceHistory[]
+  documents       Documents[]
+  Participants    Participants[]
+  savedPlaces     SavedPlace[]
+  bookingsAsUser  Booking[]       @relation("UserBookings")
+  bookingsAsRider Booking[]       @relation("RiderBookings")
 }
 
 model DeviceHistory {
@@ -211,4 +213,69 @@ enum placeType {
   office
   shop
   hotel
+}
+
+// Booking model for waste collection requests
+model Booking {
+  id      String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId  String        @db.ObjectId
+  riderId String?       @db.ObjectId
+  status  bookingStatus @default(pending)
+
+  // Waste details
+  wasteCategory wasteCategory
+  wasteImages   String[]      @default([])
+  binSize       String // e.g., "Large (240 L)"
+  binQuantity   Int           @default(1)
+  wasteSize     Float // in kg
+
+  // Location details
+  pickupLocation  Json // GeoJSON Point
+  pickupAddress   String
+  dropoffLocation Json? // GeoJSON Point (optional for now)
+  dropoffAddress  String?
+
+  // Ride details
+  vehicleType       String? // e.g., "Tri Cycle"
+  estimatedDistance Float? // in km
+  estimatedTime     String? // e.g., "30-45 m"
+
+  // Payment details
+  paymentMethod paymentMethod
+  price         Float
+
+  // Timestamps
+  requestedAt DateTime  @default(now())
+  acceptedAt  DateTime?
+  completedAt DateTime?
+  cancelledAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation("UserBookings", fields: [userId], references: [id])
+  rider User? @relation("RiderBookings", fields: [riderId], references: [id])
+
+  @@map("bookings")
+}
+
+enum bookingStatus {
+  pending // Waiting for rider to accept
+  accepted // Rider accepted
+  in_progress // Rider is on the way or collecting
+  completed // Job completed
+  cancelled // Cancelled by user or rider
+}
+
+enum wasteCategory {
+  organic
+  metal
+  plastic
+  general
+  paper
+}
+
+enum paymentMethod {
+  momo
+  cash
 }
