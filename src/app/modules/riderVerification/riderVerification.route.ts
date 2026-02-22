@@ -22,13 +22,6 @@ router.get(
   riderVerificationControllers.getPendingRiders,
 );
 
-// Get single rider details
-router.get(
-  '/:id',
-  auth(USER_ROLE.super_admin, USER_ROLE.admin),
-  riderVerificationControllers.getRiderById,
-);
-
 // Approve rider
 router.patch(
   '/:id/approve',
@@ -41,6 +34,13 @@ router.patch(
   '/:id/reject',
   auth(USER_ROLE.super_admin, USER_ROLE.admin),
   riderVerificationControllers.rejectRider,
+);
+
+// Get single rider details
+router.get(
+  '/:id',
+  auth(USER_ROLE.super_admin, USER_ROLE.admin),
+  riderVerificationControllers.getRiderById,
 );
 
 export const riderVerificationRoutes = router;
