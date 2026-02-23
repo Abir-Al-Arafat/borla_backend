@@ -20,6 +20,7 @@ import { riderVerificationRoutes } from '@app/modules/riderVerification/riderVer
 import { savedPlaceRoutes } from '@app/modules/savedPlaces/savedPlace.route';
 import { bookingRoutes } from '@app/modules/bookings/booking.route';
 import { riderRoutes } from '@app/modules/riders/rider.route';
+import { ratingRoutes } from '@app/modules/ratings/rating.route';
 // import { whatYourClientGetsRoutes } from '@app/modules/whatYourClientGets/whatYourClientGets.route';
 import { Router } from 'express';
 
@@ -109,6 +110,10 @@ const moduleRoutes = [
   {
     path: '/riders',
     route: riderRoutes,
+  },
+  {
+    path: '/ratings',
+    route: ratingRoutes,
   },
   // {
   //   path: '/services',

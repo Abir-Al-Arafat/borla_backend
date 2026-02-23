@@ -243,6 +243,12 @@ model Booking {
   // Payment details
   paymentMethod paymentMethod
   price         Float
+  isPaid        Boolean       @default(false)
+  paidAt        DateTime?
+
+  // Ride tracking
+  arrivedAtPickup  DateTime?
+  arrivedAtDropoff DateTime?
 
   // Timestamps
   requestedAt DateTime  @default(now())
@@ -253,17 +259,36 @@ model Booking {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user  User  @relation("UserBookings", fields: [userId], references: [id])
-  rider User? @relation("RiderBookings", fields: [riderId], references: [id])
+  user   User    @relation("UserBookings", fields: [userId], references: [id])
+  rider  User?   @relation("RiderBookings", fields: [riderId], references: [id])
+  rating Rating?
 
   @@map("bookings")
+}
+
+// Rating model for booking feedback
+model Rating {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId String  @unique @db.ObjectId
+  rating    Int // 1-5 stars
+  feedback  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("ratings")
 }
 
 enum bookingStatus {
   pending // Waiting for rider to accept
   accepted // Rider accepted
-  in_progress // Rider is on the way or collecting
-  completed // Job completed
+  arrived_pickup // Rider arrived at pickup location
+  in_progress // Rider is collecting/transporting
+  arrived_dropoff // Rider arrived at dropoff location
+  awaiting_payment // Waiting for customer to pay
+  completed // Job completed and paid
   cancelled // Cancelled by user or rider
 }
 
