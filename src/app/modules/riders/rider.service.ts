@@ -1,62 +1,34 @@
 import prisma from 'app/shared/prisma';
-import AppError from 'app/error/AppError';
-import httpStatus from 'http-status';
-
-interface IFindRidersQuery {
-  latitude?: number;
-  longitude?: number;
-  radius?: number; // in km
-}
+import { IFindRidersQuery } from './rider.interface';
+import { getUserLocation } from './rider.helpers';
+import {
+  extractCoordinates,
+  calculateDistance,
+  formatEstimatedTime,
+  calculateEstimatedPrice,
+} from './rider.utils';
+import { PRICING_CONFIG } from './rider.constants';
 
 // Find available riders within radius
 const findAvailableRiders = async (userId: string, query: IFindRidersQuery) => {
-  // Get user's location if lat/lng not provided
-  let { latitude, longitude, radius = 10 } = query;
+  const { radius = 10 } = query;
+  let { latitude, longitude } = query;
 
+  // Get user's location if not provided in query
   if (!latitude || !longitude) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { location: true, isDeleted: true },
-    });
-
-    if (!user) {
-      throw new AppError(httpStatus.NOT_FOUND, 'User not found');
-    }
-
-    if (user.isDeleted) {
-      throw new AppError(httpStatus.FORBIDDEN, 'User account is deleted');
-    }
-
-    if (user.location && typeof user.location === 'object') {
-      const location = user.location as any;
-      if (
-        location.coordinates &&
-        Array.isArray(location.coordinates) &&
-        location.coordinates.length >= 2
-      ) {
-        longitude = parseFloat(location.coordinates[0]);
-        latitude = parseFloat(location.coordinates[1]);
-      }
-    }
+    const userLocation = await getUserLocation(userId);
+    latitude = userLocation.latitude;
+    longitude = userLocation.longitude;
   }
 
-  if (!latitude || !longitude) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      'Location is required. Please update your location first.',
-    );
-  }
-
-  // Get all verified, online riders
+  // Fetch all verified, online riders
   const riders = await prisma.user.findMany({
     where: {
       role: 'rider',
       riderVerified: true,
       isDeleted: false,
       onlineStatus: 'online',
-      location: {
-        not: null,
-      },
+      location: { not: null },
     },
     select: {
       id: true,
@@ -70,79 +42,38 @@ const findAvailableRiders = async (userId: string, query: IFindRidersQuery) => {
     },
   });
 
-  // Filter riders within the specified radius using Haversine formula
+  // Process riders: calculate distance, filter by radius, and enrich with metadata
   const ridersWithinRadius = riders
-    .filter(rider => {
-      if (!rider.location || typeof rider.location !== 'object') return false;
-
-      const location = rider.location as any;
-      if (
-        !location.coordinates ||
-        !Array.isArray(location.coordinates) ||
-        location.coordinates.length < 2
-      ) {
-        return false;
-      }
-
-      const riderLon = parseFloat(location.coordinates[0]);
-      const riderLat = parseFloat(location.coordinates[1]);
-
-      // Haversine formula to calculate distance
-      const R = 6371; // Earth's radius in kilometers
-      const dLat = ((riderLat - latitude!) * Math.PI) / 180;
-      const dLon = ((riderLon - longitude!) * Math.PI) / 180;
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos((latitude! * Math.PI) / 180) *
-          Math.cos((riderLat * Math.PI) / 180) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const distance = R * c;
-
-      return distance <= radius;
-    })
     .map(rider => {
-      // Calculate exact distance for each rider
-      const location = rider.location as any;
-      const riderLon = parseFloat(location.coordinates[0]);
-      const riderLat = parseFloat(location.coordinates[1]);
+      const riderCoords = extractCoordinates(rider.location);
+      if (!riderCoords) return null;
 
-      const R = 6371;
-      const dLat = ((riderLat - latitude!) * Math.PI) / 180;
-      const dLon = ((riderLon - longitude!) * Math.PI) / 180;
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos((latitude! * Math.PI) / 180) *
-          Math.cos((riderLat * Math.PI) / 180) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const distance = R * c;
+      const distance = calculateDistance(
+        latitude!,
+        longitude!,
+        riderCoords.latitude,
+        riderCoords.longitude,
+      );
 
-      // Calculate estimated time based on distance
-      // Assuming average speed of 15 km/h for tri-cycle
-      const avgSpeed = 15; // km/h
-      const timeInHours = distance / avgSpeed;
-      const timeInMinutes = Math.round(timeInHours * 60);
+      // Filter out riders outside the radius
+      if (distance > radius) return null;
 
-      // Format estimated time
-      let estimatedTime: string;
-      if (timeInMinutes < 60) {
-        estimatedTime = `${timeInMinutes} min`;
-      } else {
-        const hours = Math.floor(timeInMinutes / 60);
-        const minutes = timeInMinutes % 60;
-        estimatedTime = minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
-      }
+      // Calculate time and price estimates
+      const timeInMinutes = Math.round(
+        (distance / PRICING_CONFIG.avgSpeed) * 60,
+      );
+      const estimatedTime = formatEstimatedTime(timeInMinutes);
+      const estimatedPrice = calculateEstimatedPrice(distance, timeInMinutes);
 
       return {
         ...rider,
-        distance: parseFloat(distance.toFixed(2)), // Distance in km
+        distance: parseFloat(distance.toFixed(2)),
         estimatedTime,
+        estimatedPrice,
       };
     })
-    .sort((a, b) => a.distance - b.distance); // Sort by distance (nearest first)
+    .filter((rider): rider is NonNullable<typeof rider> => rider !== null)
+    .sort((a, b) => a.distance - b.distance);
 
   return {
     riders: ridersWithinRadius,
@@ -152,10 +83,7 @@ const findAvailableRiders = async (userId: string, query: IFindRidersQuery) => {
       total: ridersWithinRadius.length,
       totalPage: 1,
       radius,
-      searchLocation: {
-        latitude,
-        longitude,
-      },
+      searchLocation: { latitude, longitude },
     },
   };
 };
