@@ -1,10 +1,4 @@
-// import { aboutHeroSectionRoutes } from '@app/modules/aboutHeroSection/aboutHeroSection.route';
-// import { aboutSteveDerayRoutes } from '@app/modules/aboutSteveDeray/aboutSteveDeray.route';
-// import { associatesRoutes } from '@app/modules/associates/associates.route';
 import { authRoutes } from '@app/modules/auth/auth.route';
-// import { blogsRoutes } from '@app/modules/blogs/blogs.route';
-// import { bookResourcesRoutes } from '@app/modules/bookResources/bookResources.route';
-// import { booksRoutes } from '@app/modules/books/books.route';
 import { contentsRoutes } from '@app/modules/contents/contents.route';
 // import { dashboardRoutes } from '@app/modules/dashboard/dashboard.route';
 // import { downloadsBookRoutes } from '@app/modules/downloadsBook/downloadsBook.route';
@@ -21,27 +15,16 @@ import { savedPlaceRoutes } from '@app/modules/savedPlaces/savedPlace.route';
 import { bookingRoutes } from '@app/modules/bookings/booking.route';
 import { riderRoutes } from '@app/modules/riders/rider.route';
 import { ratingRoutes } from '@app/modules/ratings/rating.route';
-// import { whatYourClientGetsRoutes } from '@app/modules/whatYourClientGets/whatYourClientGets.route';
+
 import { Router } from 'express';
 
 const router = Router();
 const moduleRoutes = [
   // {
-  //   path: '/downloads-book',
-  //   route: downloadsBookRoutes,
-  // },
-  // {
   //   path: '/dashboard',
   //   route: dashboardRoutes,
   // },
-  // {
-  //   path: '/about-steve-deray',
-  //   route: aboutSteveDerayRoutes,
-  // },
-  // {
-  //   path: '/freedom-path-planning',
-  //   route: freedomPathPlaningRoutes,
-  // },
+
   // {
   //   path: '/about-hero-section',
   //   route: aboutHeroSectionRoutes,
@@ -67,18 +50,7 @@ const moduleRoutes = [
   //   route: bookResourcesRoutes,
   // },
   // {
-  //   path: '/tool-resource',
-  //   route: toolResourceRoutes,
-  // },
 
-  // {
-  //   path: '/testimonial',
-  //   route: testimonialRoutes,
-  // },
-  // {
-  //   path: '/associates',
-  //   route: associatesRoutes,
-  // },
   {
     path: '/users',
     route: userRoutes,
@@ -115,14 +87,6 @@ const moduleRoutes = [
     path: '/ratings',
     route: ratingRoutes,
   },
-  // {
-  //   path: '/services',
-  //   route: serviceRouter,
-  // },
-  // {
-  //   path: '/generate-report',
-  //   route: generateReportRoutes,
-  // },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));
 
