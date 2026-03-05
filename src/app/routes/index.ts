@@ -13,6 +13,7 @@ import { userRoutes } from '@app/modules/users/users.routes';
 import { riderVerificationRoutes } from '@app/modules/riderVerification/riderVerification.route';
 import { savedPlaceRoutes } from '@app/modules/savedPlaces/savedPlace.route';
 import { bookingRoutes } from '@app/modules/bookings/booking.route';
+import { paymentRoutes } from '@app/modules/payments/payment.routes';
 import { riderRoutes } from '@app/modules/riders/rider.route';
 import { ratingRoutes } from '@app/modules/ratings/rating.route';
 
@@ -20,37 +21,6 @@ import { Router } from 'express';
 
 const router = Router();
 const moduleRoutes = [
-  // {
-  //   path: '/dashboard',
-  //   route: dashboardRoutes,
-  // },
-
-  // {
-  //   path: '/about-hero-section',
-  //   route: aboutHeroSectionRoutes,
-  // },
-  // {
-  //   path: '/included-service',
-  //   route: includedServiceRoutes,
-  // },
-  // {
-  //   path: '/what-your-client-gets',
-  //   route: whatYourClientGetsRoutes,
-  // },
-  // {
-  //   path: '/books',
-  //   route: booksRoutes,
-  // },
-  // {
-  //   path: '/blogs',
-  //   route: blogsRoutes,
-  // },
-  // {
-  //   path: '/book-resources',
-  //   route: bookResourcesRoutes,
-  // },
-  // {
-
   {
     path: '/users',
     route: userRoutes,
@@ -78,6 +48,10 @@ const moduleRoutes = [
   {
     path: '/bookings',
     route: bookingRoutes,
+  },
+  {
+    path: '/payments',
+    route: paymentRoutes,
   },
   {
     path: '/riders',
