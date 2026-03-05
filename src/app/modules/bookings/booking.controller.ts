@@ -142,6 +142,66 @@ const updateBookingStatus = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Mark arrived at pickup (Rider)
+const markArrivedAtPickup = catchAsync(async (req: Request, res: Response) => {
+  const result = await bookingServices.markArrivedAtPickup(
+    req.params.id as string,
+    req.user.userId,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Marked as arrived at pickup. Customer has been notified.',
+    data: result,
+  });
+});
+
+// Start collection (Rider)
+const startCollection = catchAsync(async (req: Request, res: Response) => {
+  const result = await bookingServices.startCollection(
+    req.params.id as string,
+    req.user.userId,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Collection started successfully',
+    data: result,
+  });
+});
+
+// Mark arrived at dropoff (Rider)
+const markArrivedAtDropoff = catchAsync(async (req: Request, res: Response) => {
+  const result = await bookingServices.markArrivedAtDropoff(
+    req.params.id as string,
+    req.user.userId,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Marked as arrived at dropoff location',
+    data: result,
+  });
+});
+
+// Request payment (Rider)
+const requestPayment = catchAsync(async (req: Request, res: Response) => {
+  const result = await bookingServices.requestPayment(
+    req.params.id as string,
+    req.user.userId as string,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Payment requested. Customer will be notified.',
+    data: result,
+  });
+});
+
 export const bookingControllers = {
   createBooking,
   getAvailableBookings,
@@ -151,4 +211,8 @@ export const bookingControllers = {
   acceptBooking,
   declineBooking,
   updateBookingStatus,
+  markArrivedAtPickup,
+  startCollection,
+  markArrivedAtDropoff,
+  requestPayment,
 };

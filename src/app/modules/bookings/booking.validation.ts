@@ -133,8 +133,19 @@ const getBookingsQueryZodSchema = z.object({
     }),
 });
 
+const processPaymentZodSchema = z.object({
+  body: z.object({
+    paymentMethod: z
+      .enum(['momo', 'cash'])
+      .refine(val => val === 'momo' || val === 'cash', {
+        message: 'Payment method must be either momo or cash',
+      }),
+  }),
+});
+
 export const bookingValidations = {
   createBookingZodSchema,
   updateBookingStatusZodSchema,
   getBookingsQueryZodSchema,
+  processPaymentZodSchema,
 };

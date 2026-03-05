@@ -531,6 +531,239 @@ const declineBooking = async (bookingId: string, riderId: string) => {
   return { message: 'Booking declined successfully' };
 };
 
+// Mark rider arrived at pickup (Rider)
+const markArrivedAtPickup = async (bookingId: string, riderId: string) => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phoneNumber: true,
+        },
+      },
+    },
+  });
+
+  if (!booking) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Booking not found');
+  }
+
+  if (booking.riderId !== riderId) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'You are not assigned to this booking',
+    );
+  }
+
+  if (booking.status !== 'accepted') {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `Cannot mark arrived from status: ${booking.status}`,
+    );
+  }
+
+  const updatedBooking = await prisma.booking.update({
+    where: { id: bookingId },
+    data: {
+      status: 'arrived_pickup',
+      arrivedAtPickup: new Date(),
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phoneNumber: true,
+          profilePicture: true,
+        },
+      },
+      rider: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phoneNumber: true,
+          profilePicture: true,
+        },
+      },
+    },
+  });
+
+  // TODO: Send notification to customer that rider has arrived
+
+  return updatedBooking;
+};
+
+// Start collecting waste (Rider)
+const startCollection = async (bookingId: string, riderId: string) => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+  });
+
+  if (!booking) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Booking not found');
+  }
+
+  if (booking.riderId !== riderId) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'You are not assigned to this booking',
+    );
+  }
+
+  if (booking.status !== 'arrived_pickup') {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `Cannot start collection from status: ${booking.status}`,
+    );
+  }
+
+  const updatedBooking = await prisma.booking.update({
+    where: { id: bookingId },
+    data: {
+      status: 'in_progress',
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phoneNumber: true,
+          profilePicture: true,
+        },
+      },
+      rider: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phoneNumber: true,
+          profilePicture: true,
+        },
+      },
+    },
+  });
+
+  return updatedBooking;
+};
+
+// Mark arrived at dropoff (Rider) - if dropoff location exists
+const markArrivedAtDropoff = async (bookingId: string, riderId: string) => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+  });
+
+  if (!booking) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Booking not found');
+  }
+
+  if (booking.riderId !== riderId) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'You are not assigned to this booking',
+    );
+  }
+
+  if (booking.status !== 'in_progress') {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `Cannot mark arrived at dropoff from status: ${booking.status}`,
+    );
+  }
+
+  const updatedBooking = await prisma.booking.update({
+    where: { id: bookingId },
+    data: {
+      status: 'arrived_dropoff',
+      arrivedAtDropoff: new Date(),
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phoneNumber: true,
+          profilePicture: true,
+        },
+      },
+      rider: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phoneNumber: true,
+          profilePicture: true,
+        },
+      },
+    },
+  });
+
+  return updatedBooking;
+};
+
+// Request payment (Rider)
+const requestPayment = async (bookingId: string, riderId: string) => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+  });
+
+  if (!booking) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Booking not found');
+  }
+
+  if (booking.riderId !== riderId) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'You are not assigned to this booking',
+    );
+  }
+
+  // Can request payment from either arrived_dropoff or in_progress
+  if (!['in_progress', 'arrived_dropoff'].includes(booking.status)) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `Cannot request payment from status: ${booking.status}`,
+    );
+  }
+
+  const updatedBooking = await prisma.booking.update({
+    where: { id: bookingId },
+    data: {
+      status: 'awaiting_payment',
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phoneNumber: true,
+          profilePicture: true,
+        },
+      },
+      rider: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phoneNumber: true,
+          profilePicture: true,
+        },
+      },
+    },
+  });
+
+  // TODO: Send notification to customer to make payment
+
+  return updatedBooking;
+};
+
 export const bookingServices = {
   createBooking,
   getAvailableBookingsForRider,
@@ -540,4 +773,8 @@ export const bookingServices = {
   acceptBooking,
   updateBookingStatus,
   declineBooking,
+  markArrivedAtPickup,
+  startCollection,
+  markArrivedAtDropoff,
+  requestPayment,
 };

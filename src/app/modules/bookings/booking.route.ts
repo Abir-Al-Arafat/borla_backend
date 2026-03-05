@@ -71,6 +71,34 @@ router.patch(
   bookingControllers.declineBooking,
 );
 
+// Mark arrived at pickup location (rider notifies customer)
+router.patch(
+  '/:id/arrive-pickup',
+  auth(USER_ROLE.rider),
+  bookingControllers.markArrivedAtPickup,
+);
+
+// Start waste collection (rider starts collecting waste)
+router.patch(
+  '/:id/start-collection',
+  auth(USER_ROLE.rider),
+  bookingControllers.startCollection,
+);
+
+// Mark arrived at dropoff location (rider arrives at disposal site)
+router.patch(
+  '/:id/arrive-dropoff',
+  auth(USER_ROLE.rider),
+  bookingControllers.markArrivedAtDropoff,
+);
+
+// Request payment from customer (rider requests payment)
+router.patch(
+  '/:id/request-payment',
+  auth(USER_ROLE.rider),
+  bookingControllers.requestPayment,
+);
+
 // ============================================
 // SHARED ROUTES (both user and rider)
 // ============================================
