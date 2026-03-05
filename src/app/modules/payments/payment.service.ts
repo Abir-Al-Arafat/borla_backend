@@ -48,27 +48,151 @@ const verifyWebhook = (payload: any, signature: string) => {
   return hash === signature;
 };
 
+// const handleWebhook = async (payload: any) => {
+//   console.log('handleWebhook', { payload });
+//   if (payload.event === 'charge.success') {
+//     const { bookingId } = payload.data.metadata;
+
+//     if (!bookingId) {
+//       console.error('Webhook received but no bookingId found in metadata');
+//       return;
+//     }
+
+//     // Update Booking Status in Prisma
+//     return await prisma.booking.update({
+//       where: { id: bookingId },
+//       data: {
+//         isPaid: true,
+//         paidAt: new Date(),
+//         status: 'completed',
+//         completedAt: new Date(),
+//         paymentMethod: 'momo',
+//       },
+//     });
+//   }
+// };
+
+// const handleWebhook = async (payload: any) => {
+//   const { event, data } = payload;
+//   console.log('payload:', payload);
+//   console.log('Received webhook event:', event, 'with data:', data);
+//   // HANDLE PAYMENTS (Inbound)
+//   if (event === 'charge.success') {
+//     const { type, userId, bookingId } = data.metadata;
+
+//     if (type === 'TOP_UP') {
+//       // Increment Wallet Balance
+//       return await prisma.wallet.update({
+//         where: { userId },
+//         data: { balance: { increment: data.amount / 100 } },
+//       });
+//     }
+
+//     if (bookingId) {
+//       // Update Booking Status in Prisma
+//       return await prisma.booking.update({
+//         where: { id: bookingId },
+//         data: {
+//           isPaid: true,
+//           paidAt: new Date(),
+//           status: 'completed',
+//           completedAt: new Date(),
+//           paymentMethod: 'momo',
+//         },
+//       });
+//     }
+//   }
+
+//   // HANDLE WITHDRAWALS (Outbound)
+//   if (event === 'transfer.success') {
+//     // Confirm the withdrawal in your DB
+//     console.log('Transfer was successful to recipient');
+//   }
+
+//   if (event === 'transfer.failed') {
+//     // Refund the money back to the Rider's app wallet
+//     console.log('Transfer failed, refunding user wallet...');
+//   }
+
+//   if (event === 'refund.processed') {
+//     console.log('Refund processed, updating booking and wallet...');
+//   }
+// };
+
 const handleWebhook = async (payload: any) => {
-  console.log('handleWebhook', { payload });
-  if (payload.event === 'charge.success') {
-    const { bookingId } = payload.data.metadata;
+  const { event, data } = payload;
+  const reference = data.reference || data.transfer_code;
 
-    if (!bookingId) {
-      console.error('Webhook received but no bookingId found in metadata');
-      return;
-    }
+  // 1. IDEMPOTENCY CHECK: Ensure we haven't processed this reference already
+  const existingTransaction = await prisma.transaction.findUnique({
+    where: { reference },
+  });
+  if (existingTransaction && existingTransaction.status === 'SUCCESS') {
+    console.log(`Transaction ${reference} already processed.`);
+    return;
+  }
 
-    // Update Booking Status in Prisma
-    return await prisma.booking.update({
-      where: { id: bookingId },
-      data: {
-        isPaid: true,
-        paidAt: new Date(),
-        status: 'completed',
-        completedAt: new Date(),
-        paymentMethod: 'momo',
-      },
+  // HANDLE PAYMENTS (Inbound)
+  if (event === 'charge.success') {
+    const { type, userId, bookingId } = data.metadata;
+
+    return await prisma.$transaction(async tx => {
+      // Create a permanent record of the transaction
+      await tx.transaction.create({
+        data: {
+          reference,
+          userId,
+          amount: data.amount / 100,
+          type: type || 'BOOKING_PAYMENT',
+          status: 'SUCCESS',
+        },
+      });
+
+      if (type === 'TOP_UP') {
+        return await tx.wallet.update({
+          where: { userId },
+          data: { balance: { increment: data.amount / 100 } },
+        });
+      }
+
+      if (bookingId) {
+        return await tx.booking.update({
+          where: { id: bookingId },
+          data: {
+            isPaid: true,
+            paidAt: new Date(),
+            status: 'completed',
+            completedAt: new Date(),
+            paymentMethod: 'momo',
+          },
+        });
+      }
     });
+  }
+
+  // HANDLE WITHDRAWALS (Outbound)
+  if (event === 'transfer.success') {
+    const { userId } = data.metadata;
+    // Update your internal withdrawal record to 'SUCCESS'
+    return await prisma.transaction.update({
+      where: { reference: data.transfer_code },
+      data: { status: 'SUCCESS' },
+    });
+  }
+
+  if (event === 'transfer.failed') {
+    const { userId } = data.metadata;
+    // REFUND the user wallet because the outbound transfer failed
+    return await prisma.$transaction([
+      prisma.wallet.update({
+        where: { userId },
+        data: { balance: { increment: data.amount / 100 } },
+      }),
+      prisma.transaction.update({
+        where: { reference: data.transfer_code },
+        data: { status: 'FAILED' },
+      }),
+    ]);
   }
 };
 

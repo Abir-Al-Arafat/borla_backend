@@ -14,6 +14,7 @@ import { riderVerificationRoutes } from '@app/modules/riderVerification/riderVer
 import { savedPlaceRoutes } from '@app/modules/savedPlaces/savedPlace.route';
 import { bookingRoutes } from '@app/modules/bookings/booking.route';
 import { paymentRoutes } from '@app/modules/payments/payment.routes';
+import { walletRoutes } from '@app/modules/wallets/wallet.routes';
 import { riderRoutes } from '@app/modules/riders/rider.route';
 import { ratingRoutes } from '@app/modules/ratings/rating.route';
 
@@ -52,6 +53,10 @@ const moduleRoutes = [
   {
     path: '/payments',
     route: paymentRoutes,
+  },
+  {
+    path: '/wallets',
+    route: walletRoutes,
   },
   {
     path: '/riders',
