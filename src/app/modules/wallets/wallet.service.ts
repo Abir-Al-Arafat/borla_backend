@@ -49,34 +49,51 @@ const initiateWithdrawal = async (
   momoNumber: string,
   bankCode: string,
 ) => {
-  // 1. Create a Transfer Recipient (Do this once and save 'recipient_code' in your DB)
-  const recipientResponse = await axios.post(
-    'https://api.paystack.co/transferrecipient',
-    {
-      type: 'mobile_money',
-      name: 'Rider Name',
-      account_number: momoNumber,
-      bank_code: bankCode, // e.g., 'MTN', 'ATL'
-      currency: 'GHS',
-    },
-    { headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` } },
-  );
+  try {
+    // 1. Create Recipient
+    const recipientResponse = await axios.post(
+      'https://api.paystack.co/transferrecipient',
+      {
+        type: 'mobile_money',
+        name: 'Rider Name',
+        account_number: momoNumber,
+        bank_code: bankCode,
+        currency: 'GHS',
+      },
+      {
+        headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
+      },
+    );
 
-  const recipientCode = recipientResponse.data.data.recipient_code;
+    const recipientCode = recipientResponse.data.data.recipient_code;
 
-  // 2. Initiate the actual Transfer
-  const transferResponse = await axios.post(
-    'https://api.paystack.co/transfer',
-    {
-      source: 'balance', // Transfer comes from your Paystack balance
-      amount: amount * 100,
-      recipient: recipientCode,
-      reason: 'Borla Rider Earnings Withdrawal',
-    },
-    { headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` } },
-  );
+    // 2. Initiate Transfer
+    const transferResponse = await axios.post(
+      'https://api.paystack.co/transfer',
+      {
+        source: 'balance',
+        amount: Math.round(amount * 100), // Ensure it's an integer
+        recipient: recipientCode,
+        reason: 'Borla Rider Earnings Withdrawal',
+        // Optional: Add a unique reference to avoid duplicate errors
+        reference: `withdraw_${Date.now()}_${userId}`,
+      },
+      {
+        headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
+      },
+    );
 
-  return transferResponse.data.data;
+    console.log('Transfer initiated successfully:', transferResponse.data.data);
+    return transferResponse.data.data;
+  } catch (error: any) {
+    // Log the EXACT reason Paystack rejected the request
+    if (error.response) {
+      console.error('Paystack Transfer Error:', error.response.data);
+    } else {
+      console.error('General Withdrawal Error:', error.message);
+    }
+    throw error;
+  }
 };
 
 export const walletServices = {
