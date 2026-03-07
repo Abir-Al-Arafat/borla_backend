@@ -120,7 +120,7 @@ const getRiderById = async (userId: string) => {
 };
 
 // Approve rider verification
-const approveRider = async (userId: string) => {
+const approveRider = async (userId: string, zoneId: string) => {
   const rider = await prisma.user.findUnique({
     where: { id: userId, role: 'rider' },
   });
@@ -133,13 +133,23 @@ const approveRider = async (userId: string) => {
     throw new AppError(httpStatus.BAD_REQUEST, 'Rider is already verified');
   }
 
-  // Update rider verification status and all documents
+  // Verify zone exists
+  const zone = await prisma.zone.findUnique({
+    where: { id: zoneId, isDeleted: false },
+  });
+
+  if (!zone) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Zone not found');
+  }
+
+  // Update rider verification status, assign zone, and update documents
   const result = await prisma.$transaction(async tx => {
-    // Update user riderVerified status
+    // Update user riderVerified status and assign zone
     const updatedRider = await tx.user.update({
       where: { id: userId },
       data: {
         riderVerified: true,
+        zoneId: zoneId,
       },
       select: {
         id: true,
@@ -147,6 +157,13 @@ const approveRider = async (userId: string) => {
         email: true,
         phoneNumber: true,
         riderVerified: true,
+        zoneId: true,
+        zone: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 

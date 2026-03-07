@@ -20,7 +20,16 @@ const getRidersQueryZodSchema = z.object({
     .default({}),
 });
 
+const approveRiderZodSchema = z.object({
+  body: z.object({
+    zoneId: z.string({
+      message: 'Zone ID is required to approve rider',
+    }),
+  }),
+});
+
 export const riderVerificationValidations = {
   updateVerificationStatusZodSchema,
   getRidersQueryZodSchema,
+  approveRiderZodSchema,
 };

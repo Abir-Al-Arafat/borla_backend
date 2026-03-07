@@ -38,6 +38,7 @@ const getRiderById = catchAsync(async (req: Request, res: Response) => {
 const approveRider = catchAsync(async (req: Request, res: Response) => {
   const result = await riderVerificationServices.approveRider(
     req.params.id as string,
+    req.body.zoneId,
   );
   sendResponse(res, {
     statusCode: httpStatus.OK,

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { riderVerificationControllers } from './riderVerification.controller';
 import auth from '../../middleware/auth';
 import { USER_ROLE } from '../users/user.constants';
@@ -6,6 +7,7 @@ import validateRequest from '../../middleware/validateRequest';
 import { riderVerificationValidations } from './riderVerification.validation';
 
 const router = Router();
+const upload = multer();
 
 // Get verification statistics (dashboard summary)
 router.get(
@@ -26,6 +28,8 @@ router.get(
 router.patch(
   '/:id/approve',
   auth(USER_ROLE.super_admin, USER_ROLE.admin),
+  upload.none(),
+  validateRequest(riderVerificationValidations.approveRiderZodSchema),
   riderVerificationControllers.approveRider,
 );
 
