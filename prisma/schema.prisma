@@ -189,6 +189,8 @@ model Wallet {
 model Transaction {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   userId    String   @db.ObjectId
+  riderId   String?  @db.ObjectId // Optional, only for ride payments
+  walletId  String?  @db.ObjectId // Track which wallet this transaction affected
   amount    Float
   type      String // "TOP_UP", "WITHDRAWAL", "RIDE_PAYMENT", "COMMISSION"
   status    String // "PENDING", "SUCCESS", "FAILED"

@@ -132,23 +132,35 @@ const handleWebhook = async (payload: any) => {
     return;
   }
 
+  console.log('event:', event, 'with data:', data);
+
   // HANDLE PAYMENTS (Inbound)
   if (event === 'charge.success') {
     const { type, userId, bookingId } = data.metadata;
 
     return await prisma.$transaction(async tx => {
-      // Create a permanent record of the transaction
-      await tx.transaction.create({
-        data: {
-          reference,
-          userId,
-          amount: data.amount / 100,
-          type: type || 'BOOKING_PAYMENT',
-          status: 'SUCCESS',
-        },
-      });
-
       if (type === 'TOP_UP') {
+        // Get or create wallet for the user
+        let wallet = await tx.wallet.findUnique({ where: { userId } });
+        if (!wallet) {
+          wallet = await tx.wallet.create({
+            data: { userId, balance: 0.0 },
+          });
+        }
+
+        // Create transaction record linked to wallet
+        await tx.transaction.create({
+          data: {
+            reference,
+            userId,
+            walletId: wallet.id,
+            amount: data.amount / 100,
+            type: 'TOP_UP',
+            status: 'SUCCESS',
+          },
+        });
+
+        // Update wallet balance
         return await tx.wallet.update({
           where: { userId },
           data: { balance: { increment: data.amount / 100 } },
@@ -156,6 +168,46 @@ const handleWebhook = async (payload: any) => {
       }
 
       if (bookingId) {
+        // Get booking with rider info
+        const booking = await tx.booking.findUnique({
+          where: { id: bookingId },
+          include: { rider: true },
+        });
+
+        if (!booking || !booking.riderId) {
+          throw new Error('Booking or rider not found');
+        }
+
+        // Get or create wallet for the rider
+        let riderWallet = await tx.wallet.findUnique({
+          where: { userId: booking.riderId },
+        });
+        if (!riderWallet) {
+          riderWallet = await tx.wallet.create({
+            data: { userId: booking.riderId, balance: 0.0 },
+          });
+        }
+
+        // Create  transaction record for the booking payment
+        await tx.transaction.create({
+          data: {
+            reference,
+            userId: userId,
+            riderId: booking.riderId,
+            walletId: riderWallet.id,
+            amount: data.amount / 100,
+            type: 'RIDE_PAYMENT',
+            status: 'SUCCESS',
+          },
+        });
+
+        // Update rider's wallet balance
+        await tx.wallet.update({
+          where: { userId: booking.riderId },
+          data: { balance: { increment: data.amount / 100 } },
+        });
+
+        // Update booking status
         return await tx.booking.update({
           where: { id: bookingId },
           data: {
@@ -182,10 +234,21 @@ const handleWebhook = async (payload: any) => {
 
   if (event === 'transfer.failed') {
     const { userId } = data.metadata;
+
+    // Get the failed transaction to find the walletId
+    const failedTransaction = await prisma.transaction.findUnique({
+      where: { reference: data.transfer_code },
+    });
+
+    if (!failedTransaction || !failedTransaction.walletId) {
+      console.error('Failed transaction or walletId not found');
+      return;
+    }
+
     // REFUND the user wallet because the outbound transfer failed
     return await prisma.$transaction([
       prisma.wallet.update({
-        where: { userId },
+        where: { id: failedTransaction.walletId },
         data: { balance: { increment: data.amount / 100 } },
       }),
       prisma.transaction.update({
