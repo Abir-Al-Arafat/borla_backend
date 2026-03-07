@@ -17,6 +17,8 @@ import { paymentRoutes } from '@app/modules/payments/payment.routes';
 import { walletRoutes } from '@app/modules/wallets/wallet.routes';
 import { riderRoutes } from '@app/modules/riders/rider.route';
 import { ratingRoutes } from '@app/modules/ratings/rating.route';
+import { zoneRoutes } from '@app/modules/zones/zone.route';
+import { stationRoutes } from '@app/modules/stations/station.route';
 
 import { Router } from 'express';
 
@@ -65,6 +67,14 @@ const moduleRoutes = [
   {
     path: '/ratings',
     route: ratingRoutes,
+  },
+  {
+    path: '/zones',
+    route: zoneRoutes,
+  },
+  {
+    path: '/stations',
+    route: stationRoutes,
   },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));
