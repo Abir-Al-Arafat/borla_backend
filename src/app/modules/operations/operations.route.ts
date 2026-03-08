@@ -43,4 +43,53 @@ router.get(
   operationsControllers.getZoneHealth,
 );
 
+// Pickup success rate by day
+router.get(
+  '/pickup-success-rate',
+  auth('admin', 'supper_admin'),
+  validateRequest(operationsValidations.rankingQueryZodSchema),
+  operationsControllers.getPickupSuccessRate,
+);
+
+// Zone performance ranking
+router.get(
+  '/zone-ranking',
+  auth('admin', 'supper_admin'),
+  validateRequest(operationsValidations.rankingQueryZodSchema),
+  operationsControllers.getZoneRanking,
+);
+
+// Top performing riders
+router.get(
+  '/top-riders',
+  auth('admin', 'supper_admin'),
+  validateRequest(operationsValidations.rankingQueryZodSchema),
+  operationsControllers.getTopRiders,
+);
+
+// Zone comparison (all zones revenue and pickups)
+router.get(
+  '/zone-comparison',
+  auth('admin', 'supper_admin'),
+  validateRequest(operationsValidations.dashboardQueryZodSchema),
+  operationsControllers.getZoneComparison,
+);
+
+// Zone-specific endpoints
+// Get zone details with KPIs
+router.get(
+  '/zones/:zoneId/details',
+  auth('admin', 'supper_admin'),
+  validateRequest(operationsValidations.zoneQueryZodSchema),
+  operationsControllers.getZoneDetails,
+);
+
+// Get zone performance trends
+router.get(
+  '/zones/:zoneId/trends',
+  auth('admin', 'supper_admin'),
+  validateRequest(operationsValidations.zoneQueryZodSchema),
+  operationsControllers.getZoneTrends,
+);
+
 export const operationsRoutes = router;

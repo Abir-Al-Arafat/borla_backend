@@ -6,6 +6,14 @@ import {
   IAvgPickupTimeByDay,
   ICompletionRate,
   IZoneHealth,
+  IPickupSuccessRate,
+  IZoneRanking,
+  ITopRider,
+  IRankingQuery,
+  IZoneDetails,
+  IZoneTrendPoint,
+  IZoneQuery,
+  IZoneComparison,
 } from './operations.interface';
 
 // Get pickups per hour
@@ -442,10 +450,687 @@ const getOperationsDashboard = async (query: IDashboardQuery) => {
   };
 };
 
+// Get pickup success rate by day
+const getPickupSuccessRate = async (query: IRankingQuery) => {
+  const { period = 'weekly', startDate, endDate } = query;
+
+  const now = new Date();
+  let start: Date;
+  let end: Date = endDate ? new Date(endDate) : now;
+
+  if (startDate) {
+    start = new Date(startDate);
+  } else {
+    // Default to 7 days for weekly view
+    start = new Date(now);
+    start.setDate(now.getDate() - 7);
+  }
+
+  // Get all bookings in date range
+  const bookings = await prisma.booking.findMany({
+    where: {
+      requestedAt: {
+        gte: start,
+        lte: end,
+      },
+      status: {
+        not: bookingStatus.cancelled,
+      },
+    },
+    select: {
+      requestedAt: true,
+      status: true,
+    },
+  });
+
+  // Group by day and calculate success rate
+  const dayMap = new Map<string, { total: number; completed: number }>();
+
+  bookings.forEach(booking => {
+    const date = new Date(booking.requestedAt);
+    const dayKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    if (!dayMap.has(dayKey)) {
+      dayMap.set(dayKey, { total: 0, completed: 0 });
+    }
+
+    const dayData = dayMap.get(dayKey)!;
+    dayData.total++;
+    if (booking.status === bookingStatus.completed) {
+      dayData.completed++;
+    }
+  });
+
+  // Convert to array and calculate rates
+  const successRates: IPickupSuccessRate[] = [];
+  const sortedDays = Array.from(dayMap.keys()).sort();
+
+  sortedDays.forEach((dayKey, index) => {
+    const dayData = dayMap.get(dayKey)!;
+    const rate =
+      dayData.total > 0
+        ? Math.round((dayData.completed / dayData.total) * 100)
+        : 0;
+
+    successRates.push({
+      day: `Day ${index + 1}`,
+      rate,
+    });
+  });
+
+  return successRates;
+};
+
+// Get zone performance ranking
+const getZoneRanking = async (query: IRankingQuery) => {
+  const {
+    period = 'monthly',
+    startDate,
+    endDate,
+    limit: limitParam = 10,
+  } = query;
+  const limit =
+    typeof limitParam === 'string' ? parseInt(limitParam, 10) : limitParam;
+
+  const now = new Date();
+  let currentStart: Date;
+  let currentEnd: Date = endDate ? new Date(endDate) : now;
+
+  if (startDate) {
+    currentStart = new Date(startDate);
+  } else {
+    switch (period) {
+      case 'weekly':
+        currentStart = new Date(now);
+        currentStart.setDate(now.getDate() - 7);
+        break;
+      case 'monthly':
+        currentStart = new Date(now);
+        currentStart.setDate(now.getDate() - 30);
+        break;
+      default:
+        currentStart = new Date(now);
+        currentStart.setHours(0, 0, 0, 0);
+    }
+  }
+
+  // Calculate previous period for growth comparison
+  const periodDuration = currentEnd.getTime() - currentStart.getTime();
+  const previousStart = new Date(currentStart.getTime() - periodDuration);
+  const previousEnd = new Date(currentStart);
+
+  // Get all zones with their bookings
+  const zones = await prisma.zone.findMany({
+    where: {
+      isDeleted: false,
+    },
+    include: {
+      riders: {
+        where: {
+          riderVerified: true,
+        },
+        include: {
+          bookingsAsRider: {
+            where: {
+              status: bookingStatus.completed,
+              completedAt: {
+                gte: currentStart,
+                lte: currentEnd,
+              },
+            },
+            select: {
+              price: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // Calculate metrics for each zone
+  const zoneMetrics = await Promise.all(
+    zones.map(async zone => {
+      // Current period metrics
+      const currentRevenue = zone.riders.reduce(
+        (sum, rider) =>
+          sum +
+          rider.bookingsAsRider.reduce(
+            (total, booking) => total + booking.price,
+            0,
+          ),
+        0,
+      );
+
+      const currentPickups = zone.riders.reduce(
+        (sum, rider) => sum + rider.bookingsAsRider.length,
+        0,
+      );
+
+      // Previous period metrics for growth calculation
+      const previousBookings = await prisma.booking.count({
+        where: {
+          status: bookingStatus.completed,
+          completedAt: {
+            gte: previousStart,
+            lte: previousEnd,
+          },
+          rider: {
+            zoneId: zone.id,
+          },
+        },
+      });
+
+      const previousRevenue = await prisma.booking.aggregate({
+        where: {
+          status: bookingStatus.completed,
+          completedAt: {
+            gte: previousStart,
+            lte: previousEnd,
+          },
+          rider: {
+            zoneId: zone.id,
+          },
+        },
+        _sum: {
+          price: true,
+        },
+      });
+
+      // Calculate growth
+      const prevRev = previousRevenue._sum.price || 0;
+      const growth =
+        prevRev > 0
+          ? Number((((currentRevenue - prevRev) / prevRev) * 100).toFixed(1))
+          : currentRevenue > 0
+            ? 100
+            : 0;
+
+      return {
+        zoneId: zone.id,
+        zone: zone.name,
+        revenue: currentRevenue,
+        pickups: currentPickups,
+        growth,
+      };
+    }),
+  );
+
+  // Sort by revenue and add rank
+  const sortedZones = zoneMetrics
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, limit);
+
+  const rankedZones: IZoneRanking[] = sortedZones.map((zone, index) => {
+    // Determine status based on performance
+    let status: 'High' | 'Medium' | 'Low' = 'Low';
+    if (zone.growth >= 8 && zone.pickups >= 700) {
+      status = 'High';
+    } else if (zone.growth >= 3 && zone.pickups >= 500) {
+      status = 'Medium';
+    }
+
+    return {
+      rank: index + 1,
+      zoneId: zone.zoneId,
+      zone: zone.zone,
+      revenue: zone.revenue,
+      pickups: zone.pickups,
+      growth: zone.growth,
+      status,
+    };
+  });
+
+  return rankedZones;
+};
+
+// Get top performing riders
+const getTopRiders = async (query: IRankingQuery) => {
+  const {
+    period = 'weekly',
+    startDate,
+    endDate,
+    limit: limitParam = 5,
+  } = query;
+  const limit =
+    typeof limitParam === 'string' ? parseInt(limitParam, 10) : limitParam;
+
+  const now = new Date();
+  let start: Date;
+  let end: Date = endDate ? new Date(endDate) : now;
+
+  if (startDate) {
+    start = new Date(startDate);
+  } else {
+    switch (period) {
+      case 'weekly':
+        start = new Date(now);
+        start.setDate(now.getDate() - 7);
+        break;
+      case 'monthly':
+        start = new Date(now);
+        start.setDate(now.getDate() - 30);
+        break;
+      default:
+        start = new Date(now);
+        start.setHours(0, 0, 0, 0);
+    }
+  }
+
+  // Get all riders with their completed bookings in period
+  const riders = await prisma.user.findMany({
+    where: {
+      riderVerified: true,
+      role: 'rider',
+      isDeleted: false,
+    },
+    include: {
+      bookingsAsRider: {
+        where: {
+          status: bookingStatus.completed,
+          completedAt: {
+            gte: start,
+            lte: end,
+          },
+        },
+        select: {
+          id: true,
+          price: true,
+        },
+      },
+      zone: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  // Calculate metrics for each rider
+  const riderMetrics = await Promise.all(
+    riders.map(async rider => {
+      const trips = rider.bookingsAsRider.length;
+      const earnings = rider.bookingsAsRider.reduce(
+        (sum, booking) => sum + booking.price,
+        0,
+      );
+
+      // Get average rating
+      const bookingIds = rider.bookingsAsRider.map(b => b.id);
+      const ratings = await prisma.rating.findMany({
+        where: {
+          bookingId: {
+            in: bookingIds,
+          },
+        },
+        select: {
+          rating: true,
+        },
+      });
+
+      const avgRating =
+        ratings.length > 0
+          ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+          : 0;
+
+      return {
+        riderId: rider.id,
+        name: rider.name,
+        zone: rider.zone?.name || 'Unassigned',
+        trips,
+        earnings,
+        rating: Number(avgRating.toFixed(1)),
+      };
+    }),
+  );
+
+  // Filter riders with at least 1 trip and sort by trips
+  const sortedRiders = riderMetrics
+    .filter(r => r.trips > 0)
+    .sort((a, b) => b.trips - a.trips || b.earnings - a.earnings)
+    .slice(0, limit);
+
+  const topRiders: ITopRider[] = sortedRiders.map((rider, index) => ({
+    rank: index + 1,
+    riderId: rider.riderId,
+    name: rider.name,
+    zone: rider.zone,
+    trips: rider.trips,
+    earnings: rider.earnings,
+    rating: rider.rating,
+  }));
+
+  return topRiders;
+};
+
+// Get zone details with KPIs
+const getZoneDetails = async (query: IZoneQuery) => {
+  const { zoneId, period = 'monthly', startDate, endDate } = query;
+
+  // Validate zone exists
+  const zone = await prisma.zone.findUnique({
+    where: { id: zoneId },
+    select: { name: true },
+  });
+
+  if (!zone) {
+    throw new Error('Zone not found');
+  }
+
+  const now = new Date();
+  let currentStart: Date;
+  let currentEnd: Date = endDate ? new Date(endDate) : now;
+
+  if (startDate) {
+    currentStart = new Date(startDate);
+  } else {
+    switch (period) {
+      case 'weekly':
+        currentStart = new Date(now);
+        currentStart.setDate(now.getDate() - 7);
+        break;
+      case 'monthly':
+        currentStart = new Date(now);
+        currentStart.setDate(now.getDate() - 30);
+        break;
+      default:
+        currentStart = new Date(now);
+        currentStart.setHours(0, 0, 0, 0);
+    }
+  }
+
+  // Calculate previous period for growth
+  const periodDuration = currentEnd.getTime() - currentStart.getTime();
+  const previousStart = new Date(currentStart.getTime() - periodDuration);
+  const previousEnd = new Date(currentStart);
+
+  // Get current period metrics
+  const [currentBookings, currentRevenue, activeRiders, ratings] =
+    await Promise.all([
+      // Total pickups
+      prisma.booking.count({
+        where: {
+          status: bookingStatus.completed,
+          completedAt: {
+            gte: currentStart,
+            lte: currentEnd,
+          },
+          rider: {
+            zoneId: zoneId,
+          },
+        },
+      }),
+      // Total revenue
+      prisma.booking.aggregate({
+        where: {
+          status: bookingStatus.completed,
+          completedAt: {
+            gte: currentStart,
+            lte: currentEnd,
+          },
+          rider: {
+            zoneId: zoneId,
+          },
+        },
+        _sum: {
+          price: true,
+        },
+      }),
+      // Active riders count
+      prisma.user.count({
+        where: {
+          zoneId: zoneId,
+          riderVerified: true,
+          role: 'rider',
+          isDeleted: false,
+        },
+      }),
+      // Get all ratings for completed bookings in zone
+      prisma.rating.findMany({
+        where: {
+          booking: {
+            status: bookingStatus.completed,
+            completedAt: {
+              gte: currentStart,
+              lte: currentEnd,
+            },
+            rider: {
+              zoneId: zoneId,
+            },
+          },
+        },
+        select: {
+          rating: true,
+        },
+      }),
+    ]);
+
+  // Get previous period revenue for growth calculation
+  const previousRevenue = await prisma.booking.aggregate({
+    where: {
+      status: bookingStatus.completed,
+      completedAt: {
+        gte: previousStart,
+        lte: previousEnd,
+      },
+      rider: {
+        zoneId: zoneId,
+      },
+    },
+    _sum: {
+      price: true,
+    },
+  });
+
+  // Calculate metrics
+  const totalRevenue = currentRevenue._sum.price || 0;
+  const totalPickups = currentBookings;
+  const avgRating =
+    ratings.length > 0
+      ? Number(
+          (
+            ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+          ).toFixed(1),
+        )
+      : 0;
+
+  const prevRev = previousRevenue._sum.price || 0;
+  const growth =
+    prevRev > 0
+      ? Number((((totalRevenue - prevRev) / prevRev) * 100).toFixed(1))
+      : totalRevenue > 0
+        ? 100
+        : 0;
+
+  // Determine status
+  let status: 'High' | 'Medium' | 'Low' = 'Low';
+  if (growth >= 8 && totalPickups >= 700) {
+    status = 'High';
+  } else if (growth >= 3 && totalPickups >= 500) {
+    status = 'Medium';
+  }
+
+  const zoneDetails: IZoneDetails = {
+    zoneId,
+    zoneName: zone.name,
+    totalRevenue,
+    totalPickups,
+    avgRating,
+    activeRiders,
+    growth,
+    status,
+  };
+
+  return zoneDetails;
+};
+
+// Get zone performance trends (daily pickups and revenue)
+const getZoneTrends = async (query: IZoneQuery) => {
+  const { zoneId, period = 'weekly', startDate, endDate } = query;
+
+  const now = new Date();
+  let start: Date;
+  let end: Date = endDate ? new Date(endDate) : now;
+
+  if (startDate) {
+    start = new Date(startDate);
+  } else {
+    // Default to 7 days for weekly view
+    start = new Date(now);
+    start.setDate(now.getDate() - 7);
+  }
+
+  // Get all completed bookings in date range for this zone
+  const bookings = await prisma.booking.findMany({
+    where: {
+      status: bookingStatus.completed,
+      completedAt: {
+        gte: start,
+        lte: end,
+      },
+      rider: {
+        zoneId: zoneId,
+      },
+    },
+    select: {
+      completedAt: true,
+      price: true,
+    },
+  });
+
+  // Group by day
+  const dayMap = new Map<string, { pickups: number; revenue: number }>();
+
+  bookings.forEach(booking => {
+    const date = new Date(booking.completedAt!);
+    const dayKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    if (!dayMap.has(dayKey)) {
+      dayMap.set(dayKey, { pickups: 0, revenue: 0 });
+    }
+
+    const dayData = dayMap.get(dayKey)!;
+    dayData.pickups++;
+    dayData.revenue += booking.price;
+  });
+
+  // Convert to array
+  const trends: IZoneTrendPoint[] = [];
+  const sortedDays = Array.from(dayMap.keys()).sort();
+
+  sortedDays.forEach((dayKey, index) => {
+    const dayData = dayMap.get(dayKey)!;
+    trends.push({
+      day: `Day ${index + 1}`,
+      pickups: dayData.pickups,
+      revenue: Math.round(dayData.revenue),
+    });
+  });
+
+  return trends;
+};
+
+// Get zone comparison (all zones revenue and pickups)
+const getZoneComparison = async (query: IDashboardQuery) => {
+  const { period = 'monthly', startDate, endDate } = query;
+
+  const now = new Date();
+  let start: Date;
+  let end: Date = endDate ? new Date(endDate) : now;
+
+  if (startDate) {
+    start = new Date(startDate);
+  } else {
+    switch (period) {
+      case 'weekly':
+        start = new Date(now);
+        start.setDate(now.getDate() - 7);
+        break;
+      case 'monthly':
+        start = new Date(now);
+        start.setDate(now.getDate() - 30);
+        break;
+      default:
+        start = new Date(now);
+        start.setHours(0, 0, 0, 0);
+    }
+  }
+
+  // Get all zones
+  const zones = await prisma.zone.findMany({
+    where: {
+      isDeleted: false,
+    },
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
+  // Get metrics for each zone
+  const zoneMetrics = await Promise.all(
+    zones.map(async zone => {
+      const [revenue, pickups] = await Promise.all([
+        // Total revenue
+        prisma.booking.aggregate({
+          where: {
+            status: bookingStatus.completed,
+            completedAt: {
+              gte: start,
+              lte: end,
+            },
+            rider: {
+              zoneId: zone.id,
+            },
+          },
+          _sum: {
+            price: true,
+          },
+        }),
+        // Total pickups
+        prisma.booking.count({
+          where: {
+            status: bookingStatus.completed,
+            completedAt: {
+              gte: start,
+              lte: end,
+            },
+            rider: {
+              zoneId: zone.id,
+            },
+          },
+        }),
+      ]);
+
+      return {
+        zone: zone.name,
+        revenue: revenue._sum.price || 0,
+        pickups,
+      };
+    }),
+  );
+
+  // Sort by revenue descending
+  const sortedZones = zoneMetrics.sort((a, b) => b.revenue - a.revenue);
+
+  const comparison: IZoneComparison[] = sortedZones.map(zone => ({
+    zone: zone.zone,
+    revenue: zone.revenue,
+    pickups: zone.pickups,
+  }));
+
+  return comparison;
+};
+
 export const operationsServices = {
   getPickupsPerHour,
   getAvgPickupTimeByDay,
   getCompletionRate,
   getZoneHealth,
   getOperationsDashboard,
+  getPickupSuccessRate,
+  getZoneRanking,
+  getTopRiders,
+  getZoneDetails,
+  getZoneTrends,
+  getZoneComparison,
 };

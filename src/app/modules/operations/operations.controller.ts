@@ -63,10 +63,88 @@ const getOperationsDashboard = catchAsync(
   },
 );
 
+const getPickupSuccessRate = catchAsync(async (req: Request, res: Response) => {
+  const result = await operationsServices.getPickupSuccessRate(req.query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Pickup success rate retrieved successfully',
+    data: result,
+  });
+});
+
+const getZoneRanking = catchAsync(async (req: Request, res: Response) => {
+  const result = await operationsServices.getZoneRanking(req.query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Zone ranking retrieved successfully',
+    data: result,
+  });
+});
+
+const getTopRiders = catchAsync(async (req: Request, res: Response) => {
+  const result = await operationsServices.getTopRiders(req.query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Top performing riders retrieved successfully',
+    data: result,
+  });
+});
+
+const getZoneDetails = catchAsync(async (req: Request, res: Response) => {
+  const result = await operationsServices.getZoneDetails({
+    zoneId: req.params.zoneId as string,
+    ...req.query,
+  });
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Zone details retrieved successfully',
+    data: result,
+  });
+});
+
+const getZoneTrends = catchAsync(async (req: Request, res: Response) => {
+  const result = await operationsServices.getZoneTrends({
+    zoneId: req.params.zoneId as string,
+    ...req.query,
+  });
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Zone performance trends retrieved successfully',
+    data: result,
+  });
+});
+
+const getZoneComparison = catchAsync(async (req: Request, res: Response) => {
+  const result = await operationsServices.getZoneComparison(req.query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Zone comparison data retrieved successfully',
+    data: result,
+  });
+});
+
 export const operationsControllers = {
   getPickupsPerHour,
   getAvgPickupTimeByDay,
   getCompletionRate,
   getZoneHealth,
   getOperationsDashboard,
+  getPickupSuccessRate,
+  getZoneRanking,
+  getTopRiders,
+  getZoneDetails,
+  getZoneTrends,
+  getZoneComparison,
 };

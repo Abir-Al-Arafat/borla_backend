@@ -38,3 +38,62 @@ export interface IDashboardQuery {
   endDate?: string;
   zoneId?: string;
 }
+
+export interface IPickupSuccessRate {
+  day: string;
+  rate: number;
+}
+
+export interface IZoneRanking {
+  rank: number;
+  zone: string;
+  zoneId: string;
+  revenue: number;
+  pickups: number;
+  growth: number;
+  status: 'High' | 'Medium' | 'Low';
+}
+
+export interface ITopRider {
+  rank: number;
+  riderId: string;
+  name: string;
+  zone: string;
+  trips: number;
+  earnings: number;
+  rating: number;
+}
+
+export interface IRankingQuery {
+  period?: 'daily' | 'weekly' | 'monthly';
+  startDate?: string;
+  endDate?: string;
+  limit?: number | string; // String from query params, converted to number in service
+}
+
+export interface IZoneDetails {
+  zoneId: string;
+  zoneName: string;
+  totalRevenue: number;
+  totalPickups: number;
+  avgRating: number;
+  activeRiders: number;
+  growth: number;
+  status: 'High' | 'Medium' | 'Low';
+}
+
+export interface IZoneTrendPoint {
+  day: string;
+  pickups: number;
+  revenue: number;
+}
+
+export interface IZoneQuery extends IDashboardQuery {
+  zoneId: string;
+}
+
+export interface IZoneComparison {
+  zone: string;
+  revenue: number;
+  pickups: number;
+}
