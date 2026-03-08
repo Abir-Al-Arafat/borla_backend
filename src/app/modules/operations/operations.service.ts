@@ -14,6 +14,9 @@ import {
   IZoneTrendPoint,
   IZoneQuery,
   IZoneComparison,
+  IZoneStat,
+  IRiderListItem,
+  IRiderListQuery,
 } from './operations.interface';
 
 // Get pickups per hour
@@ -1121,6 +1124,164 @@ const getZoneComparison = async (query: IDashboardQuery) => {
   return comparison;
 };
 
+// Get zone statistics with rider counts
+const getZoneStats = async () => {
+  const zones = await prisma.zone.findMany({
+    where: {
+      isDeleted: false,
+    },
+    include: {
+      riders: {
+        where: {
+          riderVerified: true,
+          role: 'rider',
+          isDeleted: false,
+        },
+        select: {
+          id: true,
+          onlineStatus: true,
+        },
+      },
+    },
+  });
+
+  const zoneStats: IZoneStat[] = zones.map(zone => ({
+    zoneId: zone.id,
+    name: zone.name,
+    totalRiders: zone.riders.length,
+    activeNow: zone.riders.filter(r => r.onlineStatus === 'online').length,
+  }));
+
+  return zoneStats;
+};
+
+// Get riders list with pagination
+const getRidersList = async (query: IRiderListQuery) => {
+  const {
+    search,
+    zoneId,
+    status,
+    page: pageParam = 1,
+    limit: limitParam = 12,
+  } = query;
+
+  const page =
+    typeof pageParam === 'string' ? parseInt(pageParam, 10) : pageParam;
+  const limit =
+    typeof limitParam === 'string' ? parseInt(limitParam, 10) : limitParam;
+  const skip = (page - 1) * limit;
+
+  // Build where clause
+  const where: any = {
+    riderVerified: true,
+    role: 'rider',
+    isDeleted: false,
+  };
+
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  if (zoneId) {
+    where.zoneId = zoneId;
+  }
+
+  // For status filtering, we'll handle it after fetching
+  // since "Busy" is derived from active bookings
+
+  // Get riders
+  const [riders, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      skip,
+      take: limit,
+      include: {
+        zone: {
+          select: {
+            name: true,
+          },
+        },
+        bookingsAsRider: {
+          where: {
+            status: {
+              in: [
+                bookingStatus.accepted,
+                bookingStatus.arrived_pickup,
+                bookingStatus.in_progress,
+                bookingStatus.arrived_dropoff,
+              ],
+            },
+          },
+          select: {
+            id: true,
+          },
+        },
+      },
+    }),
+    prisma.user.count({ where }),
+  ]);
+
+  // Get completed trips count for each rider
+  const riderIds = riders.map(r => r.id);
+  const completedTrips = await prisma.booking.groupBy({
+    by: ['riderId'],
+    where: {
+      riderId: {
+        in: riderIds,
+      },
+      status: bookingStatus.completed,
+    },
+    _count: {
+      id: true,
+    },
+  });
+
+  const completedTripsMap = new Map(
+    completedTrips.map(ct => [ct.riderId!, ct._count.id]),
+  );
+
+  // Map riders to response format
+  let riderList: IRiderListItem[] = riders.map(rider => {
+    // Determine status
+    let riderStatus: 'Online' | 'Offline' | 'Busy' = 'Offline';
+    if (rider.bookingsAsRider.length > 0) {
+      riderStatus = 'Busy';
+    } else if (rider.onlineStatus === 'online') {
+      riderStatus = 'Online';
+    }
+
+    return {
+      riderId: rider.id,
+      name: rider.name,
+      email: rider.email,
+      location: rider.locationName || 'N/A',
+      zipCode: 'N/A', // Not in schema, can be added later
+      zoneId: rider.zoneId,
+      zoneName: rider.zone?.name || null,
+      completedTrips: completedTripsMap.get(rider.id) || 0,
+      status: riderStatus,
+    };
+  });
+
+  // Apply status filter if provided
+  if (status) {
+    riderList = riderList.filter(r => r.status === status);
+  }
+
+  return {
+    data: riderList,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPage: Math.ceil(total / limit),
+    },
+  };
+};
+
 export const operationsServices = {
   getPickupsPerHour,
   getAvgPickupTimeByDay,
@@ -1133,4 +1294,6 @@ export const operationsServices = {
   getZoneDetails,
   getZoneTrends,
   getZoneComparison,
+  getZoneStats,
+  getRidersList,
 };

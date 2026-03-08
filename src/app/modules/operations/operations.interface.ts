@@ -97,3 +97,30 @@ export interface IZoneComparison {
   revenue: number;
   pickups: number;
 }
+
+export interface IZoneStat {
+  zoneId: string;
+  name: string;
+  totalRiders: number;
+  activeNow: number;
+}
+
+export interface IRiderListItem {
+  riderId: string;
+  name: string;
+  email: string;
+  location: string;
+  zipCode: string;
+  zoneId: string | null;
+  zoneName: string | null;
+  completedTrips: number;
+  status: 'Online' | 'Offline' | 'Busy';
+}
+
+export interface IRiderListQuery {
+  search?: string;
+  zoneId?: string;
+  status?: 'Online' | 'Offline' | 'Busy';
+  page?: number | string;
+  limit?: number | string;
+}

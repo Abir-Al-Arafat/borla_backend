@@ -534,6 +534,508 @@ export function ZoneDetailsPage() {
 
 ---
 
+## 7. Zone Statistics (Fleet Management)
+
+Get statistics for all zones including total riders and active riders count.
+
+**Endpoint:** `GET /zone-stats`
+
+**Query Parameters:** None
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Zone statistics retrieved successfully",
+  "data": [
+    {
+      "zoneId": "zone_id_1",
+      "name": "Zone Central",
+      "totalRiders": 45,
+      "activeNow": 12
+    },
+    {
+      "zoneId": "zone_id_2",
+      "name": "Zone East",
+      "totalRiders": 38,
+      "activeNow": 8
+    },
+    {
+      "zoneId": "zone_id_3",
+      "name": "Zone West",
+      "totalRiders": 52,
+      "activeNow": 15
+    }
+  ]
+}
+```
+
+**Usage Example:**
+
+```tsx
+// FleetZoneManagement Component
+const { data: zoneStats } = useQuery('/api/v1/operations/zone-stats');
+
+return (
+  <div className="grid grid-cols-3 gap-4">
+    {zoneStats?.map(zone => (
+      <div key={zone.zoneId} className="zone-card">
+        <h3>{zone.name}</h3>
+        <p>Total Riders: {zone.totalRiders}</p>
+        <p>Active Now: {zone.activeNow}</p>
+      </div>
+    ))}
+  </div>
+);
+```
+
+---
+
+## 8. Riders List (Fleet Management)
+
+Get a paginated list of riders with zone assignments, status, and filtering options.
+
+**Endpoint:** `GET /riders-list`
+
+**Query Parameters:**
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| search | string | No | - | Search term for rider name or email |
+| zoneId | string | No | - | Filter by specific zone ID |
+| status | enum | No | - | Filter by rider status: `Online`, `Offline`, `Busy` |
+| page | number | No | 1 | Page number for pagination |
+| limit | number | No | 12 | Number of riders per page |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Riders list retrieved successfully",
+  "data": [
+    {
+      "riderId": "rider_id_1",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "location": "Downtown Area",
+      "zipCode": "N/A",
+      "zoneId": "zone_id_1",
+      "zoneName": "Zone Central",
+      "completedTrips": 142,
+      "status": "Online"
+    },
+    {
+      "riderId": "rider_id_2",
+      "name": "Jane Smith",
+      "email": "jane@example.com",
+      "location": "Uptown District",
+      "zipCode": "N/A",
+      "zoneId": "zone_id_2",
+      "zoneName": "Zone East",
+      "completedTrips": 89,
+      "status": "Busy"
+    },
+    {
+      "riderId": "rider_id_3",
+      "name": "Mike Johnson",
+      "email": "mike@example.com",
+      "location": "Westside",
+      "zipCode": "N/A",
+      "zoneId": null,
+      "zoneName": null,
+      "completedTrips": 234,
+      "status": "Offline"
+    }
+  ],
+  "meta": {
+    "total": 45,
+    "page": 1,
+    "limit": 12,
+    "totalPage": 4
+  }
+}
+```
+
+**Rider Status Logic:**
+
+- **Busy**: Rider is online AND has an active booking (status: `accepted`, `arrived_pickup`, `in_progress`, `arrived_dropoff`)
+- **Online**: Rider's `onlineStatus` is `online` AND has no active booking
+- **Offline**: Rider's `onlineStatus` is `offline`
+
+**Usage Example:**
+
+```tsx
+// FleetZoneManagement Component with Rider List
+const [search, setSearch] = useState('');
+const [selectedZone, setSelectedZone] = useState('');
+const [statusFilter, setStatusFilter] = useState('');
+const [page, setPage] = useState(1);
+
+const { data: ridersData } = useQuery(
+  `/api/v1/operations/riders-list?search=${search}&zoneId=${selectedZone}&status=${statusFilter}&page=${page}&limit=12`,
+);
+
+return (
+  <div>
+    {/* Search and Filters */}
+    <div className="filters">
+      <input
+        type="text"
+        placeholder="Search riders..."
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+      />
+      <select
+        value={selectedZone}
+        onChange={e => setSelectedZone(e.target.value)}
+      >
+        <option value="">All Zones</option>
+        {zones.map(z => (
+          <option value={z.zoneId}>{z.name}</option>
+        ))}
+      </select>
+      <select
+        value={statusFilter}
+        onChange={e => setStatusFilter(e.target.value)}
+      >
+        <option value="">All Status</option>
+        <option value="Online">Online</option>
+        <option value="Busy">Busy</option>
+        <option value="Offline">Offline</option>
+      </select>
+    </div>
+
+    {/* Riders Table */}
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Zone</th>
+          <th>Completed Trips</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {ridersData?.data.map(rider => (
+          <tr key={rider.riderId}>
+            <td>{rider.name}</td>
+            <td>{rider.email}</td>
+            <td>{rider.zoneName || 'Unassigned'}</td>
+            <td>{rider.completedTrips}</td>
+            <td>
+              <span
+                className={`status-badge status-${rider.status.toLowerCase()}`}
+              >
+                {rider.status}
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    {/* Pagination */}
+    <Pagination
+      current={page}
+      total={ridersData?.meta.totalPage}
+      onChange={setPage}
+    />
+  </div>
+);
+```
+
+---
+
+## 9. Zone Summary (ZIP Code Management)
+
+Get summary statistics for a specific zone including total areas and active riders.
+
+**Endpoint:** `GET /zones/:zoneId/summary`
+
+**Path Parameters:**
+
+| Parameter | Type   | Required | Description |
+| --------- | ------ | -------- | ----------- |
+| zoneId    | string | Yes      | Zone ID     |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Zone summary retrieved successfully",
+  "data": {
+    "totalArea": 24,
+    "activeRiders": 847
+  }
+}
+```
+
+**Usage Example:**
+
+```tsx
+// Uptown Zone Page
+const { data: summary } = useQuery(
+  `/api/v1/operations/zones/${zoneId}/summary`,
+);
+
+return (
+  <div className="flex items-center gap-x-2">
+    <div className="bg-card rounded-xl p-6">
+      <p className="text-muted-foreground text-sm mb-2">Total Area</p>
+      <p className="text-foreground text-2xl font-semibold">
+        {summary?.totalArea}
+      </p>
+    </div>
+    <div className="bg-card rounded-xl p-6">
+      <p className="text-muted-foreground text-sm mb-2">Active Riders</p>
+      <p className="text-foreground text-2xl font-semibold">
+        {summary?.activeRiders}
+      </p>
+    </div>
+  </div>
+);
+```
+
+---
+
+## 10. Get ZIP Codes in Zone
+
+Get all ZIP codes for a specific zone with search and pagination.
+
+**Endpoint:** `GET /zones/:zoneId/zip-codes`
+
+**Path Parameters:**
+
+| Parameter | Type   | Required | Description |
+| --------- | ------ | -------- | ----------- |
+| zoneId    | string | Yes      | Zone ID     |
+
+**Query Parameters:**
+
+| Parameter | Type   | Required | Default | Description                           |
+| --------- | ------ | -------- | ------- | ------------------------------------- |
+| search    | string | No       | -       | Search term for ZIP code or area name |
+| page      | number | No       | 1       | Page number for pagination            |
+| limit     | number | No       | 10      | Number of items per page              |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "ZIP codes retrieved successfully",
+  "data": [
+    {
+      "id": "zip_id_1",
+      "zipCode": "3535",
+      "areaName": "Ahafo Region",
+      "riders": 23,
+      "createdAt": "2026-01-15T10:30:00Z"
+    },
+    {
+      "id": "zip_id_2",
+      "zipCode": "4242",
+      "areaName": "Bono East Region",
+      "riders": 18,
+      "createdAt": "2026-01-14T09:20:00Z"
+    }
+  ],
+  "meta": {
+    "total": 24,
+    "page": 1,
+    "limit": 10,
+    "totalPage": 3
+  }
+}
+```
+
+**Usage Example:**
+
+```tsx
+// UptownZoneTable Component
+const [search, setSearch] = useState('');
+const [page, setPage] = useState(1);
+
+const { data: zipCodesData } = useQuery(
+  `/api/v1/operations/zones/${zoneId}/zip-codes?search=${search}&page=${page}&limit=10`,
+);
+
+const columns = [
+  {
+    title: 'Serial',
+    dataIndex: 'serial',
+    render: (text, record, index) => <p>#{(page - 1) * 10 + index + 1}</p>,
+  },
+  {
+    title: 'ZIP Code',
+    dataIndex: 'zipCode',
+  },
+  {
+    title: 'Area Name',
+    dataIndex: 'areaName',
+  },
+  {
+    title: 'Riders',
+    dataIndex: 'riders',
+  },
+  {
+    title: 'Action',
+    render: record => (
+      <Trash2
+        size={20}
+        onClick={() => handleDelete(record.id)}
+        className="cursor-pointer"
+      />
+    ),
+  },
+];
+
+return (
+  <div>
+    <Input.Search
+      placeholder="Search here..."
+      value={search}
+      onChange={e => setSearch(e.target.value)}
+    />
+    <DataTable columns={columns} data={zipCodesData?.data} />
+  </div>
+);
+```
+
+---
+
+## 11. Add ZIP Code to Zone
+
+Add a new ZIP code to a specific zone.
+
+**Endpoint:** `POST /zones/:zoneId/zip-codes`
+
+**Path Parameters:**
+
+| Parameter | Type   | Required | Description |
+| --------- | ------ | -------- | ----------- |
+| zoneId    | string | Yes      | Zone ID     |
+
+**Request Body:**
+
+```json
+{
+  "zipCode": "3535",
+  "areaName": "Ahafo Region"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "ZIP code created successfully",
+  "data": {
+    "id": "zip_id_123",
+    "zoneId": "zone_id_1",
+    "zipCode": "3535",
+    "areaName": "Ahafo Region",
+    "isDeleted": false,
+    "createdAt": "2026-03-08T14:30:00Z",
+    "updatedAt": "2026-03-08T14:30:00Z"
+  }
+}
+```
+
+**Usage Example:**
+
+```tsx
+// AddZIPCode Modal Component
+const handleSubmit = async values => {
+  try {
+    const response = await fetch(
+      `/api/v1/operations/zones/${zoneId}/zip-codes`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          zipCode: values.zipCode,
+          areaName: values.areaName,
+        }),
+      },
+    );
+
+    if (response.ok) {
+      message.success('ZIP code added successfully');
+      setOpen(false);
+      refetch(); // Refresh the table
+    }
+  } catch (error) {
+    message.error('Failed to add ZIP code');
+  }
+};
+```
+
+---
+
+## 12. Delete ZIP Code
+
+Delete a ZIP code from a zone (soft delete).
+
+**Endpoint:** `DELETE /zip-codes/:zipCodeId`
+
+**Path Parameters:**
+
+| Parameter | Type   | Required | Description |
+| --------- | ------ | -------- | ----------- |
+| zipCodeId | string | Yes      | ZIP code ID |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "ZIP code deleted successfully",
+  "data": null
+}
+```
+
+**Usage Example:**
+
+```tsx
+// Table Action Column
+const handleDelete = async zipCodeId => {
+  try {
+    const confirmed = await confirm(
+      'Are you sure you want to delete this ZIP code?',
+    );
+
+    if (confirmed) {
+      const response = await fetch(
+        `/api/v1/operations/zip-codes/${zipCodeId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (response.ok) {
+        message.success('ZIP code deleted successfully');
+        refetch(); // Refresh the table
+      }
+    }
+  } catch (error) {
+    message.error('Failed to delete ZIP code');
+  }
+};
+```
+
+---
+
 ## Notes
 
 - All revenue and earnings values are in the system's base currency (GHS - Ghana Cedis)
@@ -542,3 +1044,5 @@ export function ZoneDetailsPage() {
 - Growth is calculated as percentage change from previous period
 - Only completed bookings are included in calculations (cancelled bookings are excluded)
 - Riders must have `riderVerified: true` to appear in rankings
+- ZIP codes are unique per zone (same ZIP code can exist in different zones)
+- Deleting a ZIP code performs a soft delete (sets `isDeleted: true`)

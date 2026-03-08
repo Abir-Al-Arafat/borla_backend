@@ -135,6 +135,29 @@ const getZoneComparison = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getZoneStats = catchAsync(async (req: Request, res: Response) => {
+  const result = await operationsServices.getZoneStats();
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Zone statistics retrieved successfully',
+    data: result,
+  });
+});
+
+const getRidersList = catchAsync(async (req: Request, res: Response) => {
+  const result = await operationsServices.getRidersList(req.query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Riders list retrieved successfully',
+    data: result.data,
+    meta: result.pagination,
+  });
+});
+
 export const operationsControllers = {
   getPickupsPerHour,
   getAvgPickupTimeByDay,
@@ -147,4 +170,6 @@ export const operationsControllers = {
   getZoneDetails,
   getZoneTrends,
   getZoneComparison,
+  getZoneStats,
+  getRidersList,
 };

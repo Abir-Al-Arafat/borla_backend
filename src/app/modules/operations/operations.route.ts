@@ -92,4 +92,19 @@ router.get(
   operationsControllers.getZoneTrends,
 );
 
+// Get zone statistics (for fleet management)
+router.get(
+  '/zone-stats',
+  auth('admin', 'supper_admin'),
+  operationsControllers.getZoneStats,
+);
+
+// Get riders list (for fleet management)
+router.get(
+  '/riders-list',
+  auth('admin', 'supper_admin'),
+  validateRequest(operationsValidations.riderListQueryZodSchema),
+  operationsControllers.getRidersList,
+);
+
 export const operationsRoutes = router;

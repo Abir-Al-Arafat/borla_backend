@@ -38,8 +38,22 @@ const zoneQueryZodSchema = z.object({
     .default({}),
 });
 
+const riderListQueryZodSchema = z.object({
+  query: z
+    .object({
+      search: z.string().optional(),
+      zoneId: z.string().optional(),
+      status: z.enum(['Online', 'Offline', 'Busy']).optional(),
+      page: z.string().optional(),
+      limit: z.string().optional(),
+    })
+    .optional()
+    .default({}),
+});
+
 export const operationsValidations = {
   dashboardQueryZodSchema,
   rankingQueryZodSchema,
   zoneQueryZodSchema,
+  riderListQueryZodSchema,
 };

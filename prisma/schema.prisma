@@ -109,6 +109,7 @@ model Zone {
 
   stations Station[]
   riders   User[]
+  zipCodes ZipCode[]
 
   @@map("zones")
 }
@@ -127,6 +128,22 @@ model Station {
   zone Zone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
 
   @@map("stations")
+}
+
+model ZipCode {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  zoneId    String  @db.ObjectId
+  zipCode   String
+  areaName  String
+  isDeleted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  zone Zone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  @@unique([zoneId, zipCode])
+  @@map("zip_codes")
 }
 
 model SavedPlace {
