@@ -20,7 +20,7 @@ const initiateTopUp = catchAsync(async (req: Request, res: Response) => {
 // 2. Initiate Withdrawal (Rider)
 const initiateWithdrawal = catchAsync(async (req: Request, res: Response) => {
   const { amount, momoNumber, bankCode } = req.body; // From your 'Withdraw' screen
-
+  console.log('Initiating withdrawal controller.');
   // Note: This requires your Paystack account to be 'Registered'
   const result = await walletServices.initiateWithdrawal(
     req.user.userId,

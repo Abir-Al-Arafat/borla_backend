@@ -19,6 +19,7 @@ import { riderRoutes } from '@app/modules/riders/rider.route';
 import { ratingRoutes } from '@app/modules/ratings/rating.route';
 import { zoneRoutes } from '@app/modules/zones/zone.route';
 import { stationRoutes } from '@app/modules/stations/station.route';
+import { operationsRoutes } from '@app/modules/operations/operations.route';
 
 import { Router } from 'express';
 
@@ -75,6 +76,10 @@ const moduleRoutes = [
   {
     path: '/stations',
     route: stationRoutes,
+  },
+  {
+    path: '/operations',
+    route: operationsRoutes,
   },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));
