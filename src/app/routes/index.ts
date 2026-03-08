@@ -20,6 +20,7 @@ import { ratingRoutes } from '@app/modules/ratings/rating.route';
 import { zoneRoutes } from '@app/modules/zones/zone.route';
 import { stationRoutes } from '@app/modules/stations/station.route';
 import { operationsRoutes } from '@app/modules/operations/operations.route';
+import { dashboardRoutes } from '@app/modules/dashboard/dashboard.route';
 
 import { Router } from 'express';
 
@@ -80,6 +81,10 @@ const moduleRoutes = [
   {
     path: '/operations',
     route: operationsRoutes,
+  },
+  {
+    path: '/dashboard',
+    route: dashboardRoutes,
   },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));
