@@ -121,6 +121,11 @@ const getRiderById = async (userId: string) => {
 
 // Approve rider verification
 const approveRider = async (userId: string, zoneId: string) => {
+  // Validate zoneId is provided and not empty
+  if (!zoneId || zoneId.trim() === '') {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Zone ID is required');
+  }
+
   const rider = await prisma.user.findUnique({
     where: { id: userId, role: 'rider' },
   });

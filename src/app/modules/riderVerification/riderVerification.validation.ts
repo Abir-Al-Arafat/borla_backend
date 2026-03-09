@@ -22,9 +22,11 @@ const getRidersQueryZodSchema = z.object({
 
 const approveRiderZodSchema = z.object({
   body: z.object({
-    zoneId: z.string({
-      message: 'Zone ID is required to approve rider',
-    }),
+    zoneId: z
+      .string({
+        message: 'Zone ID is required to approve rider',
+      })
+      .min(1, 'cannot be empty'),
   }),
 });
 
