@@ -98,39 +98,76 @@ const updateBookingStatusZodSchema = z.object({
 });
 
 const getBookingsQueryZodSchema = z.object({
-  query: z
-    .object({
-      status: z.string().optional(),
-      page: z
+  query: z.preprocess(
+    val => {
+      // Ensure we always have an object with default values
+      const query = typeof val === 'object' && val !== null ? val : {};
+      return {
+        status: (query as any).status || 'pending',
+        page: (query as any).page || '1',
+        limit: (query as any).limit || '10',
+        latitude: (query as any).latitude || undefined,
+        longitude: (query as any).longitude || undefined,
+        radius: (query as any).radius || '10',
+      };
+    },
+    z.object({
+      status: z
         .string()
-        .optional()
-        .transform(val => (val ? parseInt(val) : 1)),
-      limit: z
-        .string()
-        .optional()
-        .transform(val => (val ? parseInt(val) : 10)),
+        .transform(val => {
+          if (!val || val.trim() === '') return 'pending';
+          return val.trim();
+        })
+        .refine(
+          val =>
+            [
+              'pending',
+              'accepted',
+              'arrived_pickup',
+              'in_progress',
+              'arrived_dropoff',
+              'awaiting_payment',
+              'completed',
+              'cancelled',
+            ].includes(val),
+          {
+            message:
+              'Status must be one of: pending, accepted, arrived_pickup, in_progress, arrived_dropoff, awaiting_payment, completed, cancelled',
+          },
+        ),
+      page: z.string().transform(val => {
+        if (!val || val.trim() === '') return 1;
+        const parsed = parseInt(val, 10);
+        return isNaN(parsed) || parsed < 1 ? 1 : parsed;
+      }),
+      limit: z.string().transform(val => {
+        if (!val || val.trim() === '') return 10;
+        const parsed = parseInt(val, 10);
+        return isNaN(parsed) || parsed < 1 ? 10 : Math.min(parsed, 100);
+      }),
       latitude: z
         .string()
         .optional()
-        .transform(val => (val ? parseFloat(val) : undefined)),
+        .transform(val => {
+          if (!val || val.trim() === '') return undefined;
+          const parsed = parseFloat(val);
+          return isNaN(parsed) ? undefined : parsed;
+        }),
       longitude: z
         .string()
         .optional()
-        .transform(val => (val ? parseFloat(val) : undefined)),
-      radius: z
-        .string()
-        .optional()
-        .transform(val => (val ? parseFloat(val) : undefined)),
-    })
-    .optional()
-    .default({
-      status: undefined,
-      page: 1,
-      limit: 10,
-      latitude: undefined,
-      longitude: undefined,
-      radius: undefined,
+        .transform(val => {
+          if (!val || val.trim() === '') return undefined;
+          const parsed = parseFloat(val);
+          return isNaN(parsed) ? undefined : parsed;
+        }),
+      radius: z.string().transform(val => {
+        if (!val || val.trim() === '') return 10;
+        const parsed = parseFloat(val);
+        return isNaN(parsed) || parsed < 1 ? 10 : parsed;
+      }),
     }),
+  ),
 });
 
 const processPaymentZodSchema = z.object({

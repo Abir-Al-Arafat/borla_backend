@@ -6,6 +6,7 @@ import {
   IGetBookingsQuery,
   IUpdateBookingStatus,
 } from './booking.interface';
+import { validateBookingQuery } from './booking.utils';
 
 // Create a new booking (User)
 const createBooking = async (userId: string, payload: ICreateBooking) => {
@@ -80,19 +81,26 @@ const createBooking = async (userId: string, payload: ICreateBooking) => {
   return booking;
 };
 
-// Get available bookings for riders (within radius)
+// Get available bookings for riders (within their assigned zone)
 const getAvailableBookingsForRider = async (
   riderId: string,
   query: IGetBookingsQuery,
 ) => {
-  // Verify rider exists and is verified
+  // Verify rider exists and is verified, and get their zone
   const rider = await prisma.user.findUnique({
     where: { id: riderId },
     select: {
       role: true,
       riderVerified: true,
-      location: true,
+      zoneId: true,
       isDeleted: true,
+      zone: {
+        select: {
+          id: true,
+          name: true,
+          boundary: true,
+        },
+      },
     },
   });
 
@@ -115,99 +123,169 @@ const getAvailableBookingsForRider = async (
     );
   }
 
-  const { status = 'pending', page = 1, limit = 10, radius = 10 } = query;
-  let { latitude, longitude } = query;
-
-  // Use rider's location if not provided
-  if (!latitude || !longitude) {
-    if (rider.location && typeof rider.location === 'object') {
-      const location = rider.location as any;
-      if (
-        location.coordinates &&
-        Array.isArray(location.coordinates) &&
-        location.coordinates.length >= 2
-      ) {
-        longitude = parseFloat(location.coordinates[0]);
-        latitude = parseFloat(location.coordinates[1]);
-      }
-    }
-  }
-
-  if (!latitude || !longitude) {
+  if (!rider.zoneId || !rider.zone) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      'Location is required. Please update your location first.',
+      'You have not been assigned to a zone yet. Please contact admin.',
     );
   }
 
+  // Validate and sanitize query parameters
+  const { status, page, limit } = validateBookingQuery(query);
+
   const skip = (page - 1) * limit;
 
-  // Get all pending bookings
-  const bookings = await prisma.booking.findMany({
-    where: {
-      status: status as any,
-      riderId: null, // Only unassigned bookings
-    },
-    skip,
-    take: limit,
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phoneNumber: true,
-          profilePicture: true,
+  // Get the zone boundary
+  const zoneBoundary = rider.zone.boundary as any;
+
+  // Use MongoDB's $geoWithin operator to find bookings within the zone boundary
+  const bookingsInZone = await prisma.booking.aggregateRaw({
+    pipeline: [
+      {
+        $match: {
+          status: status,
+          riderId: null,
         },
       },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
+      {
+        $match: {
+          pickupLocation: {
+            $geoWithin: {
+              $geometry: zoneBoundary,
+            },
+          },
+        },
+      },
+      {
+        $sort: { createdAt: -1 },
+      },
+      {
+        $skip: skip,
+      },
+      {
+        $limit: limit,
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      {
+        $unwind: {
+          path: '$user',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          userId: 1,
+          riderId: 1,
+          wasteCategory: 1,
+          wasteImages: 1,
+          binSize: 1,
+          binQuantity: 1,
+          wasteSize: 1,
+          pickupLocation: 1,
+          pickupAddress: 1,
+          dropoffLocation: 1,
+          dropoffAddress: 1,
+          vehicleType: 1,
+          estimatedDistance: 1,
+          estimatedTime: 1,
+          paymentMethod: 1,
+          price: 1,
+          status: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          'user._id': 1,
+          'user.name': 1,
+          'user.email': 1,
+          'user.phoneNumber': 1,
+          'user.profilePicture': 1,
+        },
+      },
+    ],
   });
 
-  // Filter bookings within radius using Haversine formula
-  const bookingsWithinRadius = bookings.filter(booking => {
-    if (!booking.pickupLocation || typeof booking.pickupLocation !== 'object') {
-      return false;
-    }
-
-    const pickupLoc = booking.pickupLocation as any;
-    if (
-      !pickupLoc.coordinates ||
-      !Array.isArray(pickupLoc.coordinates) ||
-      pickupLoc.coordinates.length < 2
-    ) {
-      return false;
-    }
-
-    const bookingLon = parseFloat(pickupLoc.coordinates[0]);
-    const bookingLat = parseFloat(pickupLoc.coordinates[1]);
-
-    // Haversine formula
-    const R = 6371; // Earth's radius in km
-    const dLat = ((bookingLat - latitude!) * Math.PI) / 180;
-    const dLon = ((bookingLon - longitude!) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((latitude! * Math.PI) / 180) *
-        Math.cos((bookingLat * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c;
-
-    return distance <= radius;
+  // Get total count of bookings in zone
+  const totalCountResult = await prisma.booking.aggregateRaw({
+    pipeline: [
+      {
+        $match: {
+          status: status,
+          riderId: null,
+        },
+      },
+      {
+        $match: {
+          pickupLocation: {
+            $geoWithin: {
+              $geometry: zoneBoundary,
+            },
+          },
+        },
+      },
+      {
+        $count: 'total',
+      },
+    ],
   });
+
+  const total =
+    Array.isArray(totalCountResult) && totalCountResult.length > 0
+      ? (totalCountResult[0] as any).total
+      : 0;
+
+  // Transform the results to match the expected format
+  const bookings = Array.isArray(bookingsInZone)
+    ? bookingsInZone.map((booking: any) => ({
+        id: booking._id.$oid,
+        userId: booking.userId.$oid,
+        riderId: booking.riderId?.$oid || null,
+        wasteCategory: booking.wasteCategory,
+        wasteImages: booking.wasteImages,
+        binSize: booking.binSize,
+        binQuantity: booking.binQuantity,
+        wasteSize: booking.wasteSize,
+        pickupLocation: booking.pickupLocation,
+        pickupAddress: booking.pickupAddress,
+        dropoffLocation: booking.dropoffLocation,
+        dropoffAddress: booking.dropoffAddress,
+        vehicleType: booking.vehicleType,
+        estimatedDistance: booking.estimatedDistance,
+        estimatedTime: booking.estimatedTime,
+        paymentMethod: booking.paymentMethod,
+        price: booking.price,
+        status: booking.status,
+        createdAt: booking.createdAt,
+        updatedAt: booking.updatedAt,
+        user: booking.user
+          ? {
+              id: booking.user._id.$oid,
+              name: booking.user.name,
+              email: booking.user.email,
+              phoneNumber: booking.user.phoneNumber,
+              profilePicture: booking.user.profilePicture,
+            }
+          : null,
+      }))
+    : [];
 
   return {
-    bookings: bookingsWithinRadius,
+    bookings,
     meta: {
       page,
       limit,
-      total: bookingsWithinRadius.length,
-      totalPage: Math.ceil(bookingsWithinRadius.length / limit),
-      radius,
+      total,
+      totalPage: Math.ceil(total / limit),
+      zone: {
+        id: rider.zone.id,
+        name: rider.zone.name,
+      },
     },
   };
 };
