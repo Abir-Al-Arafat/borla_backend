@@ -158,6 +158,52 @@ const markArrivedAtPickup = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Mark payment collected at pickup (Rider)
+const markPaymentCollectedAtPickup = catchAsync(async (req: Request, res: Response) => {
+  const result = await bookingServices.markPaymentCollectedAtPickup(
+    req.params.id as string,
+    req.user.userId,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Payment collected at pickup. Customer has been notified.',
+    data: result,
+  });
+});
+
+// Mark heading to station (Rider)
+const markHeadingToStation = catchAsync(async (req: Request, res: Response) => {
+  const result = await bookingServices.markHeadingToStation(
+    req.params.id as string,
+    req.user.userId,
+    req.body.stationId,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Marked as heading to station. Customer has been notified.',
+    data: result,
+  });
+});
+
+// Mark completed (Rider)
+const markCompleted = catchAsync(async (req: Request, res: Response) => {
+  const result = await bookingServices.markCompleted(
+    req.params.id as string,
+    req.user.userId,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Marked as completed. Customer has been notified.',
+    data: result,
+  });
+});
+
 // Start collection (Rider)
 const startCollection = catchAsync(async (req: Request, res: Response) => {
   const result = await bookingServices.startCollection(
@@ -216,4 +262,7 @@ export const bookingControllers = {
   startCollection,
   markArrivedAtDropoff,
   requestPayment,
+  markPaymentCollectedAtPickup,
+  markHeadingToStation,
+  markCompleted,
 };

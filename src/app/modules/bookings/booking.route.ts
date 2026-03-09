@@ -78,6 +78,27 @@ router.patch(
   bookingControllers.markArrivedAtPickup,
 );
 
+// Mark payment collected at pickup (rider collects payment from customer)
+router.patch(
+  '/:id/payment-collected',
+  auth(USER_ROLE.rider),
+  bookingControllers.markPaymentCollectedAtPickup,
+);
+
+// Mark heading to station (rider is heading to station location after pickup)
+router.patch(
+  '/:id/heading-to-station',
+  auth(USER_ROLE.rider),
+  bookingControllers.markHeadingToStation,
+);
+
+// Mark completed (rider marks booking as completed after dropoff)
+router.patch(
+  '/:id/completed',
+  auth(USER_ROLE.rider),
+  bookingControllers.markCompleted,
+);
+
 // Start waste collection (rider starts collecting waste)
 router.patch(
   '/:id/start-collection',

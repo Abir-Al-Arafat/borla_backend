@@ -676,6 +676,133 @@ const markArrivedAtPickup = async (bookingId: string, riderId: string) => {
   return updatedBooking;
 };
 
+// Mark payment collected at pickup (Rider)
+const markPaymentCollectedAtPickup = async (
+  bookingId: string,
+  riderId: string,
+) => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+  });
+
+  if (!booking) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Booking not found');
+  }
+
+  if (booking.riderId !== riderId) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'You are not assigned to this booking',
+    );
+  }
+
+  if (booking.status !== 'arrived_pickup') {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `Cannot mark payment collected from status: ${booking.status}`,
+    );
+  }
+
+  const updatedBooking = await prisma.booking.update({
+    where: { id: bookingId },
+    data: {
+      status: 'payment_collected',
+      paymentCollectedAt: new Date(),
+    },
+  });
+
+  if (updatedBooking) {
+    return updatedBooking;
+  } else {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Failed to mark payment collected',
+    );
+  }
+};
+
+// Mark heading to station (Rider) - for bookings with dropoff to station
+const markHeadingToStation = async (bookingId: string, riderId: string, stationId: string) => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+  });
+
+  if (!booking) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Booking not found');
+  }
+
+  if (booking.riderId !== riderId) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'You are not assigned to this booking',
+    );
+  }
+
+  if (booking.status !== 'payment_collected') {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `Cannot mark heading to station from status: ${booking.status}`,
+    );
+  }
+
+  const updatedBooking = await prisma.booking.update({
+    where: { id: bookingId },
+    data: {
+      status: 'heading_to_station',
+      headingToStationAt: new Date(),
+      stationId: stationId,
+    },
+  });
+
+  if (updatedBooking) {
+    return updatedBooking;
+  } else {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Failed to mark heading to station',
+    );
+  }
+};
+
+// Mark completed (Rider) - for bookings with dropoff to station after arriving at station
+const markCompleted = async (bookingId: string, riderId: string) => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+  });
+
+  if (!booking) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Booking not found');
+  }
+
+  if (booking.riderId !== riderId) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'You are not assigned to this booking',
+    );
+  }
+
+  if (booking.status !== 'heading_to_station') {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `Cannot mark completed from status: ${booking.status}`,
+    );
+  }
+
+  const updatedBooking = await prisma.booking.update({
+    where: { id: bookingId },
+    data: {
+      status: 'completed',
+      completedAt: new Date(),
+    },
+  });
+
+  if (updatedBooking) {
+    return updatedBooking;
+  } else {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Failed to mark completed');
+  }
+};
+
 // Start collecting waste (Rider)
 const startCollection = async (bookingId: string, riderId: string) => {
   const booking = await prisma.booking.findUnique({
@@ -803,7 +930,11 @@ const requestPayment = async (bookingId: string, riderId: string) => {
   }
 
   // Can request payment from either arrived_dropoff or in_progress
-  if (!['in_progress', 'arrived_dropoff'].includes(booking.status)) {
+  if (
+    !['in_progress', 'arrived_dropoff', 'arrived_pickup'].includes(
+      booking.status,
+    )
+  ) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
       `Cannot request payment from status: ${booking.status}`,
@@ -852,6 +983,9 @@ export const bookingServices = {
   updateBookingStatus,
   declineBooking,
   markArrivedAtPickup,
+  markPaymentCollectedAtPickup,
+  markHeadingToStation,
+  markCompleted,
   startCollection,
   markArrivedAtDropoff,
   requestPayment,

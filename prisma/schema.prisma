@@ -125,7 +125,8 @@ model Station {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  zone Zone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  zone     Zone      @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  bookings Booking[]
 
   @@map("stations")
 }
@@ -320,17 +321,21 @@ model Booking {
   arrivedAtDropoff DateTime?
 
   // Timestamps
-  requestedAt DateTime  @default(now())
-  acceptedAt  DateTime?
-  completedAt DateTime?
-  cancelledAt DateTime?
+  requestedAt        DateTime  @default(now())
+  acceptedAt         DateTime?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  paymentCollectedAt DateTime?
+  headingToStationAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user   User    @relation("UserBookings", fields: [userId], references: [id])
-  rider  User?   @relation("RiderBookings", fields: [riderId], references: [id])
-  rating Rating?
+  user      User     @relation("UserBookings", fields: [userId], references: [id])
+  rider     User?    @relation("RiderBookings", fields: [riderId], references: [id])
+  rating    Rating?
+  station   Station? @relation(fields: [stationId], references: [id])
+  stationId String?  @db.ObjectId
 
   @@map("bookings")
 }
@@ -354,6 +359,8 @@ enum bookingStatus {
   pending // Waiting for rider to accept
   accepted // Rider accepted
   arrived_pickup // Rider arrived at pickup location
+  payment_collected // Rider collected payment at pickup
+  heading_to_station // Rider is heading to station location
   in_progress // Rider is collecting/transporting
   arrived_dropoff // Rider arrived at dropoff location
   awaiting_payment // Waiting for customer to pay
