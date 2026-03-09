@@ -41,7 +41,10 @@ const getStationById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateStation = catchAsync(async (req: Request, res: Response) => {
-  const result = await stationServices.updateStation(req.params.id as string, req.body);
+  const result = await stationServices.updateStation(
+    req.params.id as string,
+    req.body,
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -63,7 +66,8 @@ const deleteStation = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMyStations = catchAsync(async (req: Request, res: Response) => {
-  const riderId = req.user.id;
+  const riderId = req.user.userId;
+
   const result = await stationServices.getStationsByRiderZone(riderId);
 
   sendResponse(res, {
