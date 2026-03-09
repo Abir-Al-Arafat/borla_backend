@@ -200,13 +200,21 @@ const getDashboardStats = async (): Promise<IDashboardStats> => {
 const getUserOverview = async (
   query: IUserOverviewQuery,
 ): Promise<IUserOverviewData[]> => {
-  const { year = new Date().getFullYear().toString(), userType = 'User' } =
-    query;
+  const { year, userType = 'user' } = query;
 
-  const startOfYear = new Date(`${year}-01-01`);
-  const endOfYear = new Date(`${year}-12-31T23:59:59`);
+  // Use current year if not provided or invalid
+  const targetYear =
+    year && year.trim() !== '' ? year : new Date().getFullYear().toString();
 
-  const role = userType === 'User' ? 'user' : 'rider';
+  const startOfYear = new Date(`${targetYear}-01-01T00:00:00.000Z`);
+  const endOfYear = new Date(`${targetYear}-12-31T23:59:59.999Z`);
+
+  // Validate dates
+  if (isNaN(startOfYear.getTime()) || isNaN(endOfYear.getTime())) {
+    throw new Error('Invalid year provided');
+  }
+
+  const role = userType.toLowerCase() === 'user' ? 'user' : 'rider';
 
   // Get all users created in the specified year
   const users = await prisma.user.findMany({
@@ -424,7 +432,7 @@ const getRecentAccounts = async (query: IRecentAccountsQuery) => {
   };
 
   if (accountType) {
-    whereConditions.role = accountType === 'User' ? 'user' : 'rider';
+    whereConditions.role = accountType.toLowerCase();
   } else {
     whereConditions.role = { in: ['user', 'rider'] };
   }
@@ -459,7 +467,7 @@ const getRecentAccounts = async (query: IRecentAccountsQuery) => {
     name: user.name,
     email: user.email,
     phoneNumber: user.phoneNumber || 'N/A',
-    type: user.role === 'user' ? 'User' : 'Rider',
+    type: user.role as 'user' | 'rider',
     registrationDate: user.createdAt,
     status: user.status === 'active' ? 'Active' : 'Inactive',
   }));

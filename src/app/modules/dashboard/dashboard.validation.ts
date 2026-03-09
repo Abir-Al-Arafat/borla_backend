@@ -4,7 +4,7 @@ const userOverviewQueryZodSchema = z.object({
   query: z
     .object({
       year: z.string().optional(),
-      userType: z.enum(['User', 'Rider']).optional(),
+      userType: z.enum(['user', 'rider']).optional(),
     })
     .optional()
     .default({}),
@@ -25,7 +25,7 @@ const wasteDistributionQueryZodSchema = z.object({
 const recentAccountsQueryZodSchema = z.object({
   query: z
     .object({
-      accountType: z.enum(['User', 'Rider']).optional(),
+      accountType: z.enum(['user', 'rider']).optional(),
       status: z.enum(['Active', 'Inactive']).optional(),
       page: z.string().optional(),
       limit: z.string().optional(),

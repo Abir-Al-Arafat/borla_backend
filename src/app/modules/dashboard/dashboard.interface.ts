@@ -23,7 +23,7 @@ export interface IDashboardStats {
 // User Overview Chart
 export interface IUserOverviewQuery {
   year?: string;
-  userType?: 'User' | 'Rider';
+  userType?: 'user' | 'rider';
 }
 
 export interface IUserOverviewData {
@@ -54,7 +54,7 @@ export interface IWasteTypeData {
 
 // Recent Accounts List
 export interface IRecentAccountsQuery {
-  accountType?: 'User' | 'Rider';
+  accountType?: 'user' | 'rider';
   status?: 'Active' | 'Inactive';
   page?: number | string;
   limit?: number | string;
@@ -65,7 +65,7 @@ export interface IRecentAccount {
   name: string;
   email: string;
   phoneNumber: string;
-  type: 'User' | 'Rider';
+  type: 'user' | 'rider';
   registrationDate: Date;
   status: 'Active' | 'Inactive';
 }
