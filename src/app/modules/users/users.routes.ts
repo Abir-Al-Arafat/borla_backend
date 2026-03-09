@@ -88,6 +88,13 @@ router.patch(
   userController.updateMyLocation,
 );
 
+// Admin: Toggle user account status (active/blocked)
+router.patch(
+  '/:id/toggle-status',
+  auth(USER_ROLE.admin, USER_ROLE.sub_admin, USER_ROLE.super_admin),
+  userController.toggleAccountStatus,
+);
+
 // Dynamic parameter routes come LAST
 router.get('/:id', userController.getUserById);
 

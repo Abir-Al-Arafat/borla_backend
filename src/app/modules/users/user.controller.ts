@@ -199,6 +199,16 @@ const toggleMyStatus = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const toggleAccountStatus = catchAsync(async (req: Request, res: Response) => {
+  const result = await userService.toggleAccountStatus(req.params.id as string);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: `User account is now ${result.status}`,
+    data: result,
+  });
+});
+
 const updateMyLocation = catchAsync(async (req: Request, res: Response) => {
   const result = await userService.updateMyLocation(
     req.user?.userId as string,
@@ -223,5 +233,6 @@ export const userController = {
   deleteMYAccount,
   toggleUserStatus,
   toggleMyStatus,
+  toggleAccountStatus,
   updateMyLocation,
 };

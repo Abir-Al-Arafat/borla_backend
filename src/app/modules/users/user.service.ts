@@ -324,6 +324,38 @@ const toggleUserStatus = async (userId: string) => {
   return result;
 };
 
+const toggleAccountStatus = async (userId: string) => {
+  // Get current user status
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { status: true, isDeleted: true },
+  });
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (user.isDeleted) {
+    throw new AppError(httpStatus.FORBIDDEN, 'User is deleted');
+  }
+
+  // Toggle the account status
+  const newStatus = user.status === 'active' ? 'blocked' : 'active';
+
+  const result = await prisma.user.update({
+    where: { id: userId },
+    data: { status: newStatus },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      status: true,
+    },
+  });
+
+  return result;
+};
+
 const updateMyLocation = async (
   userId: string,
   payload: { latitude: number; longitude: number; locationName?: string },
@@ -372,5 +404,6 @@ export const userService = {
   getById,
   deleteUser,
   toggleUserStatus,
+  toggleAccountStatus,
   updateMyLocation,
 };
