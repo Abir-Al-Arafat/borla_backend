@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { bookingServices } from './booking.service';
 import sendResponse from '../../utils/sendResponse';
 import httpStatus from 'http-status';
+import { IGetBookingsQuery } from './booking.interface';
 
 // Create a new booking (User)
 const createBooking = catchAsync(async (req: Request, res: Response) => {
@@ -25,7 +26,7 @@ const createBooking = catchAsync(async (req: Request, res: Response) => {
 const getAvailableBookings = catchAsync(async (req: Request, res: Response) => {
   const result = await bookingServices.getAvailableBookingsForRider(
     req.user.userId,
-    req.query,
+    req.query as unknown as IGetBookingsQuery,
   );
 
   const message = !result.bookings.length
@@ -45,7 +46,7 @@ const getAvailableBookings = catchAsync(async (req: Request, res: Response) => {
 const getMyBookings = catchAsync(async (req: Request, res: Response) => {
   const result = await bookingServices.getMyBookings(
     req.user.userId,
-    req.query,
+    req.query as unknown as IGetBookingsQuery,
   );
 
   const message = !result.bookings.length
@@ -65,7 +66,7 @@ const getMyBookings = catchAsync(async (req: Request, res: Response) => {
 const getRiderBookings = catchAsync(async (req: Request, res: Response) => {
   const result = await bookingServices.getRiderBookings(
     req.user.userId,
-    req.query,
+    req.query as unknown as IGetBookingsQuery,
   );
 
   const message = !result.bookings.length
