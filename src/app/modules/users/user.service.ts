@@ -231,6 +231,7 @@ const getAll = async (query: Record<string, any>) => {
 };
 
 const getById = async (id: string, includeDeviceHistory = false) => {
+  console.log('getById function called');
   const result = await prisma.user.findUniqueOrThrow({
     where: {
       id,
@@ -251,6 +252,10 @@ const getById = async (id: string, includeDeviceHistory = false) => {
         },
       },
       deviceHistory: includeDeviceHistory,
+      dateOfBirth: true,
+      location: true,
+      locationName: true,
+      ghanaCardId: true,
     },
   });
 
@@ -258,27 +263,22 @@ const getById = async (id: string, includeDeviceHistory = false) => {
 };
 
 const update = async (id: string, payload: Partial<User>) => {
-  try {
-    // Check if payload has data to update
-    if (!payload || !Object.keys(payload).length) {
-      throw new AppError(httpStatus.BAD_REQUEST, 'No data provided for update');
-    }
-
-    const result = await prisma.user.update({
-      where: { id },
-      data: payload,
-      include: {
-        verification: true,
-        deviceHistory: true,
-      },
-    });
-    return result;
-  } catch (error: any) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      'User update failed: ' + error.message,
-    );
+  // Check if payload has data to update
+  if (!payload || !Object.keys(payload).length) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'No data provided for update');
   }
+
+  // Let Prisma errors bubble up to global error handler
+  const result = await prisma.user.update({
+    where: { id },
+    data: payload,
+    include: {
+      verification: true,
+      deviceHistory: true,
+    },
+  });
+
+  return result;
 };
 
 const deleteUser = async (id: string) => {

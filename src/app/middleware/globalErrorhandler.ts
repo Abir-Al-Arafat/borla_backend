@@ -12,7 +12,7 @@ import { Prisma } from '@prisma/client';
 import {
   PrismaClientKnownRequestError,
   PrismaClientValidationError,
-} from '@prisma/client/runtime/library';
+} from '../../generated/prisma/runtime/library';
 import handlePrismaValidationError from '@app/error/PrismaValidationError';
 import handlePrismaKnownError from '@app/error/PrismaKnownError';
 
