@@ -33,6 +33,7 @@ router.get(
     USER_ROLE.sub_admin,
     USER_ROLE.super_admin,
     USER_ROLE.user,
+    USER_ROLE.rider,
   ),
   userController.getMyProfile,
 );
