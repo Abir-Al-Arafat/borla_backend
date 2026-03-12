@@ -800,6 +800,15 @@ const markCompleted = async (bookingId: string, riderId: string) => {
       status: 'completed',
       completedAt: new Date(),
     },
+    include: {
+      station: {
+        select: {
+          id: true,
+          name: true,
+          address: true,
+        },
+      },
+    },
   });
 
   if (updatedBooking) {
