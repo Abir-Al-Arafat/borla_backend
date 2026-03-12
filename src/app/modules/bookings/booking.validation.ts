@@ -97,6 +97,12 @@ const updateBookingStatusZodSchema = z.object({
   }),
 });
 
+const headingToStationZodSchema = z.object({
+  body: z.object({
+    stationId: z.string().nonempty('Station ID is required'),
+  }),
+});
+
 const getBookingsQueryZodSchema = z.object({
   query: z.preprocess(
     val => {
@@ -185,4 +191,5 @@ export const bookingValidations = {
   updateBookingStatusZodSchema,
   getBookingsQueryZodSchema,
   processPaymentZodSchema,
+  headingToStationZodSchema,
 };

@@ -722,7 +722,11 @@ const markPaymentCollectedAtPickup = async (
 };
 
 // Mark heading to station (Rider) - for bookings with dropoff to station
-const markHeadingToStation = async (bookingId: string, riderId: string, stationId: string) => {
+const markHeadingToStation = async (
+  bookingId: string,
+  riderId: string,
+  stationId: string,
+) => {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
   });

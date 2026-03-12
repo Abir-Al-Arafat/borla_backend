@@ -88,6 +88,8 @@ router.patch(
 // Mark heading to station (rider is heading to station location after pickup)
 router.patch(
   '/:id/heading-to-station',
+  upload.none(),
+  validateRequest(bookingValidations.headingToStationZodSchema),
   auth(USER_ROLE.rider),
   bookingControllers.markHeadingToStation,
 );
