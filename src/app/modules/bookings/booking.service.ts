@@ -381,6 +381,7 @@ const getRiderBookings = async (riderId: string, query: IGetBookingsQuery) => {
           select: {
             id: true,
             name: true,
+            role: true,
             email: true,
             phoneNumber: true,
             profilePicture: true,
@@ -393,6 +394,8 @@ const getRiderBookings = async (riderId: string, query: IGetBookingsQuery) => {
             email: true,
             phoneNumber: true,
             profilePicture: true,
+            location: true,
+            locationName: true,
           },
         },
       },
