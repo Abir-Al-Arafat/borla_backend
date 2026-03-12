@@ -6,7 +6,7 @@ import { USER_ROLE } from './user.constants';
 import { userController } from './user.controller';
 import validateRequest from '../../middleware/validateRequest';
 import { userValidation } from './user.validation';
-import fileUpload from '../../middleware/fileUpload';
+import fileUpload, { fileUploadMulti } from '../../middleware/fileUpload';
 import path from 'path';
 
 const router = Router();
@@ -14,6 +14,21 @@ const router = Router();
 const upload = fileUpload(
   path.join(process.cwd(), 'public', 'uploads', 'profile-pictures'),
 );
+
+const ghanaCardUpload = fileUpload(
+  path.join(process.cwd(), 'public', 'uploads', 'ghana-cards'),
+);
+
+// Multi-destination upload for profile picture and Ghana cards
+const multiUpload = fileUploadMulti({
+  profilePicture: path.join(
+    process.cwd(),
+    'public',
+    'uploads',
+    'profile-pictures',
+  ),
+  ghanaCardId: path.join(process.cwd(), 'public', 'uploads', 'ghana-cards'),
+});
 
 // All specific paths MUST come before dynamic /:id routes
 
@@ -47,7 +62,10 @@ router.patch(
     USER_ROLE.user,
     USER_ROLE.rider,
   ),
-  upload.single('profilePicture'),
+  multiUpload.fields([
+    { name: 'profilePicture', maxCount: 1 },
+    { name: 'ghanaCardId', maxCount: 5 }, // Allow up to 5 Ghana card images
+  ]),
   parseData(),
   userController.updateMyProfile,
 );
@@ -103,7 +121,10 @@ router.get('/:id', userController.getUserById);
 router.patch(
   '/:id',
   auth(USER_ROLE.admin, USER_ROLE.sub_admin, USER_ROLE.super_admin),
-  upload.single('profilePicture'),
+  multiUpload.fields([
+    { name: 'profilePicture', maxCount: 1 },
+    { name: 'ghanaCardId', maxCount: 5 },
+  ]),
   parseData(),
   userController.updateUser,
 );

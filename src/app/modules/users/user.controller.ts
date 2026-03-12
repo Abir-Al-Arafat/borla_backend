@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import catchAsync from '../../utils/catchAsync';
+import { UploadedFiles } from '@app/middleware/uploadMulti';
 import { uploadToS3 } from '../../utils/s3';
 import { userService } from './user.service';
 import sendResponse from '../../utils/sendResponse';
@@ -67,25 +68,53 @@ const getMyProfile = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateUser = catchAsync(async (req: Request, res: Response) => {
-  if (req?.file) {
-    // Get old profile picture path
-    const user = await prisma.user.findUnique({
-      where: { id: req.params.id as string },
-      select: { profilePicture: true },
-    });
+  // Get old user data for file cleanup
+  const user = await prisma.user.findUnique({
+    where: { id: req.params.id as string },
+    select: { profilePicture: true, ghanaCardId: true },
+  });
 
+  // Handle multiple file uploads (using upload.fields())
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+  // Handle profile picture upload
+  if (files?.profilePicture && files.profilePicture[0]) {
     // Delete old profile picture if exists
     if (user?.profilePicture && fs.existsSync(user.profilePicture)) {
       fs.unlinkSync(user.profilePicture);
     }
 
-    // Local storage - save file path instead of uploading to S3
-    req.body.profilePicture = req.file.path;
+    // Local storage - save file path
+    req.body.profilePicture = files.profilePicture[0].path;
     // Uncomment below to use S3 upload
     // req.body.profilePicture = await uploadToS3({
-    //   file: req.file,
+    //   file: files.profilePicture[0],
     //   fileName: `images/user/profile/${Math.floor(100000 + Math.random() * 900000)}`,
     // });
+  }
+
+  // Handle Ghana card uploads (multiple files)
+  if (files?.ghanaCardId && files.ghanaCardId.length) {
+    // Delete old Ghana card images if exists
+    if (user?.ghanaCardId && Array.isArray(user.ghanaCardId)) {
+      user.ghanaCardId.forEach(cardPath => {
+        if (fs.existsSync(cardPath)) {
+          fs.unlinkSync(cardPath);
+        }
+      });
+    }
+
+    // Save all Ghana card image paths
+    req.body.ghanaCardId = files.ghanaCardId.map(file => file.path);
+    // Uncomment below to use S3 upload
+    // req.body.ghanaCardId = await Promise.all(
+    //   files.ghanaCardId.map(file =>
+    //     uploadToS3({
+    //       file,
+    //       fileName: `images/user/ghana-cards/${Math.floor(100000 + Math.random() * 900000)}`,
+    //     }),
+    //   ),
+    // );
   }
 
   const result = await userService.update(req.params.id as string, req.body);
@@ -98,25 +127,53 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
-  if (req?.file) {
-    // Get old profile picture path
-    const user = await prisma.user.findUnique({
-      where: { id: req.user?.userId },
-      select: { profilePicture: true },
-    });
+  // Get old user data for file cleanup
+  const user = await prisma.user.findUnique({
+    where: { id: req.user?.userId },
+    select: { profilePicture: true, ghanaCardId: true },
+  });
 
+  // Handle multiple file uploads (using upload.fields())
+  const files = req.files as UploadedFiles;
+
+  // Handle profile picture upload
+  if (files?.profilePicture && files.profilePicture[0]) {
     // Delete old profile picture if exists
     if (user?.profilePicture && fs.existsSync(user.profilePicture)) {
       fs.unlinkSync(user.profilePicture);
     }
 
-    // Local storage - save file path instead of uploading to S3
-    req.body.profilePicture = req.file.path;
+    // Local storage - save file path
+    req.body.profilePicture = files.profilePicture[0].path;
     // Uncomment below to use S3 upload
     // req.body.profilePicture = await uploadToS3({
-    //   file: req.file,
+    //   file: files.profilePicture[0],
     //   fileName: `images/user/profile/${Math.floor(100000 + Math.random() * 900000)}`,
     // });
+  }
+
+  // Handle Ghana card uploads (multiple files)
+  if (files?.ghanaCardId && files.ghanaCardId.length) {
+    // Delete old Ghana card images if exists
+    if (user?.ghanaCardId && Array.isArray(user.ghanaCardId)) {
+      user.ghanaCardId.forEach(cardPath => {
+        if (fs.existsSync(cardPath)) {
+          fs.unlinkSync(cardPath);
+        }
+      });
+    }
+
+    // Save all Ghana card image paths
+    req.body.ghanaCardId = files.ghanaCardId.map(file => file.path);
+    // Uncomment below to use S3 upload
+    // req.body.ghanaCardId = await Promise.all(
+    //   files.ghanaCardId.map(file =>
+    //     uploadToS3({
+    //       file,
+    //       fileName: `images/user/ghana-cards/${Math.floor(100000 + Math.random() * 900000)}`,
+    //     }),
+    //   ),
+    // );
   }
 
   if (!req.body || !Object.keys(req.body).length) {
