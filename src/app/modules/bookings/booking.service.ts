@@ -707,6 +707,8 @@ const markPaymentCollectedAtPickup = async (
     where: { id: bookingId },
     data: {
       status: 'payment_collected',
+      isPaid: true,
+      paidAt: new Date(),
       paymentCollectedAt: new Date(),
     },
   });
