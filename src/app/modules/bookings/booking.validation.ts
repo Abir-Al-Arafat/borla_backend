@@ -80,14 +80,47 @@ const createBookingZodSchema = z.object({
       .optional(),
     estimatedTime: z.string().optional(),
     paymentMethod: z.enum(['momo', 'cash']),
-    price: z
-      .union([z.number(), z.string()])
+    // Scheduling fields
+    isScheduled: z
+      .union([z.boolean(), z.string()])
       .transform(val => {
-        const num = typeof val === 'string' ? parseFloat(val) : val;
-        if (isNaN(num)) throw new Error('Invalid price');
-        return num;
+        if (typeof val === 'string') {
+          return val === 'true' || val === '1';
+        }
+        return val;
       })
-      .refine(val => val >= 0, 'Price must be non-negative'),
+      .optional()
+      .default(false),
+    scheduledFor: z
+      .string()
+      .optional()
+      .refine(
+        val => {
+          if (!val) return true;
+          const date = new Date(val);
+          return !isNaN(date.getTime());
+        },
+        { message: 'Invalid scheduled date format' },
+      ),
+    scheduledDate: z
+      .string()
+      .optional()
+      .refine(
+        val => {
+          if (!val) return true;
+          // Can be "today", "tomorrow", or any date string
+          return true;
+        },
+        { message: 'Invalid scheduled date value' },
+      ),
+    // price: z
+    //   .union([z.number(), z.string()])
+    //   .transform(val => {
+    //     const num = typeof val === 'string' ? parseFloat(val) : val;
+    //     if (isNaN(num)) throw new Error('Invalid price');
+    //     return num;
+    //   })
+    //   .refine(val => val >= 0, 'Price must be non-negative'),
   }),
 });
 
