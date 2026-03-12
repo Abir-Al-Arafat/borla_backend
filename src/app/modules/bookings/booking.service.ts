@@ -8,8 +8,55 @@ import {
   IUpdateBookingStatus,
 } from './booking.interface';
 import { validateBookingQuery } from './booking.utils';
-import { stat } from 'node:fs';
-import { array } from 'zod';
+
+// Helper function to get rider statistics
+const getRiderStats = async (riderId: string) => {
+  // Get average rating for this rider
+  const ratingStats = await prisma.rating.aggregate({
+    where: {
+      booking: {
+        riderId: riderId,
+      },
+    },
+    _avg: {
+      rating: true,
+    },
+    _count: {
+      rating: true,
+    },
+  });
+
+  // Get count of completed bookings
+  const completedBookingsCount = await prisma.booking.count({
+    where: {
+      riderId: riderId,
+      status: 'completed',
+    },
+  });
+
+  return {
+    averageRating: ratingStats._avg.rating || 0,
+    totalRatings: ratingStats._count.rating || 0,
+    completedBookings: completedBookingsCount,
+  };
+};
+
+// Helper function to attach rider stats to a booking
+const attachRiderStatsToBooking = async (booking: any) => {
+  if (booking.riderId && booking.rider) {
+    const riderStats = await getRiderStats(booking.riderId);
+    return {
+      ...booking,
+      rider: {
+        ...booking.rider,
+        averageRating: riderStats.averageRating,
+        totalRatings: riderStats.totalRatings,
+        completedBookings: riderStats.completedBookings,
+      },
+    };
+  }
+  return booking;
+};
 
 // Create a new booking (User)
 const createBooking = async (userId: string, payload: ICreateBooking) => {
@@ -295,7 +342,7 @@ const getAvailableBookingsForRider = async (
 
 // Get user's own bookings
 const getMyBookings = async (userId: string, query: IGetBookingsQuery) => {
-  const { status, page = 1, limit = 10 } = query;
+  let { status, page = 1, limit = 10 } = query;
   const skip = (page - 1) * limit;
 
   const whereCondition: any = {
@@ -303,7 +350,15 @@ const getMyBookings = async (userId: string, query: IGetBookingsQuery) => {
   };
 
   if (status) {
+    status = STATUS_MAP[status] || status; // Map to internal status if needed
+  }
+
+  if (status && typeof status === 'string') {
     whereCondition.status = status;
+  }
+
+  if (status && typeof status === 'object' && Array.isArray(status)) {
+    whereCondition.status = { in: status };
   }
 
   const [bookings, total] = await Promise.all([
@@ -338,8 +393,36 @@ const getMyBookings = async (userId: string, query: IGetBookingsQuery) => {
     prisma.booking.count({ where: whereCondition }),
   ]);
 
+  // Get unique rider IDs from bookings
+  const riderIds = [
+    ...new Set(bookings.map(b => b.riderId).filter(Boolean) as string[]),
+  ];
+
+  // Fetch rider stats for all riders
+  const riderStatsMap = new Map();
+  await Promise.all(
+    riderIds.map(async riderId => {
+      const stats = await getRiderStats(riderId);
+      riderStatsMap.set(riderId, stats);
+    }),
+  );
+
+  // Attach rider stats to bookings
+  const bookingsWithStats = bookings.map(booking => ({
+    ...booking,
+    rider: booking.rider
+      ? {
+          ...booking.rider,
+          averageRating: riderStatsMap.get(booking.riderId)?.averageRating || 0,
+          totalRatings: riderStatsMap.get(booking.riderId)?.totalRatings || 0,
+          completedBookings:
+            riderStatsMap.get(booking.riderId)?.completedBookings || 0,
+        }
+      : null,
+  }));
+
   return {
-    bookings,
+    bookings: bookingsWithStats,
     meta: {
       page,
       limit,
@@ -351,7 +434,6 @@ const getMyBookings = async (userId: string, query: IGetBookingsQuery) => {
 
 // Get rider's accepted bookings
 const getRiderBookings = async (riderId: string, query: IGetBookingsQuery) => {
-  console.log('getRiderBookings query:', query);
   let { status, page = 1, limit = 10 } = query;
   const skip = (page - 1) * limit;
 
@@ -406,8 +488,24 @@ const getRiderBookings = async (riderId: string, query: IGetBookingsQuery) => {
     prisma.booking.count({ where: whereCondition }),
   ]);
 
+  // Get rider stats for this specific rider
+  const riderStats = await getRiderStats(riderId);
+
+  // Attach rider stats to all bookings
+  const bookingsWithStats = bookings.map(booking => ({
+    ...booking,
+    rider: booking.rider
+      ? {
+          ...booking.rider,
+          averageRating: riderStats.averageRating,
+          totalRatings: riderStats.totalRatings,
+          completedBookings: riderStats.completedBookings,
+        }
+      : null,
+  }));
+
   return {
-    bookings,
+    bookings: bookingsWithStats,
     meta: {
       page,
       limit,
@@ -453,6 +551,22 @@ const getBookingById = async (bookingId: string, userId: string) => {
       httpStatus.FORBIDDEN,
       'You do not have access to this booking',
     );
+  }
+
+  // Add rider stats if rider exists
+  if (booking.riderId) {
+    const riderStats = await getRiderStats(booking.riderId);
+    return {
+      ...booking,
+      rider: booking.rider
+        ? {
+            ...booking.rider,
+            averageRating: riderStats.averageRating,
+            totalRatings: riderStats.totalRatings,
+            completedBookings: riderStats.completedBookings,
+          }
+        : null,
+    };
   }
 
   return booking;
