@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import catchAsync from '../utils/catchAsync';
-
+import { UploadedFiles } from '@app/middleware/uploadMulti';
 /**
  * Middleware to extract file paths from uploaded files and add them to req.body
  * Should be used after multer file upload middleware and before validation
@@ -10,9 +10,7 @@ const extractFilePaths = () => {
     if (req.files && typeof req.files === 'object') {
       // Handle multiple fields uploaded with .fields()
       Object.keys(req.files).forEach(fieldName => {
-        const files = (
-          req.files as { [fieldname: string]: Express.Multer.File[] }
-        )[fieldName];
+        const files = (req.files as UploadedFiles)[fieldName];
         if (files && Array.isArray(files)) {
           req.body[fieldName] = files.map(file => file.path);
         }
