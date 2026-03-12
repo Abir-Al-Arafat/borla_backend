@@ -15,6 +15,10 @@ export interface ICreateBooking {
   estimatedTime?: string;
   paymentMethod: 'momo' | 'cash';
   price: number;
+  // Scheduling
+  isScheduled?: boolean;
+  scheduledFor?: string | Date; // ISO date string or Date object
+  scheduledDate?: string; // "today", "tomorrow", or specific date
 }
 
 export interface IUpdateBookingStatus {

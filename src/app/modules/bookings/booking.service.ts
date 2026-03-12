@@ -96,6 +96,20 @@ const createBooking = async (userId: string, payload: ICreateBooking) => {
     };
   }
 
+  // Handle scheduling
+  let scheduledFor: Date | undefined = undefined;
+  if (payload.isScheduled && payload.scheduledFor) {
+    scheduledFor = new Date(payload.scheduledFor);
+    
+    // Validate that scheduled date is in the future
+    if (scheduledFor <= new Date()) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        'Scheduled time must be in the future',
+      );
+    }
+  }
+
   const booking = await prisma.booking.create({
     data: {
       userId,
@@ -114,6 +128,10 @@ const createBooking = async (userId: string, payload: ICreateBooking) => {
       paymentMethod: payload.paymentMethod,
       price: payload.price,
       status: 'pending',
+      // Scheduling fields
+      isScheduled: payload.isScheduled || false,
+      scheduledFor: scheduledFor,
+      scheduledDate: payload.scheduledDate,
     },
     include: {
       user: {

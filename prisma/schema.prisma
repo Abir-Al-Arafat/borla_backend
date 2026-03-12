@@ -312,13 +312,18 @@ model Booking {
 
   // Payment details
   paymentMethod paymentMethod
-  price         Float
+  price         Float?
   isPaid        Boolean       @default(false)
   paidAt        DateTime?
 
   // Ride tracking
   arrivedAtPickup  DateTime?
   arrivedAtDropoff DateTime?
+
+  // Scheduling
+  isScheduled   Boolean   @default(false)
+  scheduledFor  DateTime? // The date and time when the ride should start
+  scheduledDate String? // For display purposes: "today", "tomorrow", or specific date
 
   // Timestamps
   requestedAt        DateTime  @default(now())
