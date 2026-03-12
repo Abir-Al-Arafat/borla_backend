@@ -8,6 +8,23 @@ import {
   IUpdateBookingStatus,
 } from './booking.interface';
 import { validateBookingQuery } from './booking.utils';
+import { calculateDistance } from './../riders/rider.utils';
+
+// Helper function to estimate time based on distance
+// Assuming average speed of 20 km/h for waste collection vehicles in urban areas
+const estimateTime = (distanceInKm: number): string => {
+  const averageSpeedKmH = 20;
+  const timeInHours = distanceInKm / averageSpeedKmH;
+  const timeInMinutes = Math.ceil(timeInHours * 60);
+
+  if (timeInMinutes < 60) {
+    return `${timeInMinutes} min`;
+  } else {
+    const hours = Math.floor(timeInMinutes / 60);
+    const minutes = timeInMinutes % 60;
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  }
+};
 
 // Helper function to get rider statistics
 const getRiderStats = async (riderId: string) => {
@@ -100,7 +117,7 @@ const createBooking = async (userId: string, payload: ICreateBooking) => {
   let scheduledFor: Date | undefined = undefined;
   if (payload.isScheduled && payload.scheduledFor) {
     scheduledFor = new Date(payload.scheduledFor);
-    
+
     // Validate that scheduled date is in the future
     if (scheduledFor <= new Date()) {
       throw new AppError(
@@ -595,7 +612,12 @@ const acceptBooking = async (bookingId: string, riderId: string) => {
   // Verify rider
   const rider = await prisma.user.findUnique({
     where: { id: riderId },
-    select: { role: true, riderVerified: true, isDeleted: true },
+    select: {
+      role: true,
+      riderVerified: true,
+      isDeleted: true,
+      location: true,
+    },
   });
 
   if (!rider) {
@@ -617,9 +639,15 @@ const acceptBooking = async (bookingId: string, riderId: string) => {
     );
   }
 
-  // Get booking
+  // Get booking with pickup location
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
+    select: {
+      id: true,
+      status: true,
+      riderId: true,
+      pickupLocation: true,
+    },
   });
 
   if (!booking) {
@@ -640,6 +668,47 @@ const acceptBooking = async (bookingId: string, riderId: string) => {
     );
   }
 
+  // Calculate distance and time
+  let estimatedDistance: number | null = null;
+  let estimatedTime: string | null = null;
+
+  if (rider.location && booking.pickupLocation) {
+    try {
+      const riderLoc = rider.location as {
+        type: string;
+        coordinates: [number, number];
+      };
+      const pickupLoc = booking.pickupLocation as {
+        type: string;
+        coordinates: [number, number];
+      };
+
+      if (
+        riderLoc.coordinates &&
+        riderLoc.coordinates.length === 2 &&
+        pickupLoc.coordinates &&
+        pickupLoc.coordinates.length === 2
+      ) {
+        const [riderLon, riderLat] = riderLoc.coordinates;
+        const [pickupLon, pickupLat] = pickupLoc.coordinates;
+
+        estimatedDistance = calculateDistance(
+          riderLat,
+          riderLon,
+          pickupLat,
+          pickupLon,
+        );
+        estimatedTime = estimateTime(estimatedDistance);
+        console.log(
+          `Calculated distance: ${estimatedDistance} km, estimated time: ${estimatedTime}`,
+        );
+      }
+    } catch (error) {
+      console.error('Error calculating distance:', error);
+      // Continue without distance/time if calculation fails
+    }
+  }
+
   // Update booking
   const updatedBooking = await prisma.booking.update({
     where: { id: bookingId },
@@ -647,6 +716,8 @@ const acceptBooking = async (bookingId: string, riderId: string) => {
       riderId,
       status: 'accepted',
       acceptedAt: new Date(),
+      estimatedDistance,
+      estimatedTime,
     },
     include: {
       user: {
