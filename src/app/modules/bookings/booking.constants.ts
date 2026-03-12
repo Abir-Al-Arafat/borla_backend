@@ -1,0 +1,20 @@
+export const STATUS_MAP: any = {
+  ongoing: [
+    'arrived_pickup',
+    'payment_collected',
+    'heading_to_station',
+    // 'in_progress',
+    // 'arrived_dropoff',
+    // 'awaiting_payment',
+  ],
+  //   schedule: ['pending', 'accepted'],
+  scheduled: ['accepted'],
+  history: ['completed', 'cancelled'],
+  pending: 'pending',
+  accepted: 'accepted',
+  arrived_pickup: 'arrived_pickup',
+  payment_collected: 'payment_collected',
+  heading_to_station: 'heading_to_station',
+  completed: 'completed',
+  cancelled: 'cancelled',
+};

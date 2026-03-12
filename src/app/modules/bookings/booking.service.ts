@@ -1,12 +1,15 @@
 import prisma from 'app/shared/prisma';
 import AppError from 'app/error/AppError';
 import httpStatus from 'http-status';
+import { STATUS_MAP } from './booking.constants';
 import {
   ICreateBooking,
   IGetBookingsQuery,
   IUpdateBookingStatus,
 } from './booking.interface';
 import { validateBookingQuery } from './booking.utils';
+import { stat } from 'node:fs';
+import { array } from 'zod';
 
 // Create a new booking (User)
 const createBooking = async (userId: string, payload: ICreateBooking) => {
@@ -348,7 +351,8 @@ const getMyBookings = async (userId: string, query: IGetBookingsQuery) => {
 
 // Get rider's accepted bookings
 const getRiderBookings = async (riderId: string, query: IGetBookingsQuery) => {
-  const { status, page = 1, limit = 10 } = query;
+  console.log('getRiderBookings query:', query);
+  let { status, page = 1, limit = 10 } = query;
   const skip = (page - 1) * limit;
 
   const whereCondition: any = {
@@ -356,7 +360,15 @@ const getRiderBookings = async (riderId: string, query: IGetBookingsQuery) => {
   };
 
   if (status) {
+    status = STATUS_MAP[status] || status; // Map to internal status if needed
+  }
+
+  if (status && typeof status === 'string') {
     whereCondition.status = status;
+  }
+
+  if (status && typeof status === 'object' && Array.isArray(status)) {
+    whereCondition.status = { in: status };
   }
 
   const [bookings, total] = await Promise.all([

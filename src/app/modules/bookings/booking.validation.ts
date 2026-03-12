@@ -129,16 +129,18 @@ const getBookingsQueryZodSchema = z.object({
             [
               'pending',
               'accepted',
+              'ongoing',
+              'scheduled',
+              'history',
               'arrived_pickup',
-              'in_progress',
-              'arrived_dropoff',
-              'awaiting_payment',
+              'payment_collected',
+              'heading_to_station',
               'completed',
               'cancelled',
             ].includes(val),
           {
             message:
-              'Status must be one of: pending, accepted, arrived_pickup, in_progress, arrived_dropoff, awaiting_payment, completed, cancelled',
+              'Status must be one of: pending, accepted, ongoing, scheduled, history, arrived_pickup, payment_collected, heading_to_station, completed, cancelled',
           },
         ),
       page: z.string().transform(val => {
