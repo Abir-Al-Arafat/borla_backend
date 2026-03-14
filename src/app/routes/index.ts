@@ -21,6 +21,7 @@ import { zoneRoutes } from '@app/modules/zones/zone.route';
 import { stationRoutes } from '@app/modules/stations/station.route';
 import { operationsRoutes } from '@app/modules/operations/operations.route';
 import { dashboardRoutes } from '@app/modules/dashboard/dashboard.route';
+import { messageRoutes } from '@app/modules/messages/message.route';
 
 import { Router } from 'express';
 
@@ -85,6 +86,10 @@ const moduleRoutes = [
   {
     path: '/dashboard',
     route: dashboardRoutes,
+  },
+  {
+    path: '/messages',
+    route: messageRoutes,
   },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));
