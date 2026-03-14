@@ -5,6 +5,11 @@ type TMeta = {
   page: number;
   total: number;
   totalPage: number;
+  stats?: {
+    active: number;
+    resolvedToday: number;
+    pendingReply: number;
+  };
 };
 
 export type TResponse<T> = {

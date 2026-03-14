@@ -34,4 +34,48 @@ router.post(
   messageControllers.sendMessage,
 );
 
+router.post(
+  '/support',
+  auth(USER_ROLE.user),
+  imageUpload.array('images', 5),
+  validateRequest(messageValidations.sendSupportMessageZodSchema),
+  messageControllers.sendSupportMessageByUser,
+);
+
+router.get(
+  '/support/my-chats',
+  auth(USER_ROLE.user),
+  validateRequest(messageValidations.adminSupportChatsZodSchema),
+  messageControllers.getMySupportChats,
+);
+
+router.get(
+  '/support/my-chats/:chatId/messages',
+  auth(USER_ROLE.user),
+  validateRequest(messageValidations.supportMessagesByChatZodSchema),
+  messageControllers.getMySupportMessages,
+);
+
+router.get(
+  '/support/admin/chats',
+  auth(USER_ROLE.admin, USER_ROLE.sub_admin, USER_ROLE.super_admin),
+  validateRequest(messageValidations.adminSupportChatsZodSchema),
+  messageControllers.getAdminSupportChats,
+);
+
+router.get(
+  '/support/admin/chats/:chatId/messages',
+  auth(USER_ROLE.admin, USER_ROLE.sub_admin, USER_ROLE.super_admin),
+  validateRequest(messageValidations.supportMessagesByChatZodSchema),
+  messageControllers.getAdminSupportMessages,
+);
+
+router.post(
+  '/support/admin/chats/:chatId/reply',
+  auth(USER_ROLE.admin, USER_ROLE.sub_admin, USER_ROLE.super_admin),
+  imageUpload.array('images', 5),
+  validateRequest(messageValidations.adminReplySupportZodSchema),
+  messageControllers.replySupportMessageByAdmin,
+);
+
 export const messageRoutes = router;

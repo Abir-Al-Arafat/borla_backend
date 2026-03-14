@@ -76,8 +76,135 @@ const getMyChats = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const sendSupportMessageByUser = catchAsync(
+  async (req: Request, res: Response) => {
+    const imagePaths = Array.isArray(req.files)
+      ? req.files.map((file: any) => file.path)
+      : [];
+
+    const result = await messageServices.sendSupportMessageByUser(
+      req.user.userId,
+      {
+        text: req.body.text,
+        imagePaths,
+      },
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.CREATED,
+      success: true,
+      message: 'Support message sent successfully',
+      data: result,
+    });
+  },
+);
+
+const getMySupportChats = catchAsync(async (req: Request, res: Response) => {
+  const result = await messageServices.getMySupportChats(
+    req.user.userId,
+    req.query as unknown as IGetChatsQuery,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Support chats retrieved successfully',
+    data: result.chats,
+    meta: result.meta,
+  });
+});
+
+const getMySupportMessages = catchAsync(async (req: Request, res: Response) => {
+  const result = await messageServices.getSupportMessagesByChat(
+    req.user.userId,
+    {
+      chatId: req.params.chatId as string,
+      page: req.query.page as unknown as number,
+      limit: req.query.limit as unknown as number,
+    },
+    'user',
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Support messages retrieved successfully',
+    data: result.messages,
+    meta: result.meta,
+  });
+});
+
+const getAdminSupportChats = catchAsync(async (req: Request, res: Response) => {
+  const result = await messageServices.getAdminSupportChats(
+    req.query as unknown as IGetChatsQuery,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Support chats retrieved successfully',
+    data: result.chats,
+    meta: {
+      ...result.meta,
+      stats: result.stats,
+    },
+  });
+});
+
+const getAdminSupportMessages = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await messageServices.getSupportMessagesByChat(
+      req.user.userId,
+      {
+        chatId: req.params.chatId as string,
+        page: req.query.page as unknown as number,
+        limit: req.query.limit as unknown as number,
+      },
+      'admin',
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Support messages retrieved successfully',
+      data: result.messages,
+      meta: result.meta,
+    });
+  },
+);
+
+const replySupportMessageByAdmin = catchAsync(
+  async (req: Request, res: Response) => {
+    const imagePaths = Array.isArray(req.files)
+      ? req.files.map((file: any) => file.path)
+      : [];
+
+    const result = await messageServices.replySupportMessageByAdmin(
+      req.user.userId,
+      req.params.chatId as string,
+      {
+        text: req.body.text,
+        imagePaths,
+      },
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.CREATED,
+      success: true,
+      message: 'Support reply sent successfully',
+      data: result,
+    });
+  },
+);
+
 export const messageControllers = {
   sendMessage,
   getBookingMessages,
   getMyChats,
+  sendSupportMessageByUser,
+  getMySupportChats,
+  getMySupportMessages,
+  getAdminSupportChats,
+  getAdminSupportMessages,
+  replySupportMessageByAdmin,
 };
