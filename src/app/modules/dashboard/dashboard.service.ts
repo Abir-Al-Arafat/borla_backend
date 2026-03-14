@@ -334,7 +334,7 @@ const getRevenueChart = async (
         );
         if (daysDiff >= 0 && daysDiff < 7) {
           const dayIndex = 6 - daysDiff;
-          dailyRevenue[dayIndex] += booking.price;
+          dailyRevenue[dayIndex] += booking.price || 0;
         }
       }
     });
@@ -352,7 +352,7 @@ const getRevenueChart = async (
     bookings.forEach(booking => {
       if (booking.completedAt) {
         const month = booking.completedAt.getMonth();
-        monthlyRevenue[month] += booking.price;
+        monthlyRevenue[month] += booking.price || 0;
       }
     });
 

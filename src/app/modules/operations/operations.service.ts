@@ -598,7 +598,7 @@ const getZoneRanking = async (query: IRankingQuery) => {
         (sum, rider) =>
           sum +
           rider.bookingsAsRider.reduce(
-            (total, booking) => total + booking.price,
+            (total, booking) => total + (booking.price || 0),
             0,
           ),
         0,
@@ -753,7 +753,7 @@ const getTopRiders = async (query: IRankingQuery) => {
     riders.map(async rider => {
       const trips = rider.bookingsAsRider.length;
       const earnings = rider.bookingsAsRider.reduce(
-        (sum, booking) => sum + booking.price,
+        (sum, booking) => sum + (booking.price || 0),
         0,
       );
 
@@ -1013,7 +1013,7 @@ const getZoneTrends = async (query: IZoneQuery) => {
 
     const dayData = dayMap.get(dayKey)!;
     dayData.pickups++;
-    dayData.revenue += booking.price;
+    dayData.revenue += booking.price || 0;
   });
 
   // Convert to array
