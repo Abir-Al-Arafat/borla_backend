@@ -8,15 +8,20 @@ import {
   IUpdateBookingStatus,
 } from './booking.interface';
 import { validateBookingQuery } from './booking.utils';
-import { calculateDistance } from './../riders/rider.utils';
+import {
+  calculateDistance,
+  calculateEstimatedPrice,
+} from './../riders/rider.utils';
 
 // Helper function to estimate time based on distance
 // Assuming average speed of 20 km/h for waste collection vehicles in urban areas
-const estimateTime = (distanceInKm: number): string => {
+const estimateTimeInMinutes = (distanceInKm: number): number => {
   const averageSpeedKmH = 20;
   const timeInHours = distanceInKm / averageSpeedKmH;
-  const timeInMinutes = Math.ceil(timeInHours * 60);
+  return Math.ceil(timeInHours * 60);
+};
 
+const formatEstimatedTime = (timeInMinutes: number): string => {
   if (timeInMinutes < 60) {
     return `${timeInMinutes} min`;
   } else {
@@ -647,6 +652,7 @@ const acceptBooking = async (bookingId: string, riderId: string) => {
       status: true,
       riderId: true,
       pickupLocation: true,
+      price: true,
     },
   });
 
@@ -671,6 +677,7 @@ const acceptBooking = async (bookingId: string, riderId: string) => {
   // Calculate distance and time
   let estimatedDistance: number | null = null;
   let estimatedTime: string | null = null;
+  let calculatedPrice: number | null = null;
 
   if (rider.location && booking.pickupLocation) {
     try {
@@ -698,9 +705,14 @@ const acceptBooking = async (bookingId: string, riderId: string) => {
           pickupLat,
           pickupLon,
         );
-        estimatedTime = estimateTime(estimatedDistance);
+        const estimatedMinutes = estimateTimeInMinutes(estimatedDistance);
+        estimatedTime = formatEstimatedTime(estimatedMinutes);
+        calculatedPrice = calculateEstimatedPrice(
+          estimatedDistance,
+          estimatedMinutes,
+        );
         console.log(
-          `Calculated distance: ${estimatedDistance} km, estimated time: ${estimatedTime}`,
+          `Calculated distance: ${estimatedDistance} km, estimated time: ${estimatedTime}, estimated price: GHS ${calculatedPrice}`,
         );
       }
     } catch (error) {
@@ -718,6 +730,7 @@ const acceptBooking = async (bookingId: string, riderId: string) => {
       acceptedAt: new Date(),
       estimatedDistance,
       estimatedTime,
+      price: calculatedPrice ?? booking.price,
     },
     include: {
       user: {
