@@ -56,7 +56,10 @@ const create = async (payload: User) => {
 
 const getAll = async (query: Record<string, any>) => {
   const { filters, pagination } = await pickQuery(query);
-
+  console.log('getAll:');
+  console.log('query:', query);
+  console.log('filters:', filters);
+  console.log('pagination:', pagination);
   const {
     searchTerm,
     latitude,
@@ -76,12 +79,53 @@ const getAll = async (query: Record<string, any>) => {
 
   // search condition
   if (searchTerm) {
-    pipeline.OR = ['name', 'email', 'phoneNumber', 'status'].map(field => ({
-      [field]: {
-        contains: searchTerm,
-        mode: 'insensitive',
+    const normalizedSearchTerm = String(searchTerm).trim();
+    const normalizedSearchTermLower = normalizedSearchTerm.toLowerCase();
+
+    const searchConditions: Prisma.UserWhereInput[] = [
+      {
+        name: {
+          contains: normalizedSearchTerm,
+          mode: 'insensitive',
+        },
       },
-    }));
+      {
+        email: {
+          contains: normalizedSearchTerm,
+          mode: 'insensitive',
+        },
+      },
+      {
+        phoneNumber: {
+          contains: normalizedSearchTerm,
+          mode: 'insensitive',
+        },
+      },
+    ];
+
+    if (['active', 'blocked'].includes(normalizedSearchTermLower)) {
+      searchConditions.push({
+        status: normalizedSearchTermLower as any,
+      });
+    }
+
+    if (['online', 'offline'].includes(normalizedSearchTermLower)) {
+      searchConditions.push({
+        onlineStatus: normalizedSearchTermLower as any,
+      });
+    }
+
+    if (
+      ['admin', 'sub_admin', 'supper_admin', 'user', 'rider'].includes(
+        normalizedSearchTermLower,
+      )
+    ) {
+      searchConditions.push({
+        role: normalizedSearchTermLower as Role,
+      });
+    }
+
+    pipeline.OR = searchConditions;
   }
 
   // Location name search
