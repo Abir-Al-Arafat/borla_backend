@@ -99,9 +99,22 @@ export const buildUserWhereClause = (
 };
 
 /**
+ * Determine rider risk level based on average delay
+ * @param averageDelay - Average delay in minutes
+ * @returns Risk level: 'low' | 'medium' | 'high'
+ */
+const calculateRiskLevel = (
+  averageDelay: number,
+): 'low' | 'medium' | 'high' => {
+  if (averageDelay < 10) return 'low';
+  if (averageDelay <= 20) return 'medium';
+  return 'high';
+};
+
+/**
  * Calculate rider performance statistics
  * @param riderId - ID of the rider
- * @returns Object with jobsCompleted, acceptanceRate, and averageDelay
+ * @returns Object with jobsCompleted, acceptanceRate, averageDelay, and riskLevel
  */
 export const calculateRiderStats = async (riderId: string) => {
   // Count jobs with 'completed' status
@@ -155,7 +168,10 @@ export const calculateRiderStats = async (riderId: string) => {
     );
   }
 
-  return { jobsCompleted, acceptanceRate, averageDelay };
+  // Calculate risk level based on average delay
+  const riskLevel = calculateRiskLevel(averageDelay);
+
+  return { jobsCompleted, acceptanceRate, averageDelay, riskLevel };
 };
 
 /**
