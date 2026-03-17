@@ -41,9 +41,11 @@ const getAllUser = catchAsync(async (req: Request, res: Response) => {
 
 const getUserById = catchAsync(async (req: Request, res: Response) => {
   const includeDeviceHistory = req.query.includeDeviceHistory === 'true';
+  const role = req.query.role as string | undefined;
   const result = await userService.getById(
     req.params.id as string,
     includeDeviceHistory,
+    role,
   );
   sendResponse(res, {
     statusCode: httpStatus.OK,

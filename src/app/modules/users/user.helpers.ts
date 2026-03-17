@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Prisma, Role } from '@prisma/client';
 import prisma from '@app/shared/prisma';
+import { RiderDetailsPayload } from './user.types';
 
 /**
  * Build search conditions for user queries across multiple fields
@@ -238,6 +239,197 @@ export const filterUsersByRadius = (
 
     return distance <= radiusInKm;
   });
+};
+
+const formatDate = (date: Date) =>
+  date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+const formatTime = (date: Date) =>
+  date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+
+const toRiskLevelLabel = (riskLevel: 'low' | 'medium' | 'high') => {
+  if (riskLevel === 'low') return 'LOW RISK' as const;
+  if (riskLevel === 'medium') return 'MEDIUM RISK' as const;
+  return 'HIGH RISK' as const;
+};
+
+export const buildRiderDetailsPayload = async (
+  riderId: string,
+  riderName: string,
+  riderStatus: 'active' | 'blocked',
+): Promise<RiderDetailsPayload> => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const [
+    riderStats,
+    completedBookings,
+    complaintCandidates,
+    zoneSourceBookings,
+  ] = await Promise.all([
+    calculateRiderStats(riderId),
+    prisma.booking.findMany({
+      where: {
+        riderId,
+        status: 'completed',
+      },
+      select: {
+        completedAt: true,
+        pickupAddress: true,
+        price: true,
+      },
+      orderBy: {
+        completedAt: 'desc',
+      },
+      take: 100,
+    }),
+    prisma.booking.findMany({
+      where: {
+        riderId,
+        acceptedAt: { not: null },
+        arrivedAtPickup: { not: null },
+      },
+      select: {
+        acceptedAt: true,
+        arrivedAtPickup: true,
+        pickupAddress: true,
+      },
+      orderBy: {
+        arrivedAtPickup: 'desc',
+      },
+      take: 30,
+    }),
+    prisma.booking.findMany({
+      where: {
+        riderId,
+        status: 'completed',
+        completedAt: {
+          gte: thirtyDaysAgo,
+        },
+      },
+      select: {
+        pickupAddress: true,
+        station: {
+          select: {
+            zone: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  const historyMap = new Map<
+    string,
+    {
+      date: string;
+      locations: Set<string>;
+      jobs: number;
+      totalEarnings: number;
+    }
+  >();
+
+  for (const booking of completedBookings) {
+    const dateRef = booking.completedAt || new Date();
+    const dateKey = dateRef.toISOString().slice(0, 10);
+    const existing = historyMap.get(dateKey);
+
+    if (existing) {
+      existing.jobs += 1;
+      existing.totalEarnings += booking.price || 0;
+      if (booking.pickupAddress) {
+        existing.locations.add(booking.pickupAddress);
+      }
+      continue;
+    }
+
+    historyMap.set(dateKey, {
+      date: formatDate(dateRef),
+      locations: new Set(booking.pickupAddress ? [booking.pickupAddress] : []),
+      jobs: 1,
+      totalEarnings: booking.price || 0,
+    });
+  }
+
+  const recentWorkHistory = Array.from(historyMap.values())
+    .slice(0, 5)
+    .map(entry => {
+      const location = Array.from(entry.locations).slice(0, 2).join(', ');
+      return {
+        date: entry.date,
+        location: location || 'N/A',
+        jobs: entry.jobs,
+        ghs: `GHS ${entry.totalEarnings.toFixed(2)}`,
+      };
+    });
+
+//   const complaintsTimeline = complaintCandidates
+//     .map(booking => {
+//       const acceptedAt = booking.acceptedAt;
+//       const arrivedAtPickup = booking.arrivedAtPickup;
+
+//       if (!acceptedAt || !arrivedAtPickup) return null;
+
+//       const delayMinutes =
+//         (arrivedAtPickup.getTime() - acceptedAt.getTime()) / (1000 * 60);
+
+//       if (delayMinutes < 5) return null;
+
+//       const roundedDelay = Math.round(delayMinutes);
+//       const status =
+//         roundedDelay > 20
+//           ? 'reported'
+//           : roundedDelay > 10
+//             ? 'investigating'
+//             : 'resolved';
+
+//       return {
+//         date: formatDate(arrivedAtPickup),
+//         time: formatTime(arrivedAtPickup),
+//         description: `Delayed pickup - ${roundedDelay} minutes late${booking.pickupAddress ? ` at ${booking.pickupAddress}` : ''}`,
+//         status,
+//       };
+//     })
+//     .filter(Boolean)
+//     .slice(0, 10) as RiderDetailsPayload['complaintsTimeline'];
+
+  const zoneCountMap = new Map<string, number>();
+  for (const booking of zoneSourceBookings) {
+    const fallbackZone = booking.pickupAddress?.split(',')?.[0]?.trim();
+    const zoneName = booking.station?.zone?.name || fallbackZone || 'Unknown';
+    zoneCountMap.set(zoneName, (zoneCountMap.get(zoneName) || 0) + 1);
+  }
+
+  const zonesWorked = Array.from(zoneCountMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([name, jobs]) => ({ name, jobs }));
+
+  return {
+    header: {
+      name: riderName,
+      status: riderStatus === 'active' ? 'Active' : 'Inactive',
+      riskLevel: toRiskLevelLabel(riderStats.riskLevel),
+    },
+    metrics: [
+      { label: 'Acceptance Rate', value: `${riderStats.acceptanceRate}%` },
+      { label: 'Jobs Completed', value: `${riderStats.jobsCompleted}` },
+      { label: 'Avg Delay', value: `${riderStats.averageDelay} min` },
+    ],
+    recentWorkHistory,
+    // complaintsTimeline,
+    zonesWorked,
+  };
 };
 
 /**

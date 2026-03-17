@@ -7,9 +7,8 @@ import { paginationHelper } from '../../helpers/pagination.helpers';
 import { User } from '../../../generated/prisma';
 import prisma from '../../shared/prisma';
 import {
-  buildSearchConditions,
   buildUserWhereClause,
-  calculateRiderStats,
+  buildRiderDetailsPayload,
   enrichRidersWithStats,
   filterUsersByRadius,
   buildSortArray,
@@ -122,8 +121,11 @@ const getAll = async (query: Record<string, any>) => {
   };
 };
 
-const getById = async (id: string, includeDeviceHistory = false) => {
-  console.log('getById function called');
+const getById = async (
+  id: string,
+  includeDeviceHistory = false,
+  role?: string,
+) => {
   const result = await prisma.user.findUniqueOrThrow({
     where: {
       id,
@@ -150,6 +152,19 @@ const getById = async (id: string, includeDeviceHistory = false) => {
       ghanaCardId: true,
     },
   });
+
+  if (role === 'rider' && result.role === 'rider') {
+    const riderDetails = await buildRiderDetailsPayload(
+      result.id,
+      result.name,
+      result.status,
+    );
+
+    return {
+      ...result,
+      riderDetails,
+    };
+  }
 
   return result;
 };
