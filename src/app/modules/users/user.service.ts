@@ -4,9 +4,16 @@ import httpStatus from 'http-status';
 import HashPassword from '../../shared/hashPassword';
 import pickQuery from '../../utils/pickQuery';
 import { paginationHelper } from '../../helpers/pagination.helpers';
-import { Role, User } from '../../../generated/prisma';
+import { User } from '../../../generated/prisma';
 import prisma from '../../shared/prisma';
-import { Prisma } from '@prisma/client';
+import {
+  buildSearchConditions,
+  buildUserWhereClause,
+  calculateRiderStats,
+  enrichRidersWithStats,
+  filterUsersByRadius,
+  buildSortArray,
+} from './user.helpers';
 
 const create = async (payload: User) => {
   try {
@@ -56,145 +63,19 @@ const create = async (payload: User) => {
 
 const getAll = async (query: Record<string, any>) => {
   const { filters, pagination } = await pickQuery(query);
-  console.log('getAll:');
-  console.log('query:', query);
-  console.log('filters:', filters);
-  console.log('pagination:', pagination);
-  const {
-    searchTerm,
-    latitude,
-    longitude,
-    radius,
-    locationName,
-    role,
-    ...filtersData
-  } = filters;
+  const { latitude, longitude, radius, role } = filters;
 
-  // eslint-disable-next-line prefer-const
-  let pipeline: Prisma.UserWhereInput = {
-    AND: {
-      isDeleted: false,
-    },
-  };
+  // Build where clause from filters
+  const whereClause = buildUserWhereClause(filters);
 
-  // search condition
-  if (searchTerm) {
-    const normalizedSearchTerm = String(searchTerm).trim();
-    const normalizedSearchTermLower = normalizedSearchTerm.toLowerCase();
-
-    const searchConditions: Prisma.UserWhereInput[] = [
-      {
-        name: {
-          contains: normalizedSearchTerm,
-          mode: 'insensitive',
-        },
-      },
-      {
-        email: {
-          contains: normalizedSearchTerm,
-          mode: 'insensitive',
-        },
-      },
-      {
-        phoneNumber: {
-          contains: normalizedSearchTerm,
-          mode: 'insensitive',
-        },
-      },
-    ];
-
-    if (['active', 'blocked'].includes(normalizedSearchTermLower)) {
-      searchConditions.push({
-        status: normalizedSearchTermLower as any,
-      });
-    }
-
-    if (['online', 'offline'].includes(normalizedSearchTermLower)) {
-      searchConditions.push({
-        onlineStatus: normalizedSearchTermLower as any,
-      });
-    }
-
-    if (
-      ['admin', 'sub_admin', 'supper_admin', 'user', 'rider'].includes(
-        normalizedSearchTermLower,
-      )
-    ) {
-      searchConditions.push({
-        role: normalizedSearchTermLower as Role,
-      });
-    }
-
-    pipeline.OR = searchConditions;
-  }
-
-  // Location name search
-  if (locationName) {
-    const oldAnd = pipeline.AND;
-    const oldAndArray = Array.isArray(oldAnd) ? oldAnd : oldAnd ? [oldAnd] : [];
-    pipeline.AND = [
-      ...oldAndArray,
-      {
-        locationName: {
-          contains: locationName,
-          mode: 'insensitive',
-        },
-      },
-    ];
-  }
-
-  // Role filter
-  if (role) {
-    const oldAnd = pipeline.AND;
-    const oldAndArray = Array.isArray(oldAnd) ? oldAnd : oldAnd ? [oldAnd] : [];
-    pipeline.AND = [
-      ...oldAndArray,
-      {
-        role: role as Role,
-      },
-    ];
-  }
-
-  // Add filterQuery conditions
-  if (Object.keys(filtersData).length) {
-    const oldAnd = pipeline.AND;
-    const oldAndArray = Array.isArray(oldAnd) ? oldAnd : oldAnd ? [oldAnd] : [];
-
-    pipeline.AND = [
-      {
-        isDeleted: false,
-      },
-      ...oldAndArray,
-      ...Object.entries(filtersData).map(([key, value]) => ({
-        [key]: { equals: value },
-      })),
-    ];
-  }
-
-  // 🚫 exclude admin users (unless explicitly searching for a role)
-  if (!role) {
-    pipeline.NOT = {
-      role: 'admin' as Role, // Cast string to enum Role
-    };
-  }
-
-  // Sorting condition
+  // Calculate pagination
   const { page, limit, skip, sort } =
     paginationHelper.calculatePagination(pagination);
+  const sortArray = buildSortArray(sort);
 
-  let sortArray: any[] = [];
-  if (sort) {
-    sortArray = sort.split(',').map(field => {
-      const trimmedField = field.trim();
-      if (trimmedField.startsWith('-')) {
-        return { [trimmedField.slice(1)]: 'desc' };
-      }
-      return { [trimmedField]: 'asc' };
-    });
-  }
-
-  let data = await prisma.user.findMany({
-    where: pipeline,
+  // Fetch users from database
+  let users = await prisma.user.findMany({
+    where: whereClause,
     skip,
     take: limit,
     orderBy: sortArray,
@@ -221,56 +102,23 @@ const getAll = async (query: Record<string, any>) => {
     },
   });
 
-  // Location-based filtering with radius (if latitude, longitude, and radius are provided)
+  // Apply location-based filtering if parameters provided
   if (latitude && longitude && radius) {
-    const userLat = parseFloat(latitude);
-    const userLon = parseFloat(longitude);
-    const radiusInKm = parseFloat(radius);
-
-    // Filter users within the specified radius using Haversine formula
-    data = data.filter(user => {
-      if (!user.location || typeof user.location !== 'object') return false;
-
-      const location = user.location as any;
-      if (
-        !location.coordinates ||
-        !Array.isArray(location.coordinates) ||
-        location.coordinates.length < 2
-      ) {
-        return false;
-      }
-
-      const userLocLon = parseFloat(location.coordinates[0]);
-      const userLocLat = parseFloat(location.coordinates[1]);
-
-      // Haversine formula to calculate distance
-      const R = 6371; // Earth's radius in kilometers
-      const dLat = ((userLocLat - userLat) * Math.PI) / 180;
-      const dLon = ((userLocLon - userLon) * Math.PI) / 180;
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos((userLat * Math.PI) / 180) *
-          Math.cos((userLocLat * Math.PI) / 180) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const distance = R * c;
-
-      return distance <= radiusInKm;
-    });
+    users = filterUsersByRadius(users, latitude, longitude, parseFloat(radius));
   }
 
-  const total = await prisma.user.count({
-    where: pipeline,
-  });
+  // Enrich rider data with statistics
+  if (role === 'rider' && users.length > 0) {
+    users = await enrichRidersWithStats(users);
+  }
+
+  // Count total for metadata
+  const totalCount = await prisma.user.count({ where: whereClause });
+  const total = latitude && longitude && radius ? users.length : totalCount;
 
   return {
-    users: data,
-    meta: {
-      page,
-      limit,
-      total: latitude && longitude && radius ? data.length : total,
-    },
+    users,
+    meta: { page, limit, total, totalPage: Math.ceil(total / limit) },
   };
 };
 
