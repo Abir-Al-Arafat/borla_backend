@@ -1,9 +1,16 @@
 // Realtime Monitor
+export interface IRealtimeMonitorStatCard {
+  amount: string;
+  increase: boolean;
+  growth: string;
+  onlyTimeLine: string;
+}
+
 export interface IRealtimeMonitorStats {
-  ongoingRides: number;
-  availableRiders: number;
-  completedToday: number;
-  avgWaitTimeMinutes: number;
+  ongoingRides: IRealtimeMonitorStatCard;
+  availableRiders: IRealtimeMonitorStatCard;
+  completedToday: IRealtimeMonitorStatCard;
+  avgWaitTimeMinutes: IRealtimeMonitorStatCard;
 }
 
 export interface IRealtimeRiderItem {

@@ -6,6 +6,16 @@ import {
   IRealtimeActivityResponse,
   IRealtimeActivityItem,
 } from './realtimeMonitor.interface';
+import {
+  calculateAverageWaitTimeMinutes,
+  createStatCard,
+  getLowerIsBetterImprovementPercent,
+  getPercentChange,
+  getRelativeTimeLabel,
+  mapRiderRealtimeStatus,
+  toActivityProgress,
+  toActivityStatus,
+} from './realtimeMonitor.helpers';
 
 import { bookingStatus } from '@prisma/client';
 
@@ -19,58 +29,6 @@ const ONGOING_STATUSES: bookingStatus[] = [
   bookingStatus.awaiting_payment,
 ];
 
-const getRelativeTimeLabel = (date: Date) => {
-  const diffMs = Date.now() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  if (diffMinutes < 1) return 'Just now';
-  if (diffMinutes < 60) return `${diffMinutes} mins ago`;
-
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours} hours ago`;
-
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays} days ago`;
-};
-
-const toActivityStatus = (
-  status: bookingStatus,
-): IRealtimeActivityItem['status'] => {
-  if (status === bookingStatus.pending) return 'Pending';
-  if (status === bookingStatus.accepted) return 'Assigned';
-  if (status === bookingStatus.arrived_pickup) return 'Pickup';
-  return 'In Progress';
-};
-
-const toActivityProgress = (status: bookingStatus) => {
-  const progressMap: Partial<Record<bookingStatus, number>> = {
-    [bookingStatus.pending]: 10,
-    [bookingStatus.accepted]: 25,
-    [bookingStatus.arrived_pickup]: 40,
-    [bookingStatus.payment_collected]: 55,
-    [bookingStatus.heading_to_station]: 70,
-    [bookingStatus.in_progress]: 80,
-    [bookingStatus.arrived_dropoff]: 90,
-    [bookingStatus.awaiting_payment]: 95,
-  };
-
-  return progressMap[status];
-};
-
-const mapRiderRealtimeStatus = (
-  onlineStatus: 'online' | 'offline',
-  isBusy: boolean,
-): Pick<IRealtimeRiderItem, 'status' | 'mapStatus'> => {
-  if (onlineStatus === 'offline') {
-    return { status: 'Offline', mapStatus: 'pending' };
-  }
-
-  if (isBusy) {
-    return { status: 'Busy', mapStatus: 'active' };
-  }
-
-  return { status: 'Available', mapStatus: 'available' };
-};
-
 const getRealtimeMonitorStats = async (): Promise<IRealtimeMonitorStats> => {
   const now = new Date();
   const startOfToday = new Date(
@@ -78,6 +36,8 @@ const getRealtimeMonitorStats = async (): Promise<IRealtimeMonitorStats> => {
     now.getMonth(),
     now.getDate(),
   );
+  const startOfYesterday = new Date(startOfToday);
+  startOfYesterday.setDate(startOfYesterday.getDate() - 1);
 
   const [
     ongoingRides,
@@ -85,6 +45,11 @@ const getRealtimeMonitorStats = async (): Promise<IRealtimeMonitorStats> => {
     acceptedTodayAvg,
     onlineRiders,
     busyRiders,
+    ongoingRidesYesterday,
+    completedYesterday,
+    acceptedYesterdayAvg,
+    onlineRidersYesterday,
+    busyRidersYesterday,
   ] = await Promise.all([
     prisma.booking.count({
       where: {
@@ -127,33 +92,128 @@ const getRealtimeMonitorStats = async (): Promise<IRealtimeMonitorStats> => {
         riderId: true,
       },
     }),
+    prisma.booking.count({
+      where: {
+        status: {
+          in: ONGOING_STATUSES,
+        },
+        updatedAt: {
+          gte: startOfYesterday,
+          lt: startOfToday,
+        },
+      },
+    }),
+    prisma.booking.count({
+      where: {
+        status: bookingStatus.completed,
+        completedAt: {
+          gte: startOfYesterday,
+          lt: startOfToday,
+        },
+      },
+    }),
+    prisma.booking.findMany({
+      where: {
+        acceptedAt: {
+          not: null,
+          gte: startOfYesterday,
+          lt: startOfToday,
+        },
+      },
+      select: {
+        requestedAt: true,
+        acceptedAt: true,
+      },
+    }),
+    prisma.user.count({
+      where: {
+        role: 'rider',
+        riderVerified: true,
+        onlineStatus: 'online',
+        isDeleted: false,
+        updatedAt: {
+          gte: startOfYesterday,
+          lt: startOfToday,
+        },
+      },
+    }),
+    prisma.booking.findMany({
+      where: {
+        status: { in: ONGOING_STATUSES },
+        riderId: { not: null },
+        updatedAt: {
+          gte: startOfYesterday,
+          lt: startOfToday,
+        },
+      },
+      select: {
+        riderId: true,
+      },
+    }),
   ]);
 
   const busyRiderIdSet = new Set(
     busyRiders.map(item => item.riderId).filter(Boolean) as string[],
   );
 
-  const avgWaitTimeMinutes = acceptedTodayAvg.length
-    ? Number(
-        (
-          acceptedTodayAvg.reduce((sum, booking) => {
-            if (!booking.acceptedAt) return sum;
-            const minutes =
-              (booking.acceptedAt.getTime() - booking.requestedAt.getTime()) /
-              (1000 * 60);
-            return sum + Math.max(0, minutes);
-          }, 0) / acceptedTodayAvg.length
-        ).toFixed(1),
-      )
-    : 0;
+  const avgWaitTimeMinutes = calculateAverageWaitTimeMinutes(acceptedTodayAvg);
+  const avgWaitTimeMinutesYesterday =
+    calculateAverageWaitTimeMinutes(acceptedYesterdayAvg);
 
   const availableRiders = Math.max(onlineRiders - busyRiderIdSet.size, 0);
+  const busyRiderYesterdayIdSet = new Set(
+    busyRidersYesterday.map(item => item.riderId).filter(Boolean) as string[],
+  );
+  const availableRidersYesterday = Math.max(
+    onlineRidersYesterday - busyRiderYesterdayIdSet.size,
+    0,
+  );
+
+  const ongoingRidesGrowth = getPercentChange(
+    ongoingRides,
+    ongoingRidesYesterday,
+  );
+  const availableRidersGrowth = getPercentChange(
+    availableRiders,
+    availableRidersYesterday,
+  );
+  const completedTodayGrowth = getPercentChange(
+    completedToday,
+    completedYesterday,
+  );
+  const avgWaitTimeImprovementGrowth = getLowerIsBetterImprovementPercent(
+    avgWaitTimeMinutes,
+    avgWaitTimeMinutesYesterday,
+  );
+
+  const ongoingRidesIncrease = ongoingRides > ongoingRidesYesterday;
+  const availableRidersIncrease = availableRiders > availableRidersYesterday;
+  const completedTodayIncrease = completedToday > completedYesterday;
+  const avgWaitTimeMinutesIncrease =
+    avgWaitTimeMinutes > avgWaitTimeMinutesYesterday;
 
   return {
-    ongoingRides,
-    availableRiders,
-    completedToday,
-    avgWaitTimeMinutes,
+    ongoingRides: createStatCard(
+      ongoingRides.toString(),
+      ongoingRidesIncrease,
+      ongoingRidesGrowth,
+    ),
+    availableRiders: createStatCard(
+      availableRiders.toString(),
+      availableRidersIncrease,
+      availableRidersGrowth,
+    ),
+    completedToday: createStatCard(
+      completedToday.toString(),
+      completedTodayIncrease,
+      completedTodayGrowth,
+    ),
+    avgWaitTimeMinutes: createStatCard(
+      `${avgWaitTimeMinutes} min`,
+      avgWaitTimeMinutesIncrease,
+      avgWaitTimeImprovementGrowth,
+      'Min Improvement',
+    ),
   };
 };
 

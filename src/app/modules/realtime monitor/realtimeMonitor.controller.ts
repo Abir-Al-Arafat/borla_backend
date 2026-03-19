@@ -7,7 +7,7 @@ import { realtimeMonitorService } from './realtimeMonitor.service';
 const getRealtimeMonitorStats = catchAsync(
   async (req: Request, res: Response) => {
     const result = await realtimeMonitorService.getRealtimeMonitorStats();
-
+    console.log('/realtime-monitor/stats:');
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
@@ -18,7 +18,9 @@ const getRealtimeMonitorStats = catchAsync(
 );
 
 const getRealtimeRiders = catchAsync(async (req: Request, res: Response) => {
-  const result = await realtimeMonitorService.getRealtimeRiders(req.query as any);
+  const result = await realtimeMonitorService.getRealtimeRiders(
+    req.query as any,
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
