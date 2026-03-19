@@ -1,14 +1,6 @@
 import { authRoutes } from '@app/modules/auth/auth.route';
 import { contentsRoutes } from '@app/modules/contents/contents.route';
-// import { dashboardRoutes } from '@app/modules/dashboard/dashboard.route';
-// import { downloadsBookRoutes } from '@app/modules/downloadsBook/downloadsBook.route';
-// import { freedomPathPlaningRoutes } from '@app/modules/freedomPathPlaning/freedomPathPlaning.route';
-// import { generateReportRoutes } from '@app/modules/generateReport/generateReport.route';
-// import { includedServiceRoutes } from '@app/modules/includedService/includedService.route';
 import { otpRoutes } from '@app/modules/otp/otp.routes';
-// import serviceRouter from '@app/modules/services/service.routes';
-// import { testimonialRoutes } from '@app/modules/testimonial/testimonial.route';
-// import { toolResourceRoutes } from '@app/modules/toolResource/toolResource.route';
 import { userRoutes } from '@app/modules/users/users.routes';
 import { riderVerificationRoutes } from '@app/modules/riderVerification/riderVerification.route';
 import { savedPlaceRoutes } from '@app/modules/savedPlaces/savedPlace.route';
