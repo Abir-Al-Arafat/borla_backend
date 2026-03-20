@@ -34,6 +34,7 @@ model User {
   status         status       @default(active)
   onlineStatus   onlineStatus @default(offline)
   role           Role         @default(user)
+  accountType    AccountType?
   profilePicture String?
   phoneNumber    String?      @unique
   dateOfBirth    DateTime?
@@ -271,6 +272,11 @@ enum Role {
   supper_admin
   user
   rider
+}
+
+enum AccountType {
+  support_team
+  sales_lead
 }
 
 enum chatStatus {

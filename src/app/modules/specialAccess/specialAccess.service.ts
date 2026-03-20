@@ -6,7 +6,22 @@ import {
   ICreateSpecialAccessUserPayload,
   IGetSpecialAccessUsersQuery,
   SPECIAL_ACCESS_TYPES,
+  TSpecialAccessType,
 } from './specialAccess.interface';
+
+const isSpecialAccessType = (
+  value: string | null | undefined,
+): value is TSpecialAccessType =>
+  !!value && SPECIAL_ACCESS_TYPES.includes(value as TSpecialAccessType);
+
+const resolveAccountType = (
+  accountType?: string | null,
+  customerId?: string | null,
+): TSpecialAccessType | null => {
+  if (isSpecialAccessType(accountType)) return accountType;
+  if (isSpecialAccessType(customerId)) return customerId;
+  return null;
+};
 
 const createSpecialAccessUser = async (
   payload: ICreateSpecialAccessUserPayload,
@@ -37,14 +52,15 @@ const createSpecialAccessUser = async (
     password: hashedPassword,
     phoneNumber: payload.phoneNumber || null,
     role: 'sub_admin' as const,
-    customerId: payload.accountType,
+    accountType: payload.accountType,
+    customerId: null,
     riderVerified: true,
     isDeleted: false,
     status: 'active' as const,
   };
 
   const result = existingUser
-    ? await prisma.user.update({
+    ? await (prisma.user as any).update({
         where: { id: existingUser.id },
         data: {
           ...userData,
@@ -69,12 +85,13 @@ const createSpecialAccessUser = async (
           email: true,
           phoneNumber: true,
           role: true,
+          accountType: true,
           customerId: true,
           status: true,
           createdAt: true,
         },
       })
-    : await prisma.user.create({
+    : await (prisma.user as any).create({
         data: {
           ...userData,
           verification: {
@@ -91,15 +108,24 @@ const createSpecialAccessUser = async (
           email: true,
           phoneNumber: true,
           role: true,
+          accountType: true,
           customerId: true,
           status: true,
           createdAt: true,
         },
       });
 
+  const accountType = resolveAccountType(result.accountType, result.customerId);
+
   return {
-    ...result,
-    accountType: result.customerId,
+    id: result.id,
+    name: result.name,
+    email: result.email,
+    phoneNumber: result.phoneNumber,
+    role: result.role,
+    status: result.status,
+    createdAt: result.createdAt,
+    accountType,
   };
 };
 
@@ -108,27 +134,43 @@ const getSpecialAccessUsers = async (query: IGetSpecialAccessUsersQuery) => {
   const limit = Number(query.limit) > 0 ? Number(query.limit) : 20;
   const skip = (page - 1) * limit;
 
+  const accountTypeFilter = query.accountType
+    ? [{ accountType: query.accountType }, { customerId: query.accountType }]
+    : [
+        {
+          accountType: {
+            in: [...SPECIAL_ACCESS_TYPES],
+          },
+        },
+        {
+          customerId: {
+            in: [...SPECIAL_ACCESS_TYPES],
+          },
+        },
+      ];
+
   const whereClause: any = {
     isDeleted: false,
     role: 'sub_admin',
-    customerId: {
-      in: [...SPECIAL_ACCESS_TYPES],
-    },
+    AND: [
+      { OR: accountTypeFilter },
+      ...(query.searchTerm
+        ? [
+            {
+              OR: [
+                { name: { contains: query.searchTerm, mode: 'insensitive' } },
+                {
+                  email: { contains: query.searchTerm, mode: 'insensitive' },
+                },
+              ],
+            },
+          ]
+        : []),
+    ],
   };
 
-  if (query.accountType) {
-    whereClause.customerId = query.accountType;
-  }
-
-  if (query.searchTerm) {
-    whereClause.OR = [
-      { name: { contains: query.searchTerm, mode: 'insensitive' } },
-      { email: { contains: query.searchTerm, mode: 'insensitive' } },
-    ];
-  }
-
   const [users, total] = await Promise.all([
-    prisma.user.findMany({
+    (prisma.user as any).findMany({
       where: whereClause,
       orderBy: {
         createdAt: 'desc',
@@ -140,19 +182,35 @@ const getSpecialAccessUsers = async (query: IGetSpecialAccessUsersQuery) => {
         name: true,
         email: true,
         phoneNumber: true,
+        accountType: true,
         customerId: true,
         status: true,
         createdAt: true,
       },
     }),
-    prisma.user.count({ where: whereClause }),
+    (prisma.user as any).count({ where: whereClause }),
   ]);
 
   return {
-    users: users.map(user => ({
-      ...user,
-      accountType: user.customerId,
-    })),
+    users: users
+      .map((user: any) => {
+        const accountType = resolveAccountType(
+          user.accountType,
+          user.customerId,
+        );
+        if (!accountType) return null;
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          status: user.status,
+          createdAt: user.createdAt,
+          accountType,
+        };
+      })
+      .filter(Boolean),
     meta: {
       page,
       limit,
@@ -163,14 +221,23 @@ const getSpecialAccessUsers = async (query: IGetSpecialAccessUsersQuery) => {
 };
 
 const deleteSpecialAccessUser = async (id: string) => {
-  const user = await prisma.user.findFirst({
+  const user = await (prisma.user as any).findFirst({
     where: {
       id,
       isDeleted: false,
       role: 'sub_admin',
-      customerId: {
-        in: [...SPECIAL_ACCESS_TYPES],
-      },
+      OR: [
+        {
+          accountType: {
+            in: [...SPECIAL_ACCESS_TYPES],
+          },
+        },
+        {
+          customerId: {
+            in: [...SPECIAL_ACCESS_TYPES],
+          },
+        },
+      ],
     },
   });
 
@@ -178,7 +245,7 @@ const deleteSpecialAccessUser = async (id: string) => {
     throw new AppError(httpStatus.NOT_FOUND, 'Special access user not found');
   }
 
-  return prisma.user.update({
+  const result = await (prisma.user as any).update({
     where: { id },
     data: {
       isDeleted: true,
@@ -187,10 +254,21 @@ const deleteSpecialAccessUser = async (id: string) => {
       id: true,
       name: true,
       email: true,
+      accountType: true,
       customerId: true,
       isDeleted: true,
     },
   });
+
+  const accountType = resolveAccountType(result.accountType, result.customerId);
+
+  return {
+    id: result.id,
+    name: result.name,
+    email: result.email,
+    accountType,
+    isDeleted: result.isDeleted,
+  };
 };
 
 export const specialAccessService = {
