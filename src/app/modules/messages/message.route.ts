@@ -34,6 +34,8 @@ router.post(
   messageControllers.sendMessage,
 );
 
+// support messages routes
+
 router.post(
   '/support',
   auth(USER_ROLE.user),
