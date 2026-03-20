@@ -16,6 +16,7 @@ import { dashboardRoutes } from '@app/modules/dashboard/dashboard.route';
 import { messageRoutes } from '@app/modules/messages/message.route';
 import { realtimeMonitorRoutes } from '@app/modules/realtime monitor/realtimeMonitor.route';
 import { specialAccessRoutes } from '@app/modules/specialAccess/specialAccess.route';
+import { contentPagesRoutes } from '@app/modules/contentPages/contentPages.route';
 
 import { Router } from 'express';
 
@@ -92,6 +93,10 @@ const moduleRoutes = [
   {
     path: '/special-access',
     route: specialAccessRoutes,
+  },
+  {
+    path: '/content-pages',
+    route: contentPagesRoutes,
   },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));

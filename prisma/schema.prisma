@@ -17,6 +17,7 @@ datasource db {
 //contents
 model Contents {
   id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  aboutUs           String?
   termsAndCondition String
   privacyPolicy     String
   createdAt         DateTime @default(now())
