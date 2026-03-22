@@ -4,6 +4,7 @@ import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { messageServices } from './message.service';
 import { IGetChatsQuery, IGetMessagesQuery } from './message.interface';
+import { emitToChat, emitToUser } from '../../utils/socket';
 
 const sendMessage = catchAsync(async (req: Request, res: Response) => {
   const imagePaths = Array.isArray(req.files)
@@ -15,6 +16,13 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
     text: req.body.text,
     imagePaths,
   });
+
+  emitToChat(result.chatId, 'message:new', result as Record<string, unknown>);
+  emitToUser(
+    result.receiverId,
+    'message:new',
+    result as Record<string, unknown>,
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -88,6 +96,17 @@ const sendSupportMessageByUser = catchAsync(
         text: req.body.text,
         imagePaths,
       },
+    );
+
+    emitToChat(
+      result.chatId,
+      'message:new',
+      result.message as unknown as Record<string, unknown>,
+    );
+    emitToUser(
+      result.message.receiverId,
+      'message:new',
+      result.message as unknown as Record<string, unknown>,
     );
 
     sendResponse(res, {
@@ -186,6 +205,17 @@ const replySupportMessageByAdmin = catchAsync(
         text: req.body.text,
         imagePaths,
       },
+    );
+
+    emitToChat(
+      result.chatId,
+      'message:new',
+      result.message as unknown as Record<string, unknown>,
+    );
+    emitToUser(
+      result.message.receiverId,
+      'message:new',
+      result.message as unknown as Record<string, unknown>,
     );
 
     sendResponse(res, {

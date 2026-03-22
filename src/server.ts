@@ -3,6 +3,7 @@ import app from './app';
 import config from './app/config';
 import colors from 'colors';
 import { defaultTask } from '@app/utils/defaultTask';
+import { initializeSocket } from '@app/utils/socket';
 
 let server: Server;
 let currentPort: number = Number(config.port) | 5000;
@@ -16,6 +17,8 @@ async function main() {
       ),
     );
   });
+
+  initializeSocket(server);
 
   defaultTask();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

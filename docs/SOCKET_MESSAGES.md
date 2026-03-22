@@ -1,0 +1,236 @@
+# Socket Messaging Guide
+
+This document explains how realtime messaging works in the backend, including socket authentication, room strategy, and all current `on` listeners and `emit` events.
+
+## 1. Where Socket Is Initialized
+
+- Server bootstrap: `src/server.ts`
+- Socket utility: `src/app/utils/socket.ts`
+- Message emits from HTTP handlers: `src/app/modules/messages/message.controller.ts`
+
+Socket is initialized once when HTTP server starts:
+
+```ts
+initializeSocket(server);
+```
+
+## 2. Authentication Flow
+
+Socket authentication happens in `io.use(...)` middleware.
+
+### Token sources (in order)
+
+1. `socket.handshake.auth.token`
+2. `socket.handshake.headers.authorization`
+
+Helper used:
+
+- `getSocketToken(socket)`
+
+The token is normalized by removing `Bearer ` if present and then verified with:
+
+- `config.jwt_access_secret`
+
+If verification fails, connection is rejected with:
+
+- `Unauthorized socket connection`
+
+After success, user info is attached to `socket.user`:
+
+```ts
+socket.user = {
+  _id: decoded.userId,
+  email: '',
+  role: decoded.role,
+};
+```
+
+## 3. Room Strategy
+
+When a socket connects, backend auto-joins the user room:
+
+- `user:{userId}`
+
+Chat rooms are dynamic and joined/left by client requests:
+
+- `chat:{chatId}`
+
+This gives two delivery options:
+
+1. User-targeted delivery: `user:{userId}`
+2. Chat-targeted delivery: `chat:{chatId}`
+
+## 4. Server Listeners (`socket.on`)
+
+### `chat:join`
+
+Client tells server to join a chat room.
+
+Client payload:
+
+```ts
+chatId: string;
+```
+
+Server action:
+
+- `socket.join('chat:{chatId}')`
+
+### `chat:leave`
+
+Client tells server to leave a chat room.
+
+Client payload:
+
+```ts
+chatId: string;
+```
+
+Server action:
+
+- `socket.leave('chat:{chatId}')`
+
+### `chat:typing`
+
+Client sends typing state.
+
+Client payload:
+
+```ts
+{
+  chatId: string;
+  isTyping: boolean;
+}
+```
+
+Server broadcasts to others in the same room (not sender):
+
+- Event: `chat:typing`
+- Target: `chat:{chatId}`
+- Payload:
+
+```ts
+{
+  chatId: string;
+  userId: string;
+  isTyping: boolean;
+}
+```
+
+## 5. Server Emit Helpers
+
+Defined in `src/app/utils/socket.ts`.
+
+### `emitToUser(userId, event, payload)`
+
+Emits event to room:
+
+- `user:{userId}`
+
+### `emitToChat(chatId, event, payload)`
+
+Emits event to room:
+
+- `chat:{chatId}`
+
+## 6. Message Events Emitted From Backend
+
+Currently emitted event name:
+
+- `message:new`
+
+### Emitted after booking message is sent
+
+Location:
+
+- `message.controller.ts` -> `sendMessage`
+
+Targets:
+
+1. `chat:{chatId}` via `emitToChat`
+2. `user:{receiverId}` via `emitToUser`
+
+Payload:
+
+- full created message response object from `messageServices.sendMessage(...)`
+- includes fields like `id`, `chatId`, `senderId`, `receiverId`, `text`, `images`, timestamps
+
+### Emitted after user sends support message
+
+Location:
+
+- `message.controller.ts` -> `sendSupportMessageByUser`
+
+Targets:
+
+1. `chat:{chatId}`
+2. `user:{receiverId}`
+
+Payload:
+
+- `result.message` from `messageServices.sendSupportMessageByUser(...)`
+
+### Emitted after admin replies in support chat
+
+Location:
+
+- `message.controller.ts` -> `replySupportMessageByAdmin`
+
+Targets:
+
+1. `chat:{chatId}`
+2. `user:{receiverId}`
+
+Payload:
+
+- `result.message` from `messageServices.replySupportMessageByAdmin(...)`
+
+## 7. Frontend Integration Checklist
+
+1. Connect socket with JWT token in `auth.token`.
+2. Listen for `connect_error` to catch unauthorized token issues.
+3. On entering a chat screen, emit `chat:join` with `chatId`.
+4. On leaving chat screen, emit `chat:leave` with `chatId`.
+5. Send typing indicators using `chat:typing`.
+6. Listen for:
+
+- `message:new`
+- `chat:typing`
+
+## 8. Minimal Client Example
+
+```ts
+import { io } from 'socket.io-client';
+
+const socket = io('http://0.0.0.0:5000', {
+  auth: {
+    token: accessToken, // can be raw token or Bearer token
+  },
+});
+
+socket.on('connect', () => {
+  console.log('connected', socket.id);
+});
+
+socket.on('connect_error', err => {
+  console.error('socket auth failed:', err.message);
+});
+
+socket.emit('chat:join', chatId);
+
+socket.on('message:new', message => {
+  console.log('new message:', message);
+});
+
+socket.emit('chat:typing', { chatId, isTyping: true });
+
+socket.on('chat:typing', payload => {
+  console.log('typing:', payload);
+});
+```
+
+## 9. Notes
+
+- If socket server is not initialized and emit helpers are called, helpers safely no-op.
+- CORS origin for socket is from `config.client_Url` (fallback `*`).
+- Event names are string literals; keep frontend and backend names identical.
