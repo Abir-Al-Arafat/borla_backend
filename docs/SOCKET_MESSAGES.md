@@ -60,7 +60,41 @@ This gives two delivery options:
 1. User-targeted delivery: `user:{userId}`
 2. Chat-targeted delivery: `chat:{chatId}`
 
-## 4. Server Listeners (`socket.on`)
+## 4. Acknowledgement Events
+
+Every socket operation now returns a status acknowledgement event to the same client.
+
+Success format:
+
+```json
+{
+  "success": true,
+  "...": "event-specific payload"
+}
+```
+
+Failure format:
+
+```json
+{
+  "success": false,
+  "message": "error reason",
+  "...": "event-specific payload"
+}
+```
+
+Current acknowledgement events:
+
+- `socket:connection:success`
+- `chat:join:success`
+- `chat:join:failure`
+- `chat:leave:success`
+- `chat:leave:failure`
+- `chat:typing:success`
+- `chat:typing:failure`
+- `socket:disconnect:success`
+
+## 5. Server Listeners (`socket.on`)
 
 ### `chat:join`
 
@@ -76,6 +110,11 @@ Server action:
 
 - `socket.join('chat:{chatId}')`
 
+Ack emits:
+
+- Success: `chat:join:success`
+- Failure: `chat:join:failure` (e.g. missing `chatId`)
+
 ### `chat:leave`
 
 Client tells server to leave a chat room.
@@ -89,6 +128,11 @@ chatId: string;
 Server action:
 
 - `socket.leave('chat:{chatId}')`
+
+Ack emits:
+
+- Success: `chat:leave:success`
+- Failure: `chat:leave:failure` (e.g. missing `chatId`)
 
 ### `chat:typing`
 
@@ -117,7 +161,12 @@ Server broadcasts to others in the same room (not sender):
 }
 ```
 
-## 5. Server Emit Helpers
+Ack emits to sender:
+
+- Success: `chat:typing:success`
+- Failure: `chat:typing:failure` (e.g. missing `chatId`)
+
+## 6. Server Emit Helpers
 
 Defined in `src/app/utils/socket.ts`.
 
@@ -133,7 +182,7 @@ Emits event to room:
 
 - `chat:{chatId}`
 
-## 6. Message Events Emitted From Backend
+## 7. Message Events Emitted From Backend
 
 Currently emitted event name:
 
@@ -185,19 +234,26 @@ Payload:
 
 - `result.message` from `messageServices.replySupportMessageByAdmin(...)`
 
-## 7. Frontend Integration Checklist
+## 8. Frontend Integration Checklist
 
 1. Connect socket with JWT token in `auth.token`.
 2. Listen for `connect_error` to catch unauthorized token issues.
 3. On entering a chat screen, emit `chat:join` with `chatId`.
 4. On leaving chat screen, emit `chat:leave` with `chatId`.
 5. Send typing indicators using `chat:typing`.
-6. Listen for:
+6. Listen for business events:
 
 - `message:new`
 - `chat:typing`
 
-## 8. Minimal Client Example
+7. Listen for acknowledgement events:
+
+- `chat:join:success` / `chat:join:failure`
+- `chat:leave:success` / `chat:leave:failure`
+- `chat:typing:success` / `chat:typing:failure`
+- `socket:connection:success`
+
+## 9. Minimal Client Example
 
 ```ts
 import { io } from 'socket.io-client';
@@ -218,6 +274,14 @@ socket.on('connect_error', err => {
 
 socket.emit('chat:join', chatId);
 
+socket.on('chat:join:success', payload => {
+  console.log('join ok:', payload);
+});
+
+socket.on('chat:join:failure', payload => {
+  console.error('join failed:', payload);
+});
+
 socket.on('message:new', message => {
   console.log('new message:', message);
 });
@@ -227,10 +291,15 @@ socket.emit('chat:typing', { chatId, isTyping: true });
 socket.on('chat:typing', payload => {
   console.log('typing:', payload);
 });
+
+socket.on('chat:typing:failure', payload => {
+  console.error('typing failed:', payload);
+});
 ```
 
-## 9. Notes
+## 10. Notes
 
 - If socket server is not initialized and emit helpers are called, helpers safely no-op.
 - CORS origin for socket is from `config.client_Url` (fallback `*`).
 - Event names are string literals; keep frontend and backend names identical.
+- Query-string token (e.g. `?token=...`) is not read by current backend.

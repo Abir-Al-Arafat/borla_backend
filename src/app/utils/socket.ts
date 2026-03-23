@@ -10,6 +10,30 @@ type IJwtSocketPayload = {
 
 let io: Server | null = null;
 
+const emitOperationSuccess = (
+  socket: Parameters<Server['on']>[1] extends (arg: infer S) => any ? S : any,
+  event: string,
+  payload: Record<string, unknown>,
+) => {
+  socket.emit(`${event}:success`, {
+    success: true,
+    ...payload,
+  });
+};
+
+const emitOperationFailure = (
+  socket: Parameters<Server['on']>[1] extends (arg: infer S) => any ? S : any,
+  event: string,
+  message: string,
+  payload: Record<string, unknown> = {},
+) => {
+  socket.emit(`${event}:failure`, {
+    success: false,
+    message,
+    ...payload,
+  });
+};
+
 const getSocketToken = (socket: any): string | null => {
   const authToken = socket?.handshake?.auth?.token;
   const headerToken = socket?.handshake?.headers?.authorization;
@@ -64,37 +88,101 @@ export const initializeSocket = (server: HttpServer) => {
     console.log(`User connected to socket: ${userId}`);
     if (userId) {
       socket.join(`user:${userId}`);
+      emitOperationSuccess(socket, 'socket:connection', {
+        userId,
+      });
     }
 
     socket.on('chat:join', (chatId: string) => {
-      if (chatId) {
+      try {
+        if (!chatId || !String(chatId).trim()) {
+          emitOperationFailure(socket, 'chat:join', 'chatId is required');
+          return;
+        }
+
         socket.join(`chat:${chatId}`);
+
         console.log(`User ${userId} joined chat ${chatId}`);
         console.log(`typeof ${typeof chatId}`);
+
+        emitOperationSuccess(socket, 'chat:join', {
+          chatId,
+          userId,
+        });
+      } catch (_error) {
+        emitOperationFailure(socket, 'chat:join', 'Failed to join chat room', {
+          chatId,
+        });
       }
     });
 
     socket.on('chat:leave', (chatId: string) => {
-      if (chatId) {
+      try {
+        if (!chatId || !String(chatId).trim()) {
+          emitOperationFailure(socket, 'chat:leave', 'chatId is required');
+          return;
+        }
+
         socket.leave(`chat:${chatId}`);
+        emitOperationSuccess(socket, 'chat:leave', {
+          chatId,
+          userId,
+        });
+      } catch (_error) {
+        emitOperationFailure(
+          socket,
+          'chat:leave',
+          'Failed to leave chat room',
+          { chatId },
+        );
       }
     });
 
     socket.on(
       'chat:typing',
       (payload: { chatId: string; isTyping: boolean }) => {
-        if (!payload?.chatId) return;
+        try {
+          if (!payload?.chatId || !String(payload.chatId).trim()) {
+            emitOperationFailure(socket, 'chat:typing', 'chatId is required');
+            return;
+          }
 
-        socket.to(`chat:${payload.chatId}`).emit('chat:typing', {
-          chatId: payload.chatId,
-          userId,
-          isTyping: !!payload.isTyping,
-        });
-        console.log(
-          `User ${userId} is ${payload.isTyping ? 'typing...' : 'stopped typing.'} in chat ${payload.chatId}`,
-        );
+          socket.to(`chat:${payload.chatId}`).emit('chat:typing', {
+            chatId: payload.chatId,
+            userId,
+            isTyping: !!payload.isTyping,
+          });
+          console.log(
+            `User ${userId} is ${payload.isTyping ? 'typing...' : 'stopped typing.'} in chat ${payload.chatId}`,
+          );
+
+          emitOperationSuccess(socket, 'chat:typing', {
+            chatId: payload.chatId,
+            userId,
+            isTyping: !!payload.isTyping,
+          });
+        } catch (_error) {
+          emitOperationFailure(
+            socket,
+            'chat:typing',
+            'Failed to send typing state',
+            {
+              chatId: payload?.chatId || null,
+            },
+          );
+        }
       },
     );
+
+    socket.on('disconnect', reason => {
+      console.log(
+        `User disconnected from socket: ${userId}, reason: ${reason}`,
+      );
+      emitOperationSuccess(socket, 'socket:disconnect', {
+        userId,
+        reason,
+      });
+    });
   });
 
   return io;

@@ -49,6 +49,8 @@ Your backend reads token from:
 - `socket.handshake.auth.token`
 - fallback: `Authorization` header
 
+It does not read token from URL query (for example `?token=...`).
+
 If token is invalid, connection will fail with unauthorized error.
 
 ## 3. Join Chat Room
@@ -68,12 +70,43 @@ This joins room:
 
 - `chat:<CHAT_ID>`
 
+Expected acknowledgement to same socket:
+
+- Event: `chat:join:success`
+- Payload example:
+
+```json
+{
+  "success": true,
+  "chatId": "<CHAT_ID>",
+  "userId": "<USER_ID>"
+}
+```
+
+If `chatId` is empty:
+
+- Event: `chat:join:failure`
+
+```json
+{
+  "success": false,
+  "message": "chatId is required"
+}
+```
+
 ## 4. Listen For Incoming Events
 
 In the same Socket.IO tab, subscribe/listen to:
 
 1. `message:new`
 2. `chat:typing`
+3. `chat:join:success`
+4. `chat:join:failure`
+5. `chat:leave:success`
+6. `chat:leave:failure`
+7. `chat:typing:success`
+8. `chat:typing:failure`
+9. `socket:connection:success`
 
 Keep this tab open.
 
@@ -99,6 +132,17 @@ Expected result:
 
 ```json
 {
+  "chatId": "<CHAT_ID>",
+  "userId": "<SENDER_USER_ID>",
+  "isTyping": true
+}
+```
+
+- Sender receives `chat:typing:success` with:
+
+```json
+{
+  "success": true,
   "chatId": "<CHAT_ID>",
   "userId": "<SENDER_USER_ID>",
   "isTyping": true
@@ -159,12 +203,21 @@ Emit:
 "<CHAT_ID>"
 ```
 
+Expected acknowledgement:
+
+- `chat:leave:success`
+
+If `chatId` is empty:
+
+- `chat:leave:failure`
+
 ## 9. Quick Troubleshooting
 
 1. Connection fails immediately:
 
 - Check JWT token is valid and not expired.
 - Confirm token is passed in handshake auth as `token`.
+- If auth UI is difficult in your Postman version, set header: `Authorization: Bearer <ACCESS_TOKEN>`.
 
 2. Connected but no events:
 
@@ -178,6 +231,12 @@ Emit:
 4. Wrong URL:
 
 - Use backend server URL, not frontend URL.
+
+5. You connected but received only failure acks:
+
+- Confirm payload format is correct for each event.
+- `chat:join` and `chat:leave` expect a raw string `"<CHAT_ID>"`.
+- `chat:typing` expects `{ "chatId": "...", "isTyping": true }`.
 
 ## 10. Recommended Test Sequence
 
