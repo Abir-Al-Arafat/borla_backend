@@ -21,6 +21,7 @@ import path from 'path';
 import { sendEmail } from 'app/utils/mailSender';
 import fs from 'fs';
 import axios from 'axios';
+import { notificationService } from '../notifications/notification.service';
 
 const signup = async (payload: ISignup) => {
   payload.email = payload?.email?.trim().toLowerCase();
@@ -185,6 +186,17 @@ const signup = async (payload: ISignup) => {
     config.jwt_access_secret as string,
     '15m',
   );
+
+  if (userRole === 'rider') {
+    try {
+      await notificationService.notifyRiderSignup({
+        userId: user.id,
+        name: user.name,
+      });
+    } catch (error) {
+      console.error('Failed to emit rider signup notifications:', error);
+    }
+  }
 
   return {
     email: user.email,

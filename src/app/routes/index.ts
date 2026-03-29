@@ -17,6 +17,7 @@ import { messageRoutes } from '@app/modules/messages/message.route';
 import { realtimeMonitorRoutes } from '@app/modules/realtime monitor/realtimeMonitor.route';
 import { specialAccessRoutes } from '@app/modules/specialAccess/specialAccess.route';
 import { contentPagesRoutes } from '@app/modules/contentPages/contentPages.route';
+import { notificationRoutes } from '@app/modules/notifications/notification.route';
 
 import { Router } from 'express';
 
@@ -97,6 +98,10 @@ const moduleRoutes = [
   {
     path: '/content-pages',
     route: contentPagesRoutes,
+  },
+  {
+    path: '/notifications',
+    route: notificationRoutes,
   },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));
