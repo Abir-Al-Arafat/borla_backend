@@ -23,6 +23,45 @@ import fs from 'fs';
 import axios from 'axios';
 import { notificationService } from '../notifications/notification.service';
 
+// New Hubtel SMS Function
+const sendHubtelSMS = async (phoneNumber: string, message: string) => {
+  try {
+    const clientId = config.HUBTEL_CLIENT_ID;
+    const clientSecret = config.HUBTEL_CLIENT_SECRET;
+    const senderId = config.HUBTEL_SENDER_ID;
+
+    if (!clientId || !clientSecret || !senderId) {
+      throw new Error('Hubtel credentials not found');
+    }
+
+    // Using the V1 Quick-Send URL format
+    const url = `https://sms.hubtel.com/v1/messages/send`;
+
+    const response = await axios.get(url, {
+      params: {
+        clientid: clientId,
+        clientsecret: clientSecret,
+        from: senderId,
+        to: phoneNumber,
+        content: message,
+      },
+    });
+
+    // Handle the "Payment Required" status in  logs
+    if (response.data.status === 12) {
+      console.error(
+        'HUBTEL ALERT: SMS failed. Status 12 - Insufficient Balance.',
+      );
+      return { success: false, error: 'Payment required on Hubtel account' };
+    }
+
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    console.error('Hubtel SMS Error:', error.response?.data || error.message);
+    return { success: false, error: error.message };
+  }
+};
+
 const signup = async (payload: ISignup) => {
   payload.email = payload?.email?.trim().toLowerCase();
 
@@ -169,12 +208,6 @@ const signup = async (payload: ISignup) => {
       .replace('{{name}}', user.name),
   );
 
-  try {
-    await sendTermiiSMS(payload.phoneNumber, otp);
-  } catch (err) {
-    console.error('Failed to send SMS OTP:', err);
-  }
-
   // Create verification token
   const jwtPayload = {
     email: user.email,
@@ -186,6 +219,15 @@ const signup = async (payload: ISignup) => {
     config.jwt_access_secret as string,
     '15m',
   );
+
+  // 2. INTEGRATION: Send the SMS with the token/OTP
+  const smsMessage = `Your Borla verification code is ${otp}. Use this token to verify your phone number:`;
+
+  try {
+    await sendHubtelSMS(payload.phoneNumber, smsMessage);
+  } catch (err) {
+    console.error('Failed to send Hubtel SMS:', err);
+  }
 
   if (userRole === 'rider') {
     try {
