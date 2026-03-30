@@ -8,6 +8,7 @@ import httpStatus from 'http-status';
 import { otpServices } from '../otp/otp.service';
 import fs from 'fs';
 import prisma from '../../shared/prisma';
+import path from 'path';
 
 const createUser = catchAsync(async (req: Request, res: Response) => {
   if (req?.file) {
@@ -145,8 +146,16 @@ const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
       fs.unlinkSync(user.profilePicture);
     }
 
-    // Local storage - save file path
-    req.body.profilePicture = files.profilePicture[0].path;
+    // Local storage - save project-relative file path
+    const relativePath = path.relative(
+      process.cwd(),
+      files.profilePicture[0].path,
+    );
+    req.body.profilePicture = `\\${relativePath}`.replace(/\//g, '\\');
+    console.log(
+      'Profile picture uploaded req.body.profilePicture:',
+      req.body.profilePicture,
+    );
     // Uncomment below to use S3 upload
     // req.body.profilePicture = await uploadToS3({
     //   file: files.profilePicture[0],
