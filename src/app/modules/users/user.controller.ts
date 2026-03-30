@@ -9,6 +9,7 @@ import { otpServices } from '../otp/otp.service';
 import fs from 'fs';
 import prisma from '../../shared/prisma';
 import path from 'path';
+import { toPublicUploadPath } from '../../utils/filePathSanitizer';
 
 const createUser = catchAsync(async (req: Request, res: Response) => {
   if (req?.file) {
@@ -146,12 +147,8 @@ const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
       fs.unlinkSync(user.profilePicture);
     }
 
-    // Local storage - save project-relative file path
-    const relativePath = path.relative(
-      process.cwd(),
-      files.profilePicture[0].path,
-    );
-    req.body.profilePicture = `\\${relativePath}`.replace(/\//g, '\\');
+    // Local storage - save reusable public path
+    req.body.profilePicture = toPublicUploadPath(files.profilePicture[0].path);
 
     // Uncomment below to use S3 upload
     // req.body.profilePicture = await uploadToS3({
@@ -171,8 +168,10 @@ const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
       });
     }
 
-    // Save all Ghana card image paths
-    req.body.ghanaCardId = files.ghanaCardId.map(file => file.path);
+    // Save all Ghana card image paths in reusable public format
+    req.body.ghanaCardId = files.ghanaCardId.map(file =>
+      toPublicUploadPath(file.path),
+    );
     // Uncomment below to use S3 upload
     // req.body.ghanaCardId = await Promise.all(
     //   files.ghanaCardId.map(file =>
