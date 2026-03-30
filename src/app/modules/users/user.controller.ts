@@ -152,10 +152,7 @@ const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
       files.profilePicture[0].path,
     );
     req.body.profilePicture = `\\${relativePath}`.replace(/\//g, '\\');
-    console.log(
-      'Profile picture uploaded req.body.profilePicture:',
-      req.body.profilePicture,
-    );
+
     // Uncomment below to use S3 upload
     // req.body.profilePicture = await uploadToS3({
     //   file: files.profilePicture[0],
