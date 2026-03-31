@@ -46,7 +46,8 @@ const sendHubtelSMS = async (phoneNumber: string, message: string) => {
         content: message,
       },
     });
-
+    console.log('Hubtel SMS response:', response);
+    console.log('Hubtel SMS response.data:', response.data);
     // Handle the "Payment Required" status in  logs
     if (response.data.status === 12) {
       console.error(
