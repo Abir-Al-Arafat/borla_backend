@@ -124,6 +124,7 @@ const getAll = async (query: Record<string, any>) => {
 const getById = async (
   id: string,
   includeDeviceHistory = false,
+  includeRiderDocuments = false,
   role?: string,
 ) => {
   const result = await prisma.user.findUniqueOrThrow({
@@ -146,6 +147,7 @@ const getById = async (
         },
       },
       deviceHistory: includeDeviceHistory,
+      documents: true,
       dateOfBirth: true,
       location: true,
       locationName: true,
