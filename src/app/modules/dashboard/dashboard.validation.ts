@@ -16,6 +16,21 @@ const revenueChartQueryZodSchema = z.object({
   }),
 });
 
+const zoneComparisonQueryZodSchema = z.object({
+  query: z
+    .object({
+      period: z
+        .string()
+        .optional()
+        .transform(val => (val ? val.toLowerCase() : 'weekly'))
+        .refine(val => ['weekly', 'monthly'].includes(val), {
+          message: 'Period must be either weekly or monthly',
+        }),
+    })
+    .optional()
+    .default({ period: 'weekly' }),
+});
+
 const wasteDistributionQueryZodSchema = z.object({
   query: z.object({
     period: z.enum(['weekly', 'monthly']),
@@ -37,6 +52,7 @@ const recentAccountsQueryZodSchema = z.object({
 export const dashboardValidations = {
   userOverviewQueryZodSchema,
   revenueChartQueryZodSchema,
+  zoneComparisonQueryZodSchema,
   wasteDistributionQueryZodSchema,
   recentAccountsQueryZodSchema,
 };

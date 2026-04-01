@@ -37,6 +37,17 @@ const getRevenueChart = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getZoneComparison = catchAsync(async (req: Request, res: Response) => {
+  const result = await dashboardServices.getZoneComparison(req.query as any);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Zone comparison data retrieved successfully',
+    data: result,
+  });
+});
+
 const getWasteDistribution = catchAsync(async (req: Request, res: Response) => {
   const result = await dashboardServices.getWasteDistribution(req.query as any);
 
@@ -64,6 +75,7 @@ export const dashboardControllers = {
   getDashboardStats,
   getUserOverview,
   getRevenueChart,
+  getZoneComparison,
   getWasteDistribution,
   getRecentAccounts,
 };

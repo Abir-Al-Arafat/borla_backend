@@ -29,6 +29,14 @@ router.get(
   dashboardControllers.getRevenueChart,
 );
 
+// Get zone comparison chart data
+router.get(
+  '/zone-comparison',
+  auth('admin', 'supper_admin'),
+  validateRequest(dashboardValidations.zoneComparisonQueryZodSchema),
+  dashboardControllers.getZoneComparison,
+);
+
 // Get waste distribution data
 router.get(
   '/waste-distribution',

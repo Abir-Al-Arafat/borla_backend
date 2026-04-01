@@ -41,6 +41,17 @@ export interface IRevenueChartData {
   value: number;
 }
 
+// Zone comparison chart
+export interface IZoneComparisonQuery {
+  period?: 'weekly' | 'monthly';
+}
+
+export interface IZoneComparisonData {
+  zone: string;
+  revenue: number;
+  pickups: number;
+}
+
 // Waste Type Distribution
 export interface IWasteDistributionQuery {
   period: 'weekly' | 'monthly';

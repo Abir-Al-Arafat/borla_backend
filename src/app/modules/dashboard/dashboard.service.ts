@@ -5,6 +5,8 @@ import {
   IUserOverviewData,
   IRevenueChartQuery,
   IRevenueChartData,
+  IZoneComparisonData,
+  IZoneComparisonQuery,
   IWasteDistributionQuery,
   IWasteTypeData,
   IRecentAccountsQuery,
@@ -412,6 +414,92 @@ const getWasteDistribution = async (
   }));
 };
 
+// Get zone comparison chart data
+const getZoneComparison = async (
+  query: IZoneComparisonQuery,
+): Promise<IZoneComparisonData[]> => {
+  const period = (query.period || 'weekly').toLowerCase() as
+    | 'weekly'
+    | 'monthly';
+
+  const now = new Date();
+  const startDate = new Date(now);
+
+  if (period === 'weekly') {
+    startDate.setDate(startDate.getDate() - 7);
+  } else {
+    startDate.setMonth(startDate.getMonth() - 1);
+  }
+
+  const zones = await prisma.zone.findMany({
+    where: { isDeleted: false },
+    select: {
+      id: true,
+      name: true,
+      boundary: true,
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  const parseMongoNumber = (value: unknown): number => {
+    if (typeof value === 'number') return value;
+    if (!value || typeof value !== 'object') return 0;
+
+    const mongoValue = value as {
+      $numberInt?: string;
+      $numberLong?: string;
+      $numberDouble?: string;
+      $numberDecimal?: string;
+    };
+
+    if (mongoValue.$numberInt) return Number(mongoValue.$numberInt);
+    if (mongoValue.$numberLong) return Number(mongoValue.$numberLong);
+    if (mongoValue.$numberDouble) return Number(mongoValue.$numberDouble);
+    if (mongoValue.$numberDecimal) return Number(mongoValue.$numberDecimal);
+    return 0;
+  };
+
+  const zoneStats = await Promise.all(
+    zones.map(async zone => {
+      const summary = await prisma.booking.aggregateRaw({
+        pipeline: [
+          {
+            $match: {
+              status: bookingStatus.completed,
+              completedAt: { $gte: startDate },
+              pickupLocation: {
+                $geoWithin: {
+                  $geometry: zone.boundary,
+                },
+              },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              pickups: { $sum: 1 },
+              revenue: { $sum: { $ifNull: ['$price', 0] } },
+            },
+          },
+        ],
+      });
+
+      const result =
+        Array.isArray(summary) && summary.length > 0 ? summary[0] : null;
+
+      return {
+        zone: zone.name,
+        pickups: result ? parseMongoNumber((result as any).pickups) : 0,
+        revenue: result
+          ? Number(parseMongoNumber((result as any).revenue).toFixed(2))
+          : 0,
+      };
+    }),
+  );
+
+  return zoneStats;
+};
+
 // Get recent accounts list
 const getRecentAccounts = async (query: IRecentAccountsQuery) => {
   const {
@@ -487,6 +575,7 @@ export const dashboardServices = {
   getDashboardStats,
   getUserOverview,
   getRevenueChart,
+  getZoneComparison,
   getWasteDistribution,
   getRecentAccounts,
 };
