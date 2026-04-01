@@ -4,12 +4,15 @@ import { bookingServices } from './booking.service';
 import sendResponse from '../../utils/sendResponse';
 import httpStatus from 'http-status';
 import { IGetBookingsQuery } from './booking.interface';
+import { toPublicUploadPath } from '@app/utils/filePathSanitizer';
 
 // Create a new booking (User)
 const createBooking = catchAsync(async (req: Request, res: Response) => {
   // Handle multiple uploaded files
   if (req.files && Array.isArray(req.files)) {
-    req.body.wasteImages = req.files.map((file: any) => file.path);
+    req.body.wasteImages = req.files.map((file: any) =>
+      toPublicUploadPath(file.path),
+    );
   }
 
   const result = await bookingServices.createBooking(req.user.userId, req.body);
@@ -159,19 +162,21 @@ const markArrivedAtPickup = catchAsync(async (req: Request, res: Response) => {
 });
 
 // Mark payment collected at pickup (Rider)
-const markPaymentCollectedAtPickup = catchAsync(async (req: Request, res: Response) => {
-  const result = await bookingServices.markPaymentCollectedAtPickup(
-    req.params.id as string,
-    req.user.userId,
-  );
+const markPaymentCollectedAtPickup = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await bookingServices.markPaymentCollectedAtPickup(
+      req.params.id as string,
+      req.user.userId,
+    );
 
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'Payment collected at pickup. Customer has been notified.',
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Payment collected at pickup. Customer has been notified.',
+      data: result,
+    });
+  },
+);
 
 // Mark heading to station (Rider)
 const markHeadingToStation = catchAsync(async (req: Request, res: Response) => {
