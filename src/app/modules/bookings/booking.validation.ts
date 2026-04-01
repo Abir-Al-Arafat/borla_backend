@@ -148,6 +148,7 @@ const getBookingsQueryZodSchema = z.object({
         latitude: (query as any).latitude || undefined,
         longitude: (query as any).longitude || undefined,
         radius: (query as any).radius || '10',
+        populateUser: (query as any).populateUser || 'false',
       };
     },
     z.object({
@@ -207,6 +208,13 @@ const getBookingsQueryZodSchema = z.object({
         const parsed = parseFloat(val);
         return isNaN(parsed) || parsed < 1 ? 10 : parsed;
       }),
+      populateUser: z
+        .string()
+        .optional()
+        .transform(val => {
+          if (!val || val.trim() === '') return false;
+          return ['true', '1', 'yes'].includes(val.trim().toLowerCase());
+        }),
     }),
   ),
 });

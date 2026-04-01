@@ -32,4 +32,5 @@ export interface IGetBookingsQuery {
   latitude?: number;
   longitude?: number;
   radius?: number; // in km
+  populateUser?: boolean | string;
 }

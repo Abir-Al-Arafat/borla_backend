@@ -221,43 +221,45 @@ const getAvailableBookingsForRider = async (
   }
 
   // Validate and sanitize query parameters
-  const { status, page, limit } = validateBookingQuery(query);
+  const { status, page, limit, populateUser } = validateBookingQuery(query);
 
   const skip = (page - 1) * limit;
 
   // Get the zone boundary
   const zoneBoundary = rider.zone.boundary as any;
 
-  // Use MongoDB's $geoWithin operator to find bookings within the zone boundary
-  const bookingsInZone = await prisma.booking.aggregateRaw({
-    pipeline: [
-      {
-        $match: {
-          status: status,
-          riderId: null,
-        },
+  const bookingsPipeline: any[] = [
+    {
+      $match: {
+        status: status,
+        riderId: null,
       },
-      {
-        $match: {
-          pickupLocation: {
-            $geoWithin: {
-              $geometry: zoneBoundary,
-            },
+    },
+    {
+      $match: {
+        pickupLocation: {
+          $geoWithin: {
+            $geometry: zoneBoundary,
           },
         },
       },
-      {
-        $sort: { createdAt: -1 },
-      },
-      {
-        $skip: skip,
-      },
-      {
-        $limit: limit,
-      },
+    },
+    {
+      $sort: { createdAt: -1 },
+    },
+    {
+      $skip: skip,
+    },
+    {
+      $limit: limit,
+    },
+  ];
+
+  if (populateUser) {
+    bookingsPipeline.push(
       {
         $lookup: {
-          from: 'users',
+          from: 'User',
           localField: 'userId',
           foreignField: '_id',
           as: 'user',
@@ -269,36 +271,46 @@ const getAvailableBookingsForRider = async (
           preserveNullAndEmptyArrays: true,
         },
       },
-      {
-        $project: {
-          _id: 1,
-          userId: 1,
-          riderId: 1,
-          wasteCategory: 1,
-          wasteImages: 1,
-          binSize: 1,
-          binQuantity: 1,
-          wasteSize: 1,
-          pickupLocation: 1,
-          pickupAddress: 1,
-          dropoffLocation: 1,
-          dropoffAddress: 1,
-          vehicleType: 1,
-          estimatedDistance: 1,
-          estimatedTime: 1,
-          paymentMethod: 1,
-          price: 1,
-          status: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          'user._id': 1,
-          'user.name': 1,
-          'user.email': 1,
-          'user.phoneNumber': 1,
-          'user.profilePicture': 1,
-        },
-      },
-    ],
+    );
+  }
+
+  bookingsPipeline.push({
+    $project: {
+      _id: 1,
+      userId: 1,
+      riderId: 1,
+      wasteCategory: 1,
+      wasteImages: 1,
+      binSize: 1,
+      binQuantity: 1,
+      wasteSize: 1,
+      pickupLocation: 1,
+      pickupAddress: 1,
+      dropoffLocation: 1,
+      dropoffAddress: 1,
+      vehicleType: 1,
+      estimatedDistance: 1,
+      estimatedTime: 1,
+      paymentMethod: 1,
+      price: 1,
+      status: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      ...(populateUser
+        ? {
+            'user._id': 1,
+            'user.name': 1,
+            'user.email': 1,
+            'user.phoneNumber': 1,
+            'user.profilePicture': 1,
+          }
+        : {}),
+    },
+  });
+
+  // Use MongoDB's $geoWithin operator to find bookings within the zone boundary
+  const bookingsInZone = await prisma.booking.aggregateRaw({
+    pipeline: bookingsPipeline,
   });
 
   // Get total count of bookings in zone
@@ -353,15 +365,16 @@ const getAvailableBookingsForRider = async (
         status: booking.status,
         createdAt: booking.createdAt,
         updatedAt: booking.updatedAt,
-        user: booking.user
-          ? {
-              id: booking.user._id.$oid,
-              name: booking.user.name,
-              email: booking.user.email,
-              phoneNumber: booking.user.phoneNumber,
-              profilePicture: booking.user.profilePicture,
-            }
-          : null,
+        user:
+          populateUser && booking.user
+            ? {
+                id: booking.user._id.$oid,
+                name: booking.user.name,
+                email: booking.user.email,
+                phoneNumber: booking.user.phoneNumber,
+                profilePicture: booking.user.profilePicture,
+              }
+            : null,
       }))
     : [];
 

@@ -9,6 +9,7 @@ interface ValidatedBookingQuery {
   radius: number;
   latitude?: number;
   longitude?: number;
+  populateUser: boolean;
 }
 
 /**
@@ -18,7 +19,8 @@ interface ValidatedBookingQuery {
 export const validateBookingQuery = (
   query: IGetBookingsQuery,
 ): ValidatedBookingQuery => {
-  const { status, page, limit, radius, latitude, longitude } = query;
+  const { status, page, limit, radius, latitude, longitude, populateUser } =
+    query;
 
   // Validate and sanitize status
   const validStatus =
@@ -66,6 +68,11 @@ export const validateBookingQuery = (
         ? parseFloat(String(radius)) || 10
         : 10;
 
+  const validPopulateUser =
+    typeof populateUser === 'boolean'
+      ? populateUser
+      : ['true', '1', 'yes'].includes(String(populateUser).toLowerCase());
+
   return {
     status: validStatus,
     page: validPage,
@@ -73,5 +80,6 @@ export const validateBookingQuery = (
     radius: validRadius,
     latitude,
     longitude,
+    populateUser: validPopulateUser,
   };
 };
