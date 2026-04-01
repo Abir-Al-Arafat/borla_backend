@@ -1,13 +1,13 @@
 {
-  "name": "glow-street-safety-backend",
+  "name": "borla-backend",
   "version": "1.0.0",
   "main": "src/server.ts",
-  "repository": "https://github.com/mdnazmulhasanniloy/glow-street-safety-backend.git",
-  "author": "MD Nazmul Hasan",
+  "repository": "https://github.com/Abir-Al-Arafat/borla_backend",
+  "author": "MD Nazmul Hasan, Abir Al Arafat",
   "license": "MIT",
   "private": true,
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"require('fs').cpSync('src/generated', 'dist/generated', { recursive: true })\"",
     "generate": "ts-node src/generateFolder.ts",
     "dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/server.ts",
     "lint:check": "eslint --ignore-path .eslintignore --ext .js,.ts .",
@@ -17,7 +17,7 @@
     "prettier:fix": "prettier --write .",
     "lint-prettier": "npm run lint:check && npm run prettier:check",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start:prod": "node -r tsconfig-paths/register dist/server.js",
+    "start:prod": "set TS_NODE_BASEURL=./dist&& node -r tsconfig-paths/register dist/server.js",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma db push",
     "prisma:studio": "npx prisma studio"
