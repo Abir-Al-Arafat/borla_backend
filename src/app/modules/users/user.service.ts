@@ -137,6 +137,7 @@ const getById = async (
       name: true,
       email: true,
       status: true,
+      onlineStatus: true,
       role: true,
       profilePicture: true,
       phoneNumber: true,

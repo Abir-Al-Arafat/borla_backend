@@ -65,6 +65,7 @@ const getMyProfile = catchAsync(async (req: Request, res: Response) => {
   const result = await userService.getById(
     req?.user?.userId,
     includeDeviceHistory,
+    includeRiderDocuments,
   );
   sendResponse(res, {
     statusCode: httpStatus.OK,
