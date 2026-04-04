@@ -430,6 +430,7 @@ const getMyChats = async (authUserId: string, query: IGetChatsQuery) => {
               name: true,
               profilePicture: true,
               role: true,
+              phoneNumber: true,
             },
           },
         },
@@ -454,6 +455,75 @@ const getMyChats = async (authUserId: string, query: IGetChatsQuery) => {
   });
 
   const chatIds = chats.map(chat => chat.id);
+
+  const bookingPairs = chats
+    .map(chat => {
+      const userParticipant = chat.participants.find(
+        participant => participant.user.role === 'user',
+      );
+      const riderParticipant = chat.participants.find(
+        participant => participant.user.role === 'rider',
+      );
+
+      if (!userParticipant || !riderParticipant) {
+        return null;
+      }
+
+      return {
+        userId: userParticipant.userId,
+        riderId: riderParticipant.userId,
+      };
+    })
+    .filter(
+      (
+        pair,
+      ): pair is {
+        userId: string;
+        riderId: string;
+      } => Boolean(pair),
+    );
+
+  const uniqueBookingPairKeys = new Set(
+    bookingPairs.map(pair => `${pair.userId}:${pair.riderId}`),
+  );
+
+  const uniqueBookingPairs = Array.from(uniqueBookingPairKeys).map(key => {
+    const [userId, riderId] = key.split(':');
+    return { userId, riderId };
+  });
+
+  const relatedBookings = uniqueBookingPairs.length
+    ? await prisma.booking.findMany({
+        where: {
+          OR: uniqueBookingPairs.map(pair => ({
+            userId: pair.userId,
+            riderId: pair.riderId,
+          })),
+        },
+        select: {
+          id: true,
+          userId: true,
+          riderId: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      })
+    : [];
+
+  const bookingMap = new Map<string, string>();
+  for (const booking of relatedBookings) {
+    if (!booking.riderId) {
+      continue;
+    }
+
+    const key = `${booking.userId}:${booking.riderId}`;
+    if (!bookingMap.has(key)) {
+      bookingMap.set(key, booking.id);
+    }
+  }
+
   const lastMessages = chatIds.length
     ? await prisma.messages.findMany({
         where: {
@@ -482,9 +552,24 @@ const getMyChats = async (authUserId: string, query: IGetChatsQuery) => {
       participant => participant.userId !== authUserId,
     );
 
+    const userParticipant = chat.participants.find(
+      participant => participant.user.role === 'user',
+    );
+    const riderParticipant = chat.participants.find(
+      participant => participant.user.role === 'rider',
+    );
+
+    const bookingId =
+      userParticipant && riderParticipant
+        ? bookingMap.get(
+            `${userParticipant.userId}:${riderParticipant.userId}`,
+          ) || null
+        : null;
+
     return {
       id: chat.id,
       status: chat.status,
+      bookingId,
       otherParticipant: otherParticipant?.user || null,
       lastMessage: lastMessageMap.get(chat.id) || null,
       createdAt: chat.createdAt,
