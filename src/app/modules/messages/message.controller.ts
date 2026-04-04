@@ -64,7 +64,7 @@ const getMyChats = catchAsync(async (req: Request, res: Response) => {
     req.user.userId,
     req.query as unknown as IGetChatsQuery,
   );
-  console.log('Chats retrieved:', result);
+
   if (!result.chats || !result.chats.length) {
     console.log('No chats found.');
     sendResponse(res, {
