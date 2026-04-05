@@ -48,7 +48,7 @@ const sendSupportMessageZodSchema = z.object({
     text: z
       .string()
       .trim()
-      .min(1, 'Message text cannot be empty')
+      .min(0, 'Message text cannot be empty')
       .max(2000, 'Message text cannot exceed 2000 characters')
       .optional(),
   }),

@@ -141,7 +141,7 @@ const getMySupportMessages = catchAsync(async (req: Request, res: Response) => {
       page: req.query.page as unknown as number,
       limit: req.query.limit as unknown as number,
     },
-    'user',
+    req.user.role, // Pass the user role to the service
   );
 
   sendResponse(res, {

@@ -192,7 +192,8 @@ const getSupportChatById = async (chatId: string) => {
   }
 
   const hasCustomer = chat.participants.some(
-    participant => participant.user.role === 'user',
+    participant =>
+      participant.user.role === 'user' || participant.user.role === 'rider',
   );
   const hasSupportAdmin = chat.participants.some(participant =>
     SUPPORT_ADMIN_ROLES.includes(participant.user.role),
@@ -718,17 +719,32 @@ const getMySupportChats = async (authUserId: string, query: IGetChatsQuery) => {
 const getSupportMessagesByChat = async (
   authUserId: string,
   payload: IGetSupportMessagesPayload,
-  mode: 'user' | 'admin',
+  mode: 'user' | 'admin' | 'rider',
 ) => {
   const chat = await getSupportChatById(payload.chatId);
 
   if (mode === 'user') {
     const isCustomerParticipant = chat.participants.some(
       participant =>
-        participant.userId === authUserId && participant.user.role === 'user',
+        participant.userId === authUserId &&
+        (participant.user.role === 'user' || participant.user.role === 'rider'),
     );
 
     if (!isCustomerParticipant) {
+      throw new AppError(
+        httpStatus.FORBIDDEN,
+        'You are not allowed to access this support chat',
+      );
+    }
+  }
+
+  if (mode === 'rider') {
+    const isRiderParticipant = chat.participants.some(
+      participant =>
+        participant.userId === authUserId && participant.user.role === 'rider',
+    );
+
+    if (!isRiderParticipant) {
       throw new AppError(
         httpStatus.FORBIDDEN,
         'You are not allowed to access this support chat',
