@@ -38,7 +38,7 @@ router.post(
 
 router.post(
   '/support',
-  auth(USER_ROLE.user, USER_ROLE.sub_admin),
+  auth(USER_ROLE.user, USER_ROLE.rider, USER_ROLE.sub_admin),
   imageUpload.array('images', 5),
   validateRequest(messageValidations.sendSupportMessageZodSchema),
   messageControllers.sendSupportMessageByUser,
@@ -46,14 +46,14 @@ router.post(
 
 router.get(
   '/support/my-chats',
-  auth(USER_ROLE.user, USER_ROLE.sub_admin),
+  auth(USER_ROLE.user, USER_ROLE.rider, USER_ROLE.sub_admin),
   validateRequest(messageValidations.adminSupportChatsZodSchema),
   messageControllers.getMySupportChats,
 );
 
 router.get(
   '/support/my-chats/:chatId/messages',
-  auth(USER_ROLE.user, USER_ROLE.sub_admin),
+  auth(USER_ROLE.user, USER_ROLE.rider, USER_ROLE.sub_admin),
   validateRequest(messageValidations.supportMessagesByChatZodSchema),
   messageControllers.getMySupportMessages,
 );

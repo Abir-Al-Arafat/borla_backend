@@ -652,7 +652,8 @@ const getMySupportChats = async (authUserId: string, query: IGetChatsQuery) => {
   const supportChats = chats.filter(chat => {
     const hasUser = chat.participants.some(
       participant =>
-        participant.userId === authUserId && participant.user.role === 'user',
+        participant.userId === authUserId &&
+        (participant.user.role === 'user' || participant.user.role === 'rider'),
     );
     const hasAdmin = chat.participants.some(participant =>
       SUPPORT_ADMIN_ROLES.includes(participant.user.role),
