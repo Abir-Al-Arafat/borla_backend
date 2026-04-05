@@ -62,6 +62,7 @@ model User {
   bookingsAsRider Booking[]       @relation("RiderBookings")
   wallet          Wallet?
   zone            Zone?           @relation(fields: [zoneId], references: [id])
+  transactions    Transaction[]
 }
 
 model Notification {
@@ -249,18 +250,29 @@ model Wallet {
 }
 
 model Transaction {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-  riderId   String?  @db.ObjectId // Optional, only for ride payments
-  walletId  String?  @db.ObjectId // Track which wallet this transaction affected
-  amount    Float
-  type      String // "TOP_UP", "WITHDRAWAL", "RIDE_PAYMENT", "COMMISSION"
-  status    String // "PENDING", "SUCCESS", "FAILED"
-  reference String   @unique // Paystack Reference
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String          @db.ObjectId
+  user            User            @relation(fields: [userId], references: [id])
+  riderId         String?         @db.ObjectId // Optional, only for ride payments
+  walletId        String?         @db.ObjectId // Track which wallet this transaction affected
+  amount          Float
+  type            TransactionType
+  status          String          @default("pending") // pending, success, failed
+  clientReference String          @unique
+  hubtelId        String?         @unique
+  description     String?
+  reference       String          @unique // Paystack Reference
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   @@map("transactions")
+}
+
+enum TransactionType {
+  TOPUP
+  WITHDRAWAL
+  COMMISSION
+  RIDE_PAYMENT
 }
 
 enum documentType {

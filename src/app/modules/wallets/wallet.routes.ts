@@ -7,12 +7,13 @@ import { USER_ROLE } from '../users/user.constants';
 const router = Router();
 const upload = multer();
 
+// 1. RIDER ACTIONS (Protected: Requires Rider to be logged in)
 // Route for adding funds to the app wallet
 router.post(
   '/top-up',
   upload.none(),
   auth(USER_ROLE.user, USER_ROLE.rider),
-  walletControllers.initiateTopUp,
+  walletControllers.topUp,
 );
 
 // Route for getting wallet balance
@@ -27,7 +28,12 @@ router.post(
   '/withdraw',
   upload.none(),
   auth(USER_ROLE.rider),
-  walletControllers.initiateWithdrawal,
+  walletControllers.withdraw,
 );
+
+// 2. HUBTEL CALLBACKS (Public: Hubtel hits these)
+// These MUST match the PrimaryCallbackURL sent in your Hubtel request
+router.post('/receive-callback', walletControllers.handleReceiveCallback);
+router.post('/send-callback', walletControllers.handleSendCallback);
 
 export const walletRoutes = router;
