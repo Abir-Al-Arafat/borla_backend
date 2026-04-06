@@ -264,6 +264,7 @@ export const buildRiderDetailsPayload = async (
   riderId: string,
   riderName: string,
   riderStatus: 'active' | 'blocked',
+  assignedZone?: { id: string; name: string } | null,
 ): Promise<RiderDetailsPayload> => {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -273,6 +274,7 @@ export const buildRiderDetailsPayload = async (
     completedBookings,
     complaintCandidates,
     zoneSourceBookings,
+    jobsInAssignedZoneThisMonth,
   ] = await Promise.all([
     calculateRiderStats(riderId),
     prisma.booking.findMany({
@@ -327,6 +329,21 @@ export const buildRiderDetailsPayload = async (
         },
       },
     }),
+    assignedZone?.name
+      ? prisma.booking.count({
+          where: {
+            riderId,
+            status: 'completed',
+            completedAt: {
+              gte: thirtyDaysAgo,
+            },
+            pickupAddress: {
+              contains: assignedZone.name,
+              mode: 'insensitive',
+            },
+          },
+        })
+      : Promise.resolve(0),
   ]);
 
   const historyMap = new Map<
@@ -373,35 +390,35 @@ export const buildRiderDetailsPayload = async (
       };
     });
 
-//   const complaintsTimeline = complaintCandidates
-//     .map(booking => {
-//       const acceptedAt = booking.acceptedAt;
-//       const arrivedAtPickup = booking.arrivedAtPickup;
+  const complaintsTimeline = complaintCandidates
+    .map(booking => {
+      const acceptedAt = booking.acceptedAt;
+      const arrivedAtPickup = booking.arrivedAtPickup;
 
-//       if (!acceptedAt || !arrivedAtPickup) return null;
+      if (!acceptedAt || !arrivedAtPickup) return null;
 
-//       const delayMinutes =
-//         (arrivedAtPickup.getTime() - acceptedAt.getTime()) / (1000 * 60);
+      const delayMinutes =
+        (arrivedAtPickup.getTime() - acceptedAt.getTime()) / (1000 * 60);
 
-//       if (delayMinutes < 5) return null;
+      if (delayMinutes < 5) return null;
 
-//       const roundedDelay = Math.round(delayMinutes);
-//       const status =
-//         roundedDelay > 20
-//           ? 'reported'
-//           : roundedDelay > 10
-//             ? 'investigating'
-//             : 'resolved';
+      const roundedDelay = Math.round(delayMinutes);
+      const status =
+        roundedDelay > 20
+          ? 'reported'
+          : roundedDelay > 10
+            ? 'investigating'
+            : 'resolved';
 
-//       return {
-//         date: formatDate(arrivedAtPickup),
-//         time: formatTime(arrivedAtPickup),
-//         description: `Delayed pickup - ${roundedDelay} minutes late${booking.pickupAddress ? ` at ${booking.pickupAddress}` : ''}`,
-//         status,
-//       };
-//     })
-//     .filter(Boolean)
-//     .slice(0, 10) as RiderDetailsPayload['complaintsTimeline'];
+      return {
+        date: formatDate(arrivedAtPickup),
+        time: formatTime(arrivedAtPickup),
+        description: `Delayed pickup - ${roundedDelay} minutes late${booking.pickupAddress ? ` at ${booking.pickupAddress}` : ''}`,
+        status,
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 10) as RiderDetailsPayload['complaintsTimeline'];
 
   const zoneCountMap = new Map<string, number>();
   for (const booking of zoneSourceBookings) {
@@ -416,6 +433,13 @@ export const buildRiderDetailsPayload = async (
     .map(([name, jobs]) => ({ name, jobs }));
 
   return {
+    assignedZone: {
+      id: assignedZone?.id || null,
+      name: assignedZone?.name || 'Unassigned',
+      jobsThisMonth: jobsInAssignedZoneThisMonth,
+      restriction:
+        'Rides are only accepted within this zone. Admin can reassign at any time.',
+    },
     header: {
       name: riderName,
       status: riderStatus === 'active' ? 'Active' : 'Inactive',
@@ -427,7 +451,7 @@ export const buildRiderDetailsPayload = async (
       { label: 'Avg Delay', value: `${riderStats.averageDelay} min` },
     ],
     recentWorkHistory,
-    // complaintsTimeline,
+    complaintsTimeline,
     zonesWorked,
   };
 };

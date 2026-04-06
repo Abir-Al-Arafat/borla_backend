@@ -126,6 +126,7 @@ const getById = async (
   includeDeviceHistory = false,
   includeRiderDocuments = false,
   role?: string,
+  includeRiderDashboard = false,
 ) => {
   const result = await prisma.user.findUniqueOrThrow({
     where: {
@@ -153,14 +154,21 @@ const getById = async (
       location: true,
       locationName: true,
       ghanaCardId: true,
+      zone: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
     },
   });
 
-  if (role === 'rider' && result.role === 'rider') {
+  if ((includeRiderDashboard || role === 'rider') && result.role === 'rider') {
     const riderDetails = await buildRiderDetailsPayload(
       result.id,
       result.name,
       result.status,
+      result.zone,
     );
 
     return {

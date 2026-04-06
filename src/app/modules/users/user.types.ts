@@ -23,6 +23,12 @@ export interface RiderZoneWorkedItem {
 }
 
 export interface RiderDetailsPayload {
+  assignedZone: {
+    id: string | null;
+    name: string;
+    jobsThisMonth: number;
+    restriction: string;
+  };
   header: {
     name: string;
     status: 'Active' | 'Inactive';
@@ -30,6 +36,6 @@ export interface RiderDetailsPayload {
   };
   metrics: RiderMetricItem[];
   recentWorkHistory: RiderWorkHistoryItem[];
-//   complaintsTimeline: RiderComplaintItem[];
+  complaintsTimeline: RiderComplaintItem[];
   zonesWorked: RiderZoneWorkedItem[];
 }
