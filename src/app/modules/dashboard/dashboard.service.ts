@@ -539,6 +539,8 @@ const getRecentAccounts = async (query: IRecentAccountsQuery) => {
         phoneNumber: true,
         role: true,
         status: true,
+        location: true,
+        locationName: true,
         createdAt: true,
       },
       orderBy: {
@@ -558,6 +560,8 @@ const getRecentAccounts = async (query: IRecentAccountsQuery) => {
     type: user.role as 'user' | 'rider',
     registrationDate: user.createdAt,
     status: user.status === 'active' ? 'Active' : 'Inactive',
+    location: user.location,
+    locationName: user.locationName,
   }));
 
   return {
