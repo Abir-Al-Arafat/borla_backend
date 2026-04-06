@@ -15,6 +15,6 @@ router.post(
 );
 
 // IMPORTANT: No 'auth' middleware on webhook
-router.post('/webhook', paymentControllers.paystackWebhook);
+// router.post('/webhook', paymentControllers.paystackWebhook);
 
 export const paymentRoutes = router;
