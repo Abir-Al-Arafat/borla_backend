@@ -14,7 +14,14 @@ router.post(
   paymentControllers.initiatePayment,
 );
 
-// IMPORTANT: No 'auth' middleware on webhook
-// router.post('/webhook', paymentControllers.paystackWebhook);
+/**
+ * HUBTEL CALLBACKS (Public)
+ * Hubtel hits these from their servers. 
+ * Do NOT add auth() middleware here.
+ */
+router.post(
+  '/booking-callback', 
+  paymentControllers.handleBookingCallback
+);
 
 export const paymentRoutes = router;

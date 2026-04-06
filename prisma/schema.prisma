@@ -250,13 +250,14 @@ model Wallet {
 }
 
 model Transaction {
-  id              String          @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String          @db.ObjectId
-  user            User            @relation(fields: [userId], references: [id])
-  riderId         String?         @db.ObjectId // Optional, only for ride payments
-  walletId        String?         @db.ObjectId // Track which wallet this transaction affected
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String  @db.ObjectId
+  user     User    @relation(fields: [userId], references: [id])
+  riderId  String? @db.ObjectId // Optional, only for ride payments
+  walletId String? @db.ObjectId // Track which wallet this transaction affected
 
   bookingId       String?         @db.ObjectId // Optional, only for ride payments
+  booking         Booking?        @relation(fields: [bookingId], references: [id])
   amount          Float
   type            TransactionType
   status          String          @default("pending") // pending, success, failed
@@ -375,11 +376,12 @@ model Booking {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user      User     @relation("UserBookings", fields: [userId], references: [id])
-  rider     User?    @relation("RiderBookings", fields: [riderId], references: [id])
-  rating    Rating?
-  station   Station? @relation(fields: [stationId], references: [id])
-  stationId String?  @db.ObjectId
+  user         User          @relation("UserBookings", fields: [userId], references: [id])
+  rider        User?         @relation("RiderBookings", fields: [riderId], references: [id])
+  rating       Rating?
+  station      Station?      @relation(fields: [stationId], references: [id])
+  stationId    String?       @db.ObjectId
+  transactions Transaction[]
 
   @@map("bookings")
 }
@@ -421,6 +423,6 @@ enum wasteCategory {
 }
 
 enum paymentMethod {
-  momo
+  hubtel
   cash
 }
