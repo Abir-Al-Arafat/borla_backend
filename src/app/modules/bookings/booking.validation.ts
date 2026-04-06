@@ -79,7 +79,7 @@ const createBookingZodSchema = z.object({
       })
       .optional(),
     estimatedTime: z.string().optional(),
-    paymentMethod: z.enum(['momo', 'cash']),
+    paymentMethod: z.enum(['hubtel', 'cash']),
     // Scheduling fields
     isScheduled: z
       .union([z.boolean(), z.string()])
@@ -222,9 +222,9 @@ const getBookingsQueryZodSchema = z.object({
 const processPaymentZodSchema = z.object({
   body: z.object({
     paymentMethod: z
-      .enum(['momo', 'cash'])
-      .refine(val => val === 'momo' || val === 'cash', {
-        message: 'Payment method must be either momo or cash',
+      .enum(['hubtel', 'cash'])
+      .refine(val => val === 'hubtel' || val === 'cash', {
+        message: 'Payment method must be either hubtel or cash',
       }),
   }),
 });

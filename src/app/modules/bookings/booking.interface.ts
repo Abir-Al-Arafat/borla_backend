@@ -13,7 +13,7 @@ export interface ICreateBooking {
   vehicleType?: string;
   estimatedDistance?: number;
   estimatedTime?: string;
-  paymentMethod: 'momo' | 'cash';
+  paymentMethod: 'hubtel' | 'cash';
   price: number;
   // Scheduling
   isScheduled?: boolean;
