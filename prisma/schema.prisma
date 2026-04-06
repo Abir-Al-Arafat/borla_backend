@@ -255,6 +255,8 @@ model Transaction {
   user            User            @relation(fields: [userId], references: [id])
   riderId         String?         @db.ObjectId // Optional, only for ride payments
   walletId        String?         @db.ObjectId // Track which wallet this transaction affected
+
+  bookingId       String?         @db.ObjectId // Optional, only for ride payments
   amount          Float
   type            TransactionType
   status          String          @default("pending") // pending, success, failed
