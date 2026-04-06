@@ -8,13 +8,14 @@ import { walletServices } from './wallet.service';
 // 1. Initiate Top Up (Customer/Rider)
 const topUp = catchAsync(async (req: Request, res: Response) => {
   console.log('Initiating top-up with req.body:', req.body);
-  const { amount } = req.body;
+  const { amount, phoneNumber, channel } = req.body;
   const userId = req.user.userId;
   const checkoutUrl = await walletServices.initiateRiderTopUp(
     userId,
     amount,
-    req.user.phoneNumber,
-    req.body.channel,
+    // req.user.phoneNumber,
+    phoneNumber,
+    channel,
   );
   console.log('Top-up initiated, checkoutUrl:', checkoutUrl);
   sendResponse(res, {

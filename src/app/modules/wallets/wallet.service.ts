@@ -13,6 +13,16 @@ const initiateRiderTopUp = async (
   phone: string,
   channel: string,
 ) => {
+  console.log(
+    'Initiating top-up for userId:',
+    userId,
+    'amount:',
+    amount,
+    'phone:',
+    phone,
+    'channel:',
+    channel,
+  );
   const user = await prisma.user.findUnique({ where: { id: userId } });
 
   if (!user || user.role !== 'rider')
