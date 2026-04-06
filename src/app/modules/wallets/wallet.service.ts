@@ -45,27 +45,45 @@ const initiateRiderTopUp = async (
     `${config.HUBTEL_CLIENT_ID}:${config.HUBTEL_CLIENT_SECRET}`,
   ).toString('base64');
 
-  const response = await axios.post(
-    RECEIVE_MONEY_URL(config.HUBTEL_POS_ID as string),
-    payload,
-    {
-      headers: { Authorization: `Basic ${auth}` },
-    },
-  );
-
-  // Log "pending" transaction to Prisma
-  await prisma.transaction.create({
-    data: {
-      userId,
-      amount,
-      type: 'TOPUP',
-      clientReference,
-      reference,
-      status: 'pending',
-    },
-  });
-
-  return response.data; // ResponseCode "0001" means pending customer approval [cite: 478, 480]
+  console.log('auth:', auth);
+  try {
+    const response = await axios.post(
+      RECEIVE_MONEY_URL(config.HUBTEL_POS_ID as string),
+      payload,
+      {
+        headers: { Authorization: `Basic ${auth}` },
+      },
+    );
+    // Log "pending" transaction to Prisma
+    await prisma.transaction.create({
+      data: {
+        userId,
+        amount,
+        type: 'TOPUP',
+        clientReference,
+        reference,
+        status: 'pending',
+      },
+    });
+    return response.data; // ResponseCode "0001" means pending customer approval [cite: 478, 480]
+  } catch (error: any) {
+    console.error('error.response:', error.response);
+    console.error('error.response?.data:', error.response?.data);
+    console.error('error.message:', error.message);
+    console.error(
+      'Error initiating top-up:',
+      error.response?.data || error.message,
+    );
+    if (error.response) {
+      console.error('Hubtel Error Response:', error.response.data);
+      throw new AppError(
+        error.response.status,
+        error.response.data.message ||
+          'No particular error message from Hubtel',
+      );
+    }
+    throw error;
+  }
 };
 
 /*
