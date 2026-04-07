@@ -9,11 +9,30 @@ const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY!;
 
 const authToken = `Bearer ${PAYSTACK_SECRET.trim()}`;
 
+const normalizeLegacyBookingPaymentMethods = async () => {
+  await prisma.$runCommandRaw({
+    update: 'bookings',
+    updates: [
+      {
+        q: { paymentMethod: 'momo' },
+        u: { $set: { paymentMethod: 'hubtel' } },
+        multi: true,
+      },
+    ],
+  });
+};
+
 // Initiate payment when Rider arrives at pickup
 const initiateBookingPayment = async (
   // userId : string,
   bookingId: string,
 ) => {
+  console.log('Initiating payment for bookingId:', bookingId);
+
+  // Backward compatibility: old bookings may still store paymentMethod as "momo".
+  // Prisma now expects "hubtel", so normalize legacy records before reading.
+  await normalizeLegacyBookingPaymentMethods();
+
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: { user: true, rider: true },
