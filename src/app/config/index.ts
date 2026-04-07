@@ -43,6 +43,8 @@ export default {
   HUBTEL_CLIENT_ID: process.env.HUBTEL_CLIENT_ID,
   HUBTEL_CLIENT_SECRET: process.env.HUBTEL_CLIENT_SECRET,
   HUBTEL_SENDER_ID: process.env.HUBTEL_SENDER_ID,
+  HUBTEL_API_ID: process.env.HUBTEL_API_ID,
+  HUBTEL_API_KEY: process.env.HUBTEL_API_KEY,
   aws,
   stripe,
   admin_credentials,

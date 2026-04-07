@@ -57,13 +57,17 @@ const initiateBookingPayment = async (
   }
 
   // PayProxy Authentication (Basic Auth)
+  // const auth = Buffer.from(
+  //   `${config.HUBTEL_CLIENT_ID}:${config.HUBTEL_CLIENT_SECRET}`,
+  // ).toString('base64');
   const auth = Buffer.from(
-    `${config.HUBTEL_CLIENT_ID}:${config.HUBTEL_CLIENT_SECRET}`,
+    `${config.HUBTEL_API_ID}:${config.HUBTEL_API_KEY}`,
   ).toString('base64');
 
   // Payload structure based on Page 4 of your PDF
   const payload = {
-    totalAmount: Number(booking.price),
+    totalAmount: 10,
+    // Number(booking.price),
     description: `Borla Service: ${booking.wasteCategory} collection`,
     callbackUrl: `${config.server_url}/api/v1/payments/booking-callback`,
     // returnUrl: `${config.CLIENT_URL}/booking/success`,
@@ -79,6 +83,11 @@ const initiateBookingPayment = async (
     payload,
     { headers: { Authorization: `Basic ${auth}` } },
   );
+  // const response = await axios.post(
+  //   'https://webhook.site/036f6f0d-cb17-486d-967f-9eb3de264390',
+  //   payload,
+  //   { headers: { Authorization: `Basic ${auth}` } },
+  // );
 
   // Track the transaction in Prisma
   const pendingReference = `RIDE-PAY-INIT-${booking.id}-${Date.now()}`;
