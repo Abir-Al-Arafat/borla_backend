@@ -24,6 +24,7 @@ const initiatePayment = catchAsync(async (req: Request, res: Response) => {
 
 const handleBookingCallback = catchAsync(
   async (req: Request, res: Response) => {
+    console.log('Received payment callback with req.body:', req.body);
     // 1. Extract data from Hubtel's payload
     const { ResponseCode, ClientReference, Data, Message } = req.body;
 
@@ -34,40 +35,49 @@ const handleBookingCallback = catchAsync(
         include: { booking: true },
       });
 
+      console.log('Matching transaction found in DB:', transaction);
+
       // 2. Prevent double-processing
       if (transaction && transaction.status === 'pending') {
         const totalAmount = Number(transaction.amount);
         const riderShare = totalAmount * 0.8; // Borla Split: 80% to Rider
 
         // 3. Atomically update all records
-        await prisma.$transaction([
-          // Update Transaction status and store Hubtel's reference
-          prisma.transaction.update({
-            where: { clientReference: ClientReference },
-            data: {
-              status: 'success',
-              hubtelId: Data.TransactionId || Data.OrderId,
-            },
-          }),
-          // Credit the Rider's Virtual Wallet
-          prisma.wallet.update({
-            where: { userId: transaction.booking?.riderId! },
-            data: { balance: { increment: riderShare } },
-          }),
-          // Mark the Booking as completed
-          prisma.booking.update({
-            where: { id: transaction.bookingId as string },
-            data: {
-              // status: 'completed',
-              paymentMethod: 'hubtel',
-              isPaid: true,
-              paidAt: new Date(),
-            },
-          }),
-        ]);
-
+        const [updatedTransaction, updatedWallet, updatedBooking] =
+          await prisma.$transaction([
+            // Update Transaction status and store Hubtel's reference
+            prisma.transaction.update({
+              where: { clientReference: ClientReference },
+              data: {
+                status: 'success',
+                hubtelId: Data.TransactionId || Data.OrderId,
+              },
+            }),
+            // Credit the Rider's Virtual Wallet
+            prisma.wallet.update({
+              where: { userId: transaction.booking?.riderId! },
+              data: { balance: { increment: riderShare } },
+            }),
+            // Mark the Booking as completed
+            prisma.booking.update({
+              where: { id: transaction.bookingId as string },
+              data: {
+                // status: 'completed',
+                paymentMethod: 'hubtel',
+                isPaid: true,
+                paidAt: new Date(),
+              },
+            }),
+          ]);
+        console.log(
+          `Transaction ${updatedTransaction.id} marked as success, Rider wallet credited with ${riderShare}, Booking ${updatedBooking.id} marked as paid.`,
+        );
         console.log(
           `Successfully split payment for Booking ${transaction.bookingId}`,
+        );
+
+        console.log(
+          `updatedTransaction: ${updatedTransaction}, updatedWallet: ${updatedWallet}, updatedBooking: ${updatedBooking}`,
         );
       }
     } else {
