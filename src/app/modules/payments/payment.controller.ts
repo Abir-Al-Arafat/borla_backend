@@ -36,7 +36,13 @@ const handleBookingCallback = catchAsync(
       });
 
       console.log('Matching transaction found in DB:', transaction);
-
+      if (!transaction) {
+        console.error(
+          `No transaction found for ClientReference: ${ClientReference}`,
+        );
+        res.sendStatus(200); // Still return 200 to Hubtel to prevent retries
+        return;
+      }
       // 2. Prevent double-processing
       if (transaction && transaction.status === 'pending') {
         const totalAmount = Number(transaction.amount);
