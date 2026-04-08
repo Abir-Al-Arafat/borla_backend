@@ -66,8 +66,7 @@ const initiateBookingPayment = async (
 
   // Payload structure based on Page 4 of your PDF
   const payload = {
-    totalAmount: 10,
-    // Number(booking.price),
+    totalAmount: Number(booking.price) < 10 ? Number(booking.price) : 10, // Hubtel may have a minimum amount requirement; adjust as needed
     description: `Borla Service: ${booking.wasteCategory} collection`,
     callbackUrl: `${config.server_url}/api/v1/payments/booking-callback`,
     // returnUrl: `${config.CLIENT_URL}/booking/success`,
