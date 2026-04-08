@@ -26,19 +26,25 @@ const handleBookingCallback = catchAsync(
   async (req: Request, res: Response) => {
     console.log('Received payment callback with req.body:', req.body);
     // 1. Extract data from Hubtel's payload
-    const { ResponseCode, ClientReference, Data, Message } = req.body;
-
+    const { ResponseCode, Data, Message } = req.body;
+    const clientReference = Data?.ClientReference;
     // 0000 = Success
     if (ResponseCode === '0000') {
+      if (!clientReference) {
+        console.error(
+          'Callback received success but no ClientReference found in Data',
+        );
+        return res.sendStatus(200);
+      }
       const transaction = await prisma.transaction.findUnique({
-        where: { clientReference: ClientReference },
+        where: { clientReference: clientReference },
         include: { booking: true },
       });
 
       console.log('Matching transaction found in DB:', transaction);
       if (!transaction) {
         console.error(
-          `No transaction found for ClientReference: ${ClientReference}`,
+          `No transaction found for ClientReference: ${clientReference}`,
         );
         res.sendStatus(200); // Still return 200 to Hubtel to prevent retries
         return;
@@ -53,10 +59,12 @@ const handleBookingCallback = catchAsync(
           await prisma.$transaction([
             // Update Transaction status and store Hubtel's reference
             prisma.transaction.update({
-              where: { clientReference: ClientReference },
+              where: { clientReference: clientReference },
               data: {
                 status: 'success',
-                hubtelId: Data.TransactionId || Data.OrderId,
+                hubtelId: Data.SalesInvoiceId || Data.CheckoutId,
+                salesInvoiceId: Data.SalesInvoiceId,
+                checkoutId: Data.CheckoutId,
               },
             }),
             // Credit the Rider's Virtual Wallet
@@ -83,17 +91,18 @@ const handleBookingCallback = catchAsync(
         );
 
         console.log(
-          `updatedTransaction: ${updatedTransaction}, updatedWallet: ${updatedWallet}, updatedBooking: ${updatedBooking}`,
+          `updatedTransaction: ${JSON.stringify(updatedTransaction, null, 2)}, updatedWallet: ${JSON.stringify(updatedWallet, null, 2)}, updatedBooking: ${JSON.stringify(updatedBooking, null, 2)}`,
         );
       }
     } else {
       // 4. Handle Failed Payments (e.g., Wrong PIN, Insufficient Funds)
-      console.warn(`Payment failed for ${ClientReference}: ${Message}`);
-
-      await prisma.transaction.update({
-        where: { clientReference: ClientReference },
-        data: { status: 'failed' },
-      });
+      console.warn(`Payment failed for ${clientReference}: ${Message}`);
+      if (clientReference) {
+        await prisma.transaction.update({
+          where: { clientReference: clientReference },
+          data: { status: 'failed' },
+        });
+      }
     }
 
     // 5. Mandatory: Always return 200 OK to Hubtel
