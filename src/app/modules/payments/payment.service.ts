@@ -75,36 +75,68 @@ const initiateBookingPayment = async (
     // cancellationUrl: `${config.CLIENT_URL}/booking/failed`,
     cancellationUrl: `${config.server_url}/booking/failed`,
     merchantAccountNumber: config.HUBTEL_POS_ID,
-    clientReference: `BK-${bookingId}-${Date.now()}`,
+    clientReference: `BK-${bookingId}`,
   };
   console.log('Initiating payment with payload:', payload);
-  const response = await axios.post(
-    'https://payproxyapi.hubtel.com/items/initiate',
-    payload,
-    { headers: { Authorization: `Basic ${auth}` } },
-  );
-  // const response = await axios.post(
-  //   'https://webhook.site/036f6f0d-cb17-486d-967f-9eb3de264390',
-  //   payload,
-  //   { headers: { Authorization: `Basic ${auth}` } },
-  // );
 
-  // Track the transaction in Prisma
-  const pendingReference = `RIDE-PAY-INIT-${booking.id}-${Date.now()}`;
-  await prisma.transaction.create({
-    data: {
-      userId: booking.userId,
-      amount: booking.price!,
-      type: 'RIDE_PAYMENT',
-      clientReference: payload.clientReference,
-      bookingId: booking.id,
-      reference: pendingReference,
-      status: 'pending',
-    },
-  });
-  console.log('response', response);
-  // The PayProxy API returns a checkoutUrl in the response data
-  return response.data.data.checkoutUrl;
+  try {
+    const response = await axios.post(
+      'https://payproxyapi.hubtel.com/items/initiate',
+      payload,
+      { headers: { Authorization: `Basic ${auth}` } },
+    );
+    // const response = await axios.post(
+    //   'https://webhook.site/036f6f0d-cb17-486d-967f-9eb3de264390',
+    //   payload,
+    //   { headers: { Authorization: `Basic ${auth}` } },
+    // );
+    console.log('response', response);
+    // Track the transaction in Prisma
+    const pendingReference = `RIDE-PAY-INIT-${booking.id}-${Date.now()}`;
+    await prisma.transaction.create({
+      data: {
+        userId: booking.userId,
+        amount: booking.price!,
+        type: 'RIDE_PAYMENT',
+        clientReference: payload.clientReference,
+        bookingId: booking.id,
+        reference: pendingReference,
+        status: 'pending',
+      },
+    });
+
+    // The PayProxy API returns a checkoutUrl in the response data
+    return response.data.data.checkoutUrl;
+  } catch (error: any) {
+    console.error('Error initiating payment:');
+    console.error('error:', error);
+    console.error(
+      'error.response?.data || error.message:',
+      error.response?.data || error.message,
+    );
+    if (error.response && error.response.data) {
+      // This looks for the specific validation messages Hubtel sends
+      const hubtelErrors = error.response.data.errors;
+      const detailMessage = hubtelErrors
+        ? Object.entries(hubtelErrors)
+            .map(([key, val]) => `${key}: ${val}`)
+            .join(', ')
+        : error.response.data.title || 'Hubtel Validation Error';
+
+      console.error(
+        'Hubtel Validation Error:',
+        JSON.stringify(hubtelErrors, null, 2),
+      );
+
+      // This will now send the "Client reference exceeds maximum length" to Postman
+      throw new AppError(httpStatus.BAD_REQUEST, detailMessage);
+    }
+
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'External Service Error',
+    );
+  }
 };
 
 // Admin Refund Logic (Full or Partial)
