@@ -262,7 +262,7 @@ model Transaction {
   type            TransactionType
   status          String          @default("pending") // pending, success, failed
   clientReference String          @unique
-  hubtelId        String?         @unique
+  hubtelId        String?
   description     String?
   reference       String          @unique // Paystack Reference
   createdAt       DateTime        @default(now())
