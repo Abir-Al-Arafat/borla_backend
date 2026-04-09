@@ -152,8 +152,11 @@ const processRefund = async (
   orderId: string, // This is the SalesInvoiceId from your callback Data
   reason: string, // Description for the refund
 ) => {
+  console.log(
+    `Processing refund for Order ID: ${orderId} with reason: ${reason}`,
+  );
   const auth = Buffer.from(
-    `${config.HUBTEL_CLIENT_ID}:${config.HUBTEL_CLIENT_SECRET}`,
+    `${config.HUBTEL_API_ID}:${config.HUBTEL_API_KEY}`,
   ).toString('base64');
 
   // Your Hubtel POS ID from config (e.g., 2038240)
@@ -180,6 +183,9 @@ const processRefund = async (
     // 0000 = Success, 0001 = Pending
     return response.data;
   } catch (error: any) {
+    let errorMessage = 'An unknown error occurred';
+    let errorData = null;
+
     if (error.response) {
       console.error('Hubtel Refund API error:', error);
       console.error('Hubtel Refund API error.response:', error.response);
@@ -187,13 +193,28 @@ const processRefund = async (
         'Hubtel Refund API error.response.data:',
         error.response.data,
       );
+
+      errorData = error.response.data;
+
+      // Check if Hubtel sent an HTML error (like the 403 Forbidden AWS block)
+      if (typeof errorData === 'string' && errorData.includes('<html>')) {
+        errorMessage = `Infrastructure Block (403 Forbidden): Your Server IP is likely not whitelisted on Hubtel's Firewall.`;
+      }
+      // Check if Hubtel sent a JSON validation error
+      else if (errorData && typeof errorData === 'object') {
+        errorMessage =
+          errorData.message ||
+          JSON.stringify(errorData.errors) ||
+          'Hubtel API rejected the request';
+      }
+
       // Hubtel Refund API specific error handling
       const hubtelData = error.response.data;
 
       // Error 3000 = Order not found, 4000 = Amount < 1 cedi, etc.
-      const errorMessage = hubtelData.errors
-        ? JSON.stringify(hubtelData.errors)
-        : hubtelData.message || 'Refund API rejected the request';
+      // const errorMessage = hubtelData.errors
+      //   ? JSON.stringify(hubtelData.errors)
+      //   : hubtelData.message || 'Refund API rejected the request';
 
       console.error(
         `Hubtel Refund API Error [${error.response.status}]:`,
@@ -204,13 +225,22 @@ const processRefund = async (
         error.response.status,
         `Refund Failed: ${errorMessage}`,
       );
+    } else {
+      errorMessage = error.message;
     }
 
-    console.error('Connection Error to Hubtel Refund API:', error.message);
-    throw new AppError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      'Unable to reach Hubtel Refund Service',
+    // --- CONSOLE LOG FOR HUBTEL DEVELOPERS ---
+    console.log('\n--- DEBUG INFO FOR HUBTEL SUPPORT ---');
+    console.log(`URL: ${url}`);
+    console.log(`Status: ${error.response?.status}`);
+    console.log(
+      `Response Data: ${typeof errorData === 'object' ? JSON.stringify(errorData) : errorData}`,
     );
+    console.log(`Headers: ${JSON.stringify(error.config?.headers)}`);
+    console.log('-------------------------------------\n');
+
+    // --- RESPONSE FOR POSTMAN ---
+    throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, errorMessage);
   }
 };
 
