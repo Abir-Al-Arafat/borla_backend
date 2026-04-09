@@ -256,19 +256,22 @@ model Transaction {
   riderId  String? @db.ObjectId // Optional, only for ride payments
   walletId String? @db.ObjectId // Track which wallet this transaction affected
 
-  bookingId       String?         @db.ObjectId // Optional, only for ride payments
-  booking         Booking?        @relation(fields: [bookingId], references: [id])
-  amount          Float
-  type            TransactionType
-  status          String          @default("pending") // pending, success, failed
-  clientReference String          @unique
-  hubtelId        String?
-  salesInvoiceId  String?
-  checkoutId      String?
-  description     String?
-  reference       String          @unique // Paystack Reference
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  bookingId           String?         @db.ObjectId // Optional, only for ride payments
+  booking             Booking?        @relation(fields: [bookingId], references: [id])
+  amount              Float
+  commission          Float? // Optional, for ride payments
+  comissionPercentage Float? // Optional, for ride payments
+  riderEarnings       Float? // Optional, for ride payments
+  type                TransactionType
+  status              String          @default("pending") // pending, success, failed
+  clientReference     String          @unique
+  hubtelId            String?
+  salesInvoiceId      String?
+  checkoutId          String?
+  description         String?
+  reference           String          @unique // Paystack Reference
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
   @@map("transactions")
 }
@@ -357,6 +360,8 @@ model Booking {
   price         Float?
   isPaid        Boolean       @default(false)
   paidAt        DateTime?
+  isRefunded    Boolean       @default(false)
+  refundedAt    DateTime?
 
   // Ride tracking
   arrivedAtPickup  DateTime?
