@@ -65,6 +65,9 @@ const handleBookingCallback = catchAsync(
                 hubtelId: Data.SalesInvoiceId || Data.CheckoutId,
                 salesInvoiceId: Data.SalesInvoiceId,
                 checkoutId: Data.CheckoutId,
+                commission: totalAmount - riderShare,
+                comissionPercentage: 20, // 20% commission for Borla
+                riderEarnings: riderShare,
               },
             }),
             // Credit the Rider's Virtual Wallet
@@ -110,7 +113,73 @@ const handleBookingCallback = catchAsync(
   },
 );
 
+const initiateRefund = catchAsync(async (req: Request, res: Response) => {
+  const { orderId, reason } = req.body;
+  const result = await paymentServices.processRefund(orderId, reason);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Refund session initiated successfully.',
+    data: result,
+  });
+});
+
+// payment.controller.ts
+
+const handleRefundCallback = catchAsync(async (req: Request, res: Response) => {
+  console.log('Received Refund Callback:', JSON.stringify(req.body, null, 2));
+  console.log('Received Refund Callback:', req.body);
+
+  const { responseCode, data, message } = req.body;
+  console.log('Extracted responseCode:', responseCode);
+  console.log('Extracted data:', data);
+  console.log('Extracted message:', message);
+  // responseCode "0000" means the refund is complete
+  if (responseCode === '0000' && data?.orderId) {
+    const orderId = data.orderId;
+
+    // Find the original transaction using the SalesInvoiceId (orderId)
+    const transaction = await prisma.transaction.findFirst({
+      where: { salesInvoiceId: orderId },
+    });
+
+    if (transaction) {
+      const [updatedTransaction, updatedBooking] = await prisma.$transaction([
+        // 1. Update Transaction status
+        prisma.transaction.update({
+          where: { id: transaction.id },
+          data: { status: 'refunded' },
+        }),
+        // 2. Update Booking payment status if applicable
+        ...(transaction.bookingId
+          ? [
+              prisma.booking.update({
+                where: { id: transaction.bookingId },
+                data: { isRefunded: true, refundedAt: new Date() },
+              }),
+            ]
+          : []),
+      ]);
+
+      console.log(`Successfully processed refund for Order: ${orderId}`);
+
+      console.log(
+        `updatedTransaction: ${JSON.stringify(updatedTransaction, null, 2)}, updatedBooking: ${JSON.stringify(updatedBooking, null, 2)}`,
+      );
+    }
+  } else {
+    console.warn(
+      `Refund callback returned non-success: ${responseCode} - ${message}`,
+    );
+  }
+
+  // Mandatory: Always return 200 OK to Hubtel
+  res.sendStatus(200);
+});
+
 export const paymentControllers = {
   initiatePayment,
   handleBookingCallback,
+  initiateRefund,
+  handleRefundCallback,
 };

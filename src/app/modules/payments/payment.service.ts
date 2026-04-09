@@ -74,7 +74,8 @@ const initiateBookingPayment = async (
     // cancellationUrl: `${config.CLIENT_URL}/booking/failed`,
     cancellationUrl: `${config.server_url}/booking/failed`,
     merchantAccountNumber: config.HUBTEL_POS_ID,
-    clientReference: `BK-${bookingId}`,
+    // clientReference: `BK-${bookingId}`,
+    clientReference: `BK-${Date.now()}`,
   };
   console.log('Initiating payment with payload:', payload);
 
@@ -95,6 +96,7 @@ const initiateBookingPayment = async (
     await prisma.transaction.create({
       data: {
         userId: booking.userId,
+        riderId: booking.riderId,
         amount: booking.price!,
         type: 'RIDE_PAYMENT',
         clientReference: payload.clientReference,
@@ -139,29 +141,77 @@ const initiateBookingPayment = async (
 };
 
 // Admin Refund Logic (Full or Partial)
+// payment.service.ts
+
+/**
+ * processRefund
+ * Strictly follows the Hubtel Refund API
+ * URL: https://refund-api.hubtel.com/refund/{Hubtel_POS_Sales_ID}/order/{orderId}
+ */
 const processRefund = async (
-  transactionId: string,
-  amount: number,
-  reason: string,
+  orderId: string, // This is the SalesInvoiceId from your callback Data
+  reason: string, // Description for the refund
 ) => {
   const auth = Buffer.from(
     `${config.HUBTEL_CLIENT_ID}:${config.HUBTEL_CLIENT_SECRET}`,
   ).toString('base64');
 
+  // Your Hubtel POS ID from config (e.g., 2038240)
+  const posId = config.HUBTEL_POS_ID;
+
+  // The endpoint path variable structure from your sample request
+  const url = `https://refund-api.hubtel.com/refund/${posId}/order/${orderId}`;
+
+  // Constructing payload based on your Sample Request snippets
   const payload = {
-    transactionId, // Hubtel's internal ID
-    amount, // Can be full amount or just the partial portion
-    reason,
-    clientReference: `REF-${Date.now()}`,
+    callbackUrl: `${config.server_url}/api/v1/payments/refund-callback`, // Optional as per sample
+    description: reason, // Explanation for the refund
   };
 
-  const response = await axios.post(
-    'https://api-v2.hubtel.com/payments/v1/refund',
-    payload,
-    { headers: { Authorization: `Basic ${auth}` } },
-  );
+  try {
+    const response = await axios.post(url, payload, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Basic ${auth}`,
+      },
+    });
+    console.log('Refund API response:', response);
+    // Handle Hubtel Success Response Codes
+    // 0000 = Success, 0001 = Pending
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      console.error('Hubtel Refund API error:', error);
+      console.error('Hubtel Refund API error.response:', error.response);
+      console.error(
+        'Hubtel Refund API error.response.data:',
+        error.response.data,
+      );
+      // Hubtel Refund API specific error handling
+      const hubtelData = error.response.data;
 
-  return response.data;
+      // Error 3000 = Order not found, 4000 = Amount < 1 cedi, etc.
+      const errorMessage = hubtelData.errors
+        ? JSON.stringify(hubtelData.errors)
+        : hubtelData.message || 'Refund API rejected the request';
+
+      console.error(
+        `Hubtel Refund API Error [${error.response.status}]:`,
+        errorMessage,
+      );
+
+      throw new AppError(
+        error.response.status,
+        `Refund Failed: ${errorMessage}`,
+      );
+    }
+
+    console.error('Connection Error to Hubtel Refund API:', error.message);
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'Unable to reach Hubtel Refund Service',
+    );
+  }
 };
 
 export const paymentServices = {

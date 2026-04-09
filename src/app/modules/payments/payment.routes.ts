@@ -16,12 +16,17 @@ router.post(
 
 /**
  * HUBTEL CALLBACKS (Public)
- * Hubtel hits these from their servers. 
+ * Hubtel hits these from their servers.
  * Do NOT add auth() middleware here.
  */
+router.post('/booking-callback', paymentControllers.handleBookingCallback);
+
 router.post(
-  '/booking-callback', 
-  paymentControllers.handleBookingCallback
+  '/refund/initiate',
+  upload.none(),
+  paymentControllers.initiateRefund,
 );
+
+router.post('/refund-callback', paymentControllers.handleRefundCallback);
 
 export const paymentRoutes = router;
