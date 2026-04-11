@@ -105,17 +105,6 @@ const markNotificationAsRead = async (
   userId: string,
   notificationId: string,
 ) => {
-  const existing = await (prisma as any).notification.findFirst({
-    where: {
-      id: notificationId,
-      userId,
-    },
-  });
-
-  if (!existing) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Notification not found');
-  }
-
   return (prisma as any).notification.update({
     where: { id: notificationId },
     data: {
