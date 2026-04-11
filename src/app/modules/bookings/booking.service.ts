@@ -12,6 +12,8 @@ import {
   calculateDistance,
   calculateEstimatedPrice,
 } from './../riders/rider.utils';
+import { emitToUser } from '../../utils/socket';
+import { notificationService } from '../notifications/notification.service';
 
 // Helper function to estimate time based on distance
 // Assuming average speed of 20 km/h for waste collection vehicles in urban areas
@@ -767,6 +769,29 @@ const acceptBooking = async (bookingId: string, riderId: string) => {
     },
   });
 
+  await notificationService.createNotificationForUsers(
+    [updatedBooking.userId, riderId],
+    {
+      type: 'booking_accepted',
+      title: 'Booking Accepted',
+      message: `${updatedBooking.rider?.name || 'A rider'} accepted your booking.`,
+      data: {
+        bookingId: updatedBooking.id,
+        riderId,
+        userId: updatedBooking.userId,
+        status: updatedBooking.status,
+      },
+    },
+  );
+
+  emitToUser(updatedBooking.userId, 'booking:accepted', {
+    bookingId: updatedBooking.id,
+    riderId,
+    userId: updatedBooking.userId,
+    status: updatedBooking.status,
+    message: `${updatedBooking.rider?.name || 'A rider'} accepted your booking.`,
+  });
+
   return updatedBooking;
 };
 
@@ -913,6 +938,29 @@ const markArrivedAtPickup = async (bookingId: string, riderId: string) => {
         },
       },
     },
+  });
+
+  await notificationService.createNotificationForUsers(
+    [updatedBooking.userId, riderId],
+    {
+      type: 'rider_arrived_pickup',
+      title: 'Rider Arrived at Pickup',
+      message: `${updatedBooking.rider?.name || 'Your rider'} has arrived at the pickup point.`,
+      data: {
+        bookingId: updatedBooking.id,
+        riderId,
+        userId: updatedBooking.userId,
+        status: updatedBooking.status,
+      },
+    },
+  );
+
+  emitToUser(updatedBooking.userId, 'booking:arrived_pickup', {
+    bookingId: updatedBooking.id,
+    riderId,
+    userId: updatedBooking.userId,
+    status: updatedBooking.status,
+    message: `${updatedBooking.rider?.name || 'Your rider'} has arrived at the pickup point.`,
   });
 
   // TODO: Send notification to customer that rider has arrived
