@@ -1123,6 +1123,31 @@ const markHeadingToStation = async (
     },
   });
 
+  await notificationService.createNotificationForUsers(
+    [updatedBooking.userId, riderId],
+    {
+      type: 'booking_heading_to_station',
+      title: 'Heading to Station',
+      message: `${bookingId} is now heading to the station.`,
+      data: {
+        bookingId: updatedBooking.id,
+        riderId,
+        userId: updatedBooking.userId,
+        stationId,
+        status: updatedBooking.status,
+      },
+    },
+  );
+
+  emitToUser(updatedBooking.userId, 'booking:heading_to_station', {
+    bookingId: updatedBooking.id,
+    riderId,
+    userId: updatedBooking.userId,
+    stationId,
+    status: updatedBooking.status,
+    message: 'Your rider is now heading to the station.',
+  });
+
   if (updatedBooking) {
     return updatedBooking;
   } else {
