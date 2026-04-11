@@ -1199,6 +1199,31 @@ const markCompleted = async (bookingId: string, riderId: string) => {
     },
   });
 
+  await notificationService.createNotificationForUsers(
+    [updatedBooking.userId, riderId],
+    {
+      type: 'booking_completed',
+      title: 'Booking Completed',
+      message: `Booking ${bookingId} has been marked as completed.`,
+      data: {
+        bookingId: updatedBooking.id,
+        riderId,
+        userId: updatedBooking.userId,
+        status: updatedBooking.status,
+        completedAt: updatedBooking.completedAt,
+      },
+    },
+  );
+
+  emitToUser(updatedBooking.userId, 'booking:completed', {
+    bookingId: updatedBooking.id,
+    riderId,
+    userId: updatedBooking.userId,
+    status: updatedBooking.status,
+    completedAt: updatedBooking.completedAt,
+    message: 'Your booking has been completed.',
+  });
+
   if (updatedBooking) {
     return updatedBooking;
   } else {
