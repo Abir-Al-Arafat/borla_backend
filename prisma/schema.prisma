@@ -356,12 +356,14 @@ model Booking {
   estimatedTime     String? // e.g., "30-45 m"
 
   // Payment details
-  paymentMethod paymentMethod
-  price         Float?
-  isPaid        Boolean       @default(false)
-  paidAt        DateTime?
-  isRefunded    Boolean       @default(false)
-  refundedAt    DateTime?
+  paymentMethod      paymentMethod
+  price              Float?
+  isPaid             Boolean       @default(false)
+  paidAt             DateTime?
+  isPaidByCustomer   Boolean       @default(false) // Track if customer has paid (for cash payments)
+  isPaidByCustomerAt DateTime? // When customer paid (for cash payments)
+  isRefunded         Boolean       @default(false)
+  refundedAt         DateTime?
 
   // Ride tracking
   arrivedAtPickup  DateTime?
