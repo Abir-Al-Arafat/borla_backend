@@ -1014,6 +1014,29 @@ const markPaymentCollectedAtPickup = async (
     updatedBooking,
   );
 
+  await notificationService.createNotificationForUsers(
+    [updatedBooking.userId, riderId],
+    {
+      type: 'booking_payment_collected',
+      title: 'Payment Collected',
+      message: 'Payment has been collected for this booking.',
+      data: {
+        bookingId: updatedBooking.id,
+        riderId,
+        userId: updatedBooking.userId,
+        status: updatedBooking.status,
+      },
+    },
+  );
+
+  emitToUser(updatedBooking.userId, 'booking:payment_collected', {
+    bookingId: updatedBooking.id,
+    riderId,
+    userId: updatedBooking.userId,
+    status: updatedBooking.status,
+    message: 'Payment has been collected for this booking.',
+  });
+
   const transaction = await prisma.transaction.findFirst({
     where: { bookingId },
   });

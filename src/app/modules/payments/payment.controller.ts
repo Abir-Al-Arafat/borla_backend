@@ -29,8 +29,9 @@ const initiatePayment = catchAsync(async (req: Request, res: Response) => {
     // req.user.userId,
     bookingId,
   );
-
+  console.log('Payment initiation result:', result);
   if (booking.riderId) {
+    console.log(`Emitting payment:initiated event to Rider ${booking.riderId}`);
     emitToUser(booking.riderId, 'payment:initiated', {
       bookingId: booking.id,
       userId: booking.userId,
@@ -38,6 +39,7 @@ const initiatePayment = catchAsync(async (req: Request, res: Response) => {
       status: 'pending',
       message: 'Customer initiated online payment for this booking.',
     });
+    console.log(`Emitted payment:initiated event to Rider ${booking.riderId}`);
   }
 
   await notificationService.createNotificationForUsers(

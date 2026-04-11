@@ -201,7 +201,12 @@ export const emitToUser = (
   event: string,
   payload: Record<string, unknown>,
 ) => {
+  console.log(
+    `Emitting event '${event}' to user ${userId} with payload:`,
+    payload,
+  );
   if (!io || !userId) return;
+  console.log(`event emitted to'${event}' to user ${userId}...`);
   io.to(`user:${userId}`).emit(event, payload);
 };
 

@@ -11,6 +11,7 @@ Booking and payment actions now produce both realtime updates and persisted noti
 3. `/payments/initiate`
 4. `/payments/booking-callback`
 5. `/payments/initiate/cash`
+6. `/:id/payment-collected`
 
 When any of these actions happen, the backend:
 
@@ -113,7 +114,7 @@ The emitted event contains:
 
 The customer can immediately see that the rider has arrived at the pickup point.
 
-## 5. Payment Initiated Flow
+## 6. Payment Initiated Flow
 
 Route:
 
@@ -144,7 +145,7 @@ What happens:
 }
 ```
 
-## 6. Booking Callback Flow (Hubtel)
+## 7. Booking Callback Flow (Hubtel)
 
 Route:
 
@@ -172,7 +173,7 @@ What happens:
 }
 ```
 
-## 7. Cash Payment Initiated Flow
+## 8. Cash Payment Initiated Flow
 
 Route:
 
@@ -201,7 +202,48 @@ What happens:
 }
 ```
 
-## 8. Notifications
+## 9. Payment Collected at Pickup Flow
+
+Route:
+
+- `PATCH /bookings/:id/payment-collected`
+
+When this should happen:
+
+- After the payment stage has been initiated and confirmed through either:
+  - online flow: `POST /payments/initiate` followed by `POST /payments/booking-callback`
+  - cash flow: `POST /payments/initiate/cash`
+
+What happens:
+
+1. Rider confirms payment collected at pickup.
+2. Booking status is updated to `payment_collected`.
+3. Notification is created for:
+   - booking user
+   - rider
+4. Realtime socket event is sent to booking user:
+
+```ts
+'booking:payment_collected';
+```
+
+### Payload
+
+```ts
+{
+  bookingId: string;
+  userId: string;
+  riderId: string;
+  status: string;
+  message: string;
+}
+```
+
+### UI meaning
+
+The customer immediately sees that payment has been collected by the rider.
+
+## 10. Notifications
 
 Notifications are created through `src/app/modules/notifications/notification.service.ts`.
 
@@ -215,12 +257,13 @@ That means the frontend gets both:
 - persistent notification history
 - live popup/in-app update
 
-## 9. Current Notification Types
+## 11. Current Notification Types
 
 The booking flow currently creates these notification records:
 
 - `booking_accepted`
 - `rider_arrived_pickup`
+- `booking_payment_collected`
 - `booking_payment_initiated`
 - `booking_payment_callback_success`
 - `booking_payment_callback_failed`
@@ -237,7 +280,7 @@ Each notification includes booking context in `data`, such as:
 }
 ```
 
-## 10. Frontend Integration
+## 12. Frontend Integration
 
 ### Listen for booking events
 
@@ -245,6 +288,7 @@ Subscribe to these socket events:
 
 - `booking:accepted`
 - `booking:arrived_pickup`
+- `booking:payment_collected`
 - `payment:initiated`
 - `payment:callback`
 - `payment:cash_completed`
@@ -262,7 +306,7 @@ Subscribe to these socket events:
 
 4. Use `notification:new` to update the notifications panel and badge count.
 
-## 11. Testing Notes
+## 13. Testing Notes
 
 To test the flow:
 
@@ -276,10 +320,14 @@ To test the flow:
 8. Confirm rider receives `payment:initiated` and both users receive notification entries.
 9. Trigger callback (`POST /payments/booking-callback`) with success/failed payload.
 10. Confirm both users receive `payment:callback` and notifications.
-11. Customer calls `POST /payments/initiate/cash`.
-12. Confirm rider receives `payment:cash_completed` and both users receive notification entries.
+11. Rider calls `PATCH /bookings/:id/payment-collected`.
+12. Confirm the customer receives `booking:payment_collected` and both users receive notifications.
+13. Customer calls `POST /payments/initiate/cash`.
+14. Confirm rider receives `payment:cash_completed` and both users receive notification entries.
+15. Rider calls `PATCH /bookings/:id/payment-collected`.
+16. Confirm the customer receives `booking:payment_collected` and both users receive notifications.
 
-## 12. File References
+## 14. File References
 
 - Socket layer: `src/app/utils/socket.ts`
 - Booking service: `src/app/modules/bookings/booking.service.ts`
