@@ -244,7 +244,65 @@ const processRefund = async (
   }
 };
 
+const initiateBookingPaymentCash = async (bookingId: string) => {
+  // This function can be expanded to handle cash payments if needed
+  console.log(`Initiating cash payment for bookingId: ${bookingId}`);
+
+  // Backward compatibility: old bookings may still store paymentMethod as "momo".
+  // Prisma now expects "hubtel", so normalize legacy records before reading.
+  await normalizeLegacyBookingPaymentMethods();
+
+  const booking = await prisma.booking.update({
+    where: { id: bookingId as string },
+    data: {
+      // status: 'completed',
+      paymentMethod: 'cash',
+      isPaidByCustomer: true,
+      isPaidByCustomerAt: new Date(),
+    },
+  });
+
+  console.log('Updated booking for cash payment:', booking);
+
+  if (!booking) throw new AppError(httpStatus.NOT_FOUND, 'Booking not found');
+
+  // Ensure only the assigned rider can trigger the payment
+  // if (booking.userId !== userId) {
+  //   throw new AppError(
+  //     httpStatus.FORBIDDEN,
+  //     'You are not assigned to this booking',
+  //   );
+  // }
+
+  // Ensure payment is only requested after arrival at pickup
+  if (booking.status !== 'arrived_pickup') {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Rider must arrive at pickup before requesting payment',
+    );
+  }
+
+  const transaction = await prisma.transaction.create({
+    data: {
+      userId: booking.userId,
+      riderId: booking.riderId,
+      amount: booking.price!,
+      type: 'RIDE_PAYMENT',
+      clientReference: `BK-${bookingId}`,
+      bookingId: booking.id,
+      reference: `BK-${bookingId}`,
+      status: 'pending',
+    },
+  });
+
+  console.log('Created transaction for cash payment:', transaction);
+
+  // return booking details or transaction details as needed
+  return booking;
+};
+
 export const paymentServices = {
   initiateBookingPayment,
+  initiateBookingPaymentCash,
   processRefund,
 };

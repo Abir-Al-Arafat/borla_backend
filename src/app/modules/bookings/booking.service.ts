@@ -957,6 +957,54 @@ const markPaymentCollectedAtPickup = async (
     },
   });
 
+  console.log(
+    `Booking ${bookingId} marked as payment collected by rider ${riderId}`,
+  );
+
+  console.log(
+    'Updated booking after marking payment collected:',
+    updatedBooking,
+  );
+
+  const transaction = await prisma.transaction.findFirst({
+    where: { bookingId },
+  });
+
+  if (!transaction) {
+    console.warn(
+      `No transaction found for booking ${bookingId} when marking payment collected. This might indicate an issue with transaction creation.`,
+    );
+  }
+
+  if (transaction) {
+    const totalAmount = Number(transaction.amount);
+    const riderShare = totalAmount * 0.8; // Borla Split: 80% to Rider
+    const updatedTransaction = await prisma.transaction.update({
+      where: { id: transaction.id },
+      data: {
+        status: 'success',
+        commission: totalAmount - riderShare,
+        comissionPercentage: 20, // 20% commission for Borla
+        riderEarnings: riderShare,
+      },
+    });
+
+    console.log(
+      'Updated transaction after marking payment collected:',
+      updatedTransaction,
+    );
+
+    const updatedWallet = await prisma.wallet.update({
+      where: { userId: riderId },
+      data: { balance: { increment: riderShare } },
+    });
+
+    console.log(
+      `Updated wallet for rider ${riderId} after marking payment collected:`,
+      updatedWallet,
+    );
+  }
+
   if (updatedBooking) {
     return updatedBooking;
   } else {

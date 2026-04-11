@@ -124,8 +124,6 @@ const initiateRefund = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// payment.controller.ts
-
 const handleRefundCallback = catchAsync(async (req: Request, res: Response) => {
   console.log('Received Refund Callback:', JSON.stringify(req.body, null, 2));
   console.log('Received Refund Callback:', req.body);
@@ -177,9 +175,28 @@ const handleRefundCallback = catchAsync(async (req: Request, res: Response) => {
   res.sendStatus(200);
 });
 
+const initiateBookingPaymentCash = catchAsync(
+  async (req: Request, res: Response) => {
+    // This function can be expanded to handle cash payments if neededconsole.log('req.body:', req.body);
+    console.log('req.body:', req.body);
+    console.log('req.user.userId:', req.user.userId);
+
+    const { bookingId } = req.body;
+    const result = await paymentServices.initiateBookingPaymentCash(bookingId);
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Cash payment initiated successfully.',
+      data: result,
+    });
+  },
+);
+
 export const paymentControllers = {
   initiatePayment,
   handleBookingCallback,
   initiateRefund,
   handleRefundCallback,
+
+  initiateBookingPaymentCash,
 };

@@ -29,4 +29,11 @@ router.post(
 
 router.post('/refund-callback', paymentControllers.handleRefundCallback);
 
+router.post(
+  '/initiate/cash',
+  upload.none(),
+  auth(USER_ROLE.user),
+  paymentControllers.initiateBookingPaymentCash,
+);
+
 export const paymentRoutes = router;
