@@ -4,14 +4,55 @@ import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import httpStatus from 'http-status';
 import { paymentServices } from './payment.service';
+import { emitToUser } from '../../utils/socket';
+import { notificationService } from '../notifications/notification.service';
+import AppError from '../../error/AppError';
 
 const initiatePayment = catchAsync(async (req: Request, res: Response) => {
   console.log('req.body:', req.body);
   console.log('req.user.userId:', req.user.userId);
   const { bookingId } = req.body;
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    select: {
+      id: true,
+      userId: true,
+      riderId: true,
+    },
+  });
+
+  if (!booking) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Booking not found');
+  }
+
   const result = await paymentServices.initiateBookingPayment(
     // req.user.userId,
     bookingId,
+  );
+
+  if (booking.riderId) {
+    emitToUser(booking.riderId, 'payment:initiated', {
+      bookingId: booking.id,
+      userId: booking.userId,
+      riderId: booking.riderId,
+      status: 'pending',
+      message: 'Customer initiated online payment for this booking.',
+    });
+  }
+
+  await notificationService.createNotificationForUsers(
+    [booking.userId, booking.riderId].filter(Boolean) as string[],
+    {
+      type: 'booking_payment_initiated',
+      title: 'Payment Initiated',
+      message: 'Online payment has been initiated for this booking.',
+      data: {
+        bookingId: booking.id,
+        userId: booking.userId,
+        riderId: booking.riderId,
+        status: 'pending',
+      },
+    },
   );
 
   sendResponse(res, {
@@ -96,15 +137,80 @@ const handleBookingCallback = catchAsync(
         console.log(
           `updatedTransaction: ${JSON.stringify(updatedTransaction, null, 2)}, updatedWallet: ${JSON.stringify(updatedWallet, null, 2)}, updatedBooking: ${JSON.stringify(updatedBooking, null, 2)}`,
         );
+
+        const targetUsers = [
+          updatedBooking.userId,
+          transaction.booking?.riderId,
+        ].filter(Boolean) as string[];
+
+        await notificationService.createNotificationForUsers(targetUsers, {
+          type: 'booking_payment_callback_success',
+          title: 'Payment Successful',
+          message: 'Booking payment callback confirmed successful payment.',
+          data: {
+            bookingId: updatedBooking.id,
+            transactionId: updatedTransaction.id,
+            status: 'success',
+          },
+        });
+
+        targetUsers.forEach(targetUserId => {
+          emitToUser(targetUserId, 'payment:callback', {
+            bookingId: updatedBooking.id,
+            transactionId: updatedTransaction.id,
+            status: 'success',
+            message: 'Booking payment callback confirmed successful payment.',
+          });
+        });
       }
     } else {
       // 4. Handle Failed Payments (e.g., Wrong PIN, Insufficient Funds)
       console.warn(`Payment failed for ${clientReference}: ${Message}`);
       if (clientReference) {
-        await prisma.transaction.update({
+        const failedTransaction = await prisma.transaction.update({
           where: { clientReference: clientReference },
           data: { status: 'failed' },
+          include: {
+            booking: {
+              select: {
+                id: true,
+                userId: true,
+                riderId: true,
+              },
+            },
+          },
         });
+
+        const targetUsers = [
+          failedTransaction.booking?.userId,
+          failedTransaction.booking?.riderId,
+        ].filter(Boolean) as string[];
+
+        if (targetUsers.length) {
+          await notificationService.createNotificationForUsers(targetUsers, {
+            type: 'booking_payment_callback_failed',
+            title: 'Payment Failed',
+            message:
+              Message ||
+              'Booking payment callback reported a failed payment attempt.',
+            data: {
+              bookingId: failedTransaction.booking?.id || null,
+              transactionId: failedTransaction.id,
+              status: 'failed',
+            },
+          });
+
+          targetUsers.forEach(targetUserId => {
+            emitToUser(targetUserId, 'payment:callback', {
+              bookingId: failedTransaction.booking?.id || null,
+              transactionId: failedTransaction.id,
+              status: 'failed',
+              message:
+                Message ||
+                'Booking payment callback reported a failed payment attempt.',
+            });
+          });
+        }
       }
     }
 
@@ -183,6 +289,32 @@ const initiateBookingPaymentCash = catchAsync(
 
     const { bookingId } = req.body;
     const result = await paymentServices.initiateBookingPaymentCash(bookingId);
+
+    if (result.riderId) {
+      emitToUser(result.riderId, 'payment:cash_completed', {
+        bookingId: result.id,
+        userId: result.userId,
+        riderId: result.riderId,
+        status: 'success',
+        message: 'Customer completed payment by cash.',
+      });
+    }
+
+    await notificationService.createNotificationForUsers(
+      [result.userId, result.riderId].filter(Boolean) as string[],
+      {
+        type: 'booking_payment_cash_completed',
+        title: 'Cash Payment Completed',
+        message: 'Customer completed payment by cash for this booking.',
+        data: {
+          bookingId: result.id,
+          userId: result.userId,
+          riderId: result.riderId,
+          status: 'success',
+        },
+      },
+    );
+
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
