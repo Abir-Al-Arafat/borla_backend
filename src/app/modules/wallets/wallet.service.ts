@@ -38,7 +38,7 @@ const initiateRiderTopUp = async (userId: string, amount: number) => {
     const transaction = await prisma.transaction.create({
       data: {
         userId,
-        amount,
+        amount: Number(amount),
         type: 'TOPUP',
         status: 'pending',
         clientReference,
