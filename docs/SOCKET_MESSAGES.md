@@ -182,7 +182,36 @@ Emits event to room:
 
 - `chat:{chatId}`
 
-## 7. Message Events Emitted From Backend
+## 7. Booking Events Emitted From Backend
+
+### `booking:new`
+
+Emitted when a booking is created and its pickup location falls inside a rider's zone.
+
+Targets:
+
+1. Verified riders assigned to the matching zone through `emitToUser(riderId, 'booking:new', payload)`
+
+Payload includes:
+
+- `bookingId`
+- `userId`
+- `status`
+- `pickupAddress`
+- `pickupLocation`
+- `wasteCategory`
+- `binSize`
+- `binQuantity`
+- `wasteSize`
+- `estimatedDistance`
+- `estimatedTime`
+- `price`
+- `createdAt`
+- `user`
+
+This event is what the rider dashboard listens to for new available work.
+
+## 8. Message Events Emitted From Backend
 
 Currently emitted event name:
 

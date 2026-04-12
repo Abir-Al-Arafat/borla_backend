@@ -7,31 +7,19 @@ import {
   IGetBookingsQuery,
   IUpdateBookingStatus,
 } from './booking.interface';
-import { validateBookingQuery } from './booking.utils';
+import {
+  validateBookingQuery,
+  normalizeZoneBoundary,
+  isPointInsideBoundary,
+  estimateTimeInMinutes,
+  formatEstimatedTime,
+} from './booking.utils';
 import {
   calculateDistance,
   calculateEstimatedPrice,
 } from './../riders/rider.utils';
 import { emitToUser } from '../../utils/socket';
 import { notificationService } from '../notifications/notification.service';
-
-// Helper function to estimate time based on distance
-// Assuming average speed of 20 km/h for waste collection vehicles in urban areas
-const estimateTimeInMinutes = (distanceInKm: number): number => {
-  const averageSpeedKmH = 20;
-  const timeInHours = distanceInKm / averageSpeedKmH;
-  return Math.ceil(timeInHours * 60);
-};
-
-const formatEstimatedTime = (timeInMinutes: number): string => {
-  if (timeInMinutes < 60) {
-    return `${timeInMinutes} min`;
-  } else {
-    const hours = Math.floor(timeInMinutes / 60);
-    const minutes = timeInMinutes % 60;
-    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
-  }
-};
 
 // Helper function to get rider statistics
 const getRiderStats = async (riderId: string) => {
@@ -82,6 +70,51 @@ const attachRiderStatsToBooking = async (booking: any) => {
   return booking;
 };
 
+const getRidersForBookingNotification = async (pickupLocation: {
+  type: 'Point';
+  coordinates: [number, number];
+}) => {
+  const riders = await prisma.user.findMany({
+    where: {
+      role: 'rider',
+      riderVerified: true,
+      isDeleted: false,
+      zoneId: { not: null },
+    },
+    select: {
+      id: true,
+      name: true,
+      zoneId: true,
+      zone: {
+        select: {
+          id: true,
+          isDeleted: true,
+          boundary: true,
+        },
+      },
+    },
+  });
+
+  const ridersInMatchingZones = riders
+    .filter(rider => {
+      if (!rider.zone || rider.zone.isDeleted || !rider.zone.boundary) {
+        return false;
+      }
+
+      return isPointInsideBoundary(
+        pickupLocation.coordinates,
+        rider.zone.boundary,
+      );
+    })
+    .map(rider => ({
+      id: rider.id,
+      name: rider.name,
+      zoneId: rider.zoneId,
+    }));
+
+  return ridersInMatchingZones;
+};
+
 // Create a new booking (User)
 const createBooking = async (userId: string, payload: ICreateBooking) => {
   // Verify user exists and is not a rider
@@ -106,7 +139,10 @@ const createBooking = async (userId: string, payload: ICreateBooking) => {
   }
 
   // Create GeoJSON Point for pickup location
-  const pickupLocation = {
+  const pickupLocation: {
+    type: 'Point';
+    coordinates: [number, number];
+  } = {
     type: 'Point',
     coordinates: [payload.pickupLongitude, payload.pickupLatitude],
   };
@@ -170,6 +206,58 @@ const createBooking = async (userId: string, payload: ICreateBooking) => {
     },
   });
 
+  const ridersInZone = await getRidersForBookingNotification(pickupLocation);
+
+  console.log(
+    `Found ${ridersInZone.length} riders in zone for booking notification`,
+  );
+
+  console.log('Riders in zone:', ridersInZone);
+
+  if (ridersInZone.length > 0) {
+    const riderIds = ridersInZone.map(rider => rider.id);
+
+    await notificationService.createNotificationForUsers(riderIds, {
+      type: 'new_booking_available',
+      title: 'New Booking Available',
+      message: 'A new booking is available in your zone.',
+      data: {
+        bookingId: booking.id,
+        userId: booking.userId,
+        status: booking.status,
+        pickupAddress: booking.pickupAddress,
+        pickupLocation: booking.pickupLocation,
+        wasteCategory: booking.wasteCategory,
+        binSize: booking.binSize,
+        binQuantity: booking.binQuantity,
+        wasteSize: booking.wasteSize,
+        estimatedDistance: booking.estimatedDistance,
+        estimatedTime: booking.estimatedTime,
+        price: booking.price,
+      },
+    });
+
+    riderIds.forEach(riderId => {
+      emitToUser(riderId, 'booking:new', {
+        bookingId: booking.id,
+        userId: booking.userId,
+        status: booking.status,
+        pickupAddress: booking.pickupAddress,
+        pickupLocation: booking.pickupLocation,
+        wasteCategory: booking.wasteCategory,
+        binSize: booking.binSize,
+        binQuantity: booking.binQuantity,
+        wasteSize: booking.wasteSize,
+        estimatedDistance: booking.estimatedDistance,
+        estimatedTime: booking.estimatedTime,
+        price: booking.price,
+        createdAt: booking.createdAt,
+        user: booking.user,
+        message: 'A new booking is available in your zone.',
+      });
+    });
+  }
+
   return booking;
 };
 
@@ -178,6 +266,7 @@ const getAvailableBookingsForRider = async (
   riderId: string,
   query: IGetBookingsQuery,
 ) => {
+  console.log('get available bookings for rider called with query:', query);
   // Verify rider exists and is verified, and get their zone
   const rider = await prisma.user.findUnique({
     where: { id: riderId },
@@ -228,7 +317,7 @@ const getAvailableBookingsForRider = async (
   const skip = (page - 1) * limit;
 
   // Get the zone boundary
-  const zoneBoundary = rider.zone.boundary as any;
+  const zoneBoundary = normalizeZoneBoundary(rider.zone.boundary as any);
 
   const bookingsPipeline: any[] = [
     {

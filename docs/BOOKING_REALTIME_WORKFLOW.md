@@ -6,18 +6,59 @@ This document explains how booking realtime and notification flows work for ride
 
 Booking and payment actions now produce both realtime updates and persisted notifications:
 
-1. `/:id/accept`
-2. `/:id/arrive-pickup`
-3. `/payments/initiate`
-4. `/payments/booking-callback`
-5. `/payments/initiate/cash`
-6. `/:id/payment-collected`
+1. `POST /bookings` (new booking available event)
+2. `/:id/accept`
+3. `/:id/arrive-pickup`
+4. `/payments/initiate`
+5. `/payments/booking-callback`
+6. `/payments/initiate/cash`
+7. `/:id/payment-collected`
 
 When any of these actions happen, the backend:
 
 1. Updates the booking in the database.
 2. Creates notifications for the rider and the booking user.
 3. Emits realtime socket events to the target user(s) so the UI updates immediately.
+
+## 3. New Booking Available Flow
+
+Route:
+
+- `POST /bookings`
+
+What happens:
+
+1. Customer creates a booking.
+2. Booking is saved with `status = pending`.
+3. The pickup point is matched against zone geometry.
+4. Verified riders assigned to the matching zone receive:
+   - a notification record
+   - a realtime `booking:new` event
+
+### Payload
+
+```ts
+{
+  bookingId: string;
+  userId: string;
+  status: string;
+  pickupAddress: string;
+  pickupLocation: unknown;
+  wasteCategory: string;
+  binSize: string;
+  binQuantity: number;
+  wasteSize: number;
+  estimatedDistance: number | null;
+  estimatedTime: string | null;
+  price: number | null;
+  createdAt: Date;
+  user: unknown;
+}
+```
+
+### UI meaning
+
+Riders can immediately see new work that belongs to their zone without polling.
 
 ## 2. Socket Setup
 
@@ -286,6 +327,7 @@ Each notification includes booking context in `data`, such as:
 
 Subscribe to these socket events:
 
+- `booking:new`
 - `booking:accepted`
 - `booking:arrived_pickup`
 - `booking:payment_collected`
@@ -296,15 +338,16 @@ Subscribe to these socket events:
 
 ### Suggested UI behavior
 
-1. On `booking:accepted`, update the booking card to show the assigned rider.
-2. On `booking:arrived_pickup`, show that the rider has reached the pickup point.
-3. After `arrive-pickup`, show payment progress using:
+1. On `booking:new`, insert the booking into the rider's available list.
+2. On `booking:accepted`, update the booking card to show the assigned rider.
+3. On `booking:arrived_pickup`, show that the rider has reached the pickup point.
+4. After `arrive-pickup`, show payment progress using:
 
 - `payment:initiated`
 - `payment:callback`
 - `payment:cash_completed`
 
-4. Use `notification:new` to update the notifications panel and badge count.
+5. Use `notification:new` to update the notifications panel and badge count.
 
 ## 13. Testing Notes
 
@@ -312,20 +355,21 @@ To test the flow:
 
 1. Connect the customer and rider sockets with valid JWT tokens.
 2. Open the booking screen for the customer.
-3. Rider calls `PATCH /bookings/:id/accept`.
-4. Confirm the customer receives `booking:accepted` and a `notification:new` event.
-5. Rider calls `PATCH /bookings/:id/arrive-pickup`.
-6. Confirm the customer receives `booking:arrived_pickup` and another `notification:new` event.
-7. Customer calls `POST /payments/initiate`.
-8. Confirm rider receives `payment:initiated` and both users receive notification entries.
-9. Trigger callback (`POST /payments/booking-callback`) with success/failed payload.
-10. Confirm both users receive `payment:callback` and notifications.
-11. Rider calls `PATCH /bookings/:id/payment-collected`.
-12. Confirm the customer receives `booking:payment_collected` and both users receive notifications.
-13. Customer calls `POST /payments/initiate/cash`.
-14. Confirm rider receives `payment:cash_completed` and both users receive notification entries.
-15. Rider calls `PATCH /bookings/:id/payment-collected`.
-16. Confirm the customer receives `booking:payment_collected` and both users receive notifications.
+3. Customer creates a booking and confirm matching riders receive `booking:new` and `notification:new`.
+4. Rider calls `PATCH /bookings/:id/accept`.
+5. Confirm the customer receives `booking:accepted` and a `notification:new` event.
+6. Rider calls `PATCH /bookings/:id/arrive-pickup`.
+7. Confirm the customer receives `booking:arrived_pickup` and another `notification:new` event.
+8. Customer calls `POST /payments/initiate`.
+9. Confirm rider receives `payment:initiated` and both users receive notification entries.
+10. Trigger callback (`POST /payments/booking-callback`) with success/failed payload.
+11. Confirm both users receive `payment:callback` and notifications.
+12. Rider calls `PATCH /bookings/:id/payment-collected`.
+13. Confirm the customer receives `booking:payment_collected` and both users receive notifications.
+14. Customer calls `POST /payments/initiate/cash`.
+15. Confirm rider receives `payment:cash_completed` and both users receive notification entries.
+16. Rider calls `PATCH /bookings/:id/payment-collected`.
+17. Confirm the customer receives `booking:payment_collected` and both users receive notifications.
 
 ## 14. File References
 

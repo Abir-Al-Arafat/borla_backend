@@ -53,6 +53,8 @@ It does not read token from URL query (for example `?token=...`).
 
 If token is invalid, connection will fail with unauthorized error.
 
+To test booking availability events, connect as a verified rider whose zone matches the booking pickup location.
+
 ## 3. Join Chat Room
 
 After connection, emit event:
@@ -99,14 +101,15 @@ If `chatId` is empty:
 In the same Socket.IO tab, subscribe/listen to:
 
 1. `message:new`
-2. `chat:typing`
-3. `chat:join:success`
-4. `chat:join:failure`
-5. `chat:leave:success`
-6. `chat:leave:failure`
-7. `chat:typing:success`
-8. `chat:typing:failure`
-9. `socket:connection:success`
+2. `booking:new`
+3. `chat:typing`
+4. `chat:join:success`
+5. `chat:join:failure`
+6. `chat:leave:success`
+7. `chat:leave:failure`
+8. `chat:typing:success`
+9. `chat:typing:failure`
+10. `socket:connection:success`
 
 Keep this tab open.
 
@@ -237,6 +240,12 @@ If `chatId` is empty:
 - Confirm payload format is correct for each event.
 - `chat:join` and `chat:leave` expect a raw string `"<CHAT_ID>"`.
 - `chat:typing` expects `{ "chatId": "...", "isTyping": true }`.
+
+6. You do not see `booking:new`:
+
+- Confirm the socket user is a verified rider.
+- Confirm the rider belongs to the zone that contains the booking pickup location.
+- Confirm the booking was created after the socket connection was established.
 
 ## 10. Recommended Test Sequence
 
