@@ -16,6 +16,17 @@ router.post(
   walletControllers.topUp,
 );
 
+/**
+ * HUBTEL CALLBACKS (Public)
+ * Hubtel hits these from their servers.
+ * Do NOT add auth() middleware here.
+ */
+router.post(
+  '/receive-callback',
+  upload.none(),
+  walletControllers.handleTopUpCallback,
+);
+
 // Route for getting wallet balance
 router.get(
   '/self',
@@ -33,7 +44,7 @@ router.post(
 
 // 2. HUBTEL CALLBACKS (Public: Hubtel hits these)
 // These MUST match the PrimaryCallbackURL sent in your Hubtel request
-router.post('/receive-callback', walletControllers.handleReceiveCallback);
+// router.post('/receive-callback', walletControllers.handleReceiveCallback);
 router.post('/send-callback', walletControllers.handleSendCallback);
 
 export const walletRoutes = router;

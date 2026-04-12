@@ -4,82 +4,62 @@ import httpStatus from 'http-status';
 import axios from 'axios';
 import config from 'app/config';
 
-const RECEIVE_MONEY_URL = (posId: string) =>
-  `https://rmp.hubtel.com/merchantaccount/merchants/${posId}/receive/mobilemoney`;
-
-const initiateRiderTopUp = async (
-  userId: string,
-  amount: number,
-  phone: string,
-  channel: string,
-) => {
-  console.log(
-    'Initiating top-up for userId:',
-    userId,
-    'amount:',
-    amount,
-    'phone:',
-    phone,
-    'channel:',
-    channel,
-  );
+const initiateRiderTopUp = async (userId: string, amount: number) => {
+  console.log('Initiating top-up with userId:', userId, 'amount:', amount);
   const user = await prisma.user.findUnique({ where: { id: userId } });
-
-  if (!user || user.role !== 'rider')
-    throw new AppError(httpStatus.FORBIDDEN, 'Only riders can top up');
-
-  const clientReference = `TOP-${Date.now()}`;
-  const reference = `TOPUP-INIT-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-
-  const payload = {
-    CustomerName: user.name || 'Borla User', // Optional [cite: 100]
-    CustomerMsisdn: phone, // International format (e.g., 233...) [cite: 124]
-    Channel: channel, // mtn-gh, vodafone-gh, or tigo-gh [cite: 131-133]
-    Amount: amount, // Max 2 decimal places [cite: 138-140]
-    PrimaryCallbackURL: `${config.server_url}/api/v1/payments/receive-callback`,
-    Description: `Wallet Top-up: ${user.name || 'Borla User'}`,
-    ClientReference: clientReference,
-  };
+  if (!user) throw new AppError(httpStatus.NOT_FOUND, 'User not found');
 
   const auth = Buffer.from(
-    `${config.HUBTEL_CLIENT_ID}:${config.HUBTEL_CLIENT_SECRET}`,
+    `${config.HUBTEL_API_ID}:${config.HUBTEL_API_KEY}`,
   ).toString('base64');
 
-  console.log('auth:', auth);
+  // BK-TOP (6) + userId suffix (8) + timestamp (13) = 27 chars (Safe < 36)
+  const clientReference = `BK-TOP-${userId.slice(-8)}-${Date.now()}`;
+
+  const payload = {
+    totalAmount: amount,
+    description: `Borla Wallet Top-up: ${user.name}`,
+    callbackUrl: `${config.server_url}/api/v1/wallets/receive-callback`,
+    returnUrl: `${config.server_url}/wallet/success`,
+    cancellationUrl: `${config.server_url}/wallet/failed`,
+    merchantAccountNumber: config.HUBTEL_POS_ID,
+    clientReference: clientReference,
+  };
+
   try {
     const response = await axios.post(
-      RECEIVE_MONEY_URL(config.HUBTEL_POS_ID as string),
+      'https://payproxyapi.hubtel.com/items/initiate',
       payload,
-      {
-        headers: { Authorization: `Basic ${auth}` },
-      },
+      { headers: { Authorization: `Basic ${auth}` } },
     );
-    // Log "pending" transaction to Prisma
-    await prisma.transaction.create({
+    console.log('response:', response);
+    console.log('response.data:', response.data);
+    // Track the top-up intent in the transactions table
+    const transaction = await prisma.transaction.create({
       data: {
         userId,
         amount,
         type: 'TOPUP',
-        clientReference,
-        reference,
         status: 'pending',
+        clientReference,
+        reference: clientReference,
       },
     });
-    return response.data; // ResponseCode "0001" means pending customer approval [cite: 478, 480]
+    console.log('Top-up transaction created in DB:', transaction);
+    // Return the hosted checkout URL to the frontend
+    return response.data.data.checkoutUrl;
   } catch (error: any) {
-    console.error('error.response:', error.response);
+    console.error('Hubtel Top-up Error:', error);
     console.error('error.response?.data:', error.response?.data);
     console.error('error.message:', error.message);
-    console.error(
-      'Error initiating top-up:',
-      error.response?.data || error.message,
-    );
     if (error.response) {
-      console.error('Hubtel Error Response:', error.response.data);
+      console.error(
+        'Hubtel Top-up Error:',
+        JSON.stringify(error.response.data, null, 2),
+      );
       throw new AppError(
         error.response.status,
-        error.response.data.message ||
-          'No particular error message from Hubtel',
+        'Hubtel failed to initiate top-up',
       );
     }
     throw error;
