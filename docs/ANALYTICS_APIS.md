@@ -22,14 +22,15 @@ Authorization: Bearer <admin_token>
 
 ## 1. Pickup Success Rate
 
-Get daily pickup success rate (percentage of successful pickups).
+Get pickup success rate for a zone as a time series of percentage values.
 
-**Endpoint:** `GET /pickup-success-rate`
+**Endpoint:** `GET /zones/:zoneId/pickup-success-rate`
 
 **Query Parameters:**
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| period | enum | No | weekly | Time period: `daily`, `weekly`, `monthly` |
+| zoneId | string | Yes | - | Zone ID in the URL path |
+| period | enum | No | all-time | Time period: `weekly`, `monthly`, `yearly`, `all-time` |
 | startDate | string | No | - | Start date (ISO format) |
 | endDate | string | No | now | End date (ISO format) |
 
@@ -40,13 +41,13 @@ Get daily pickup success rate (percentage of successful pickups).
   "success": true,
   "message": "Pickup success rate retrieved successfully",
   "data": [
-    { "day": "Day 1", "rate": 88 },
-    { "day": "Day 2", "rate": 92 },
-    { "day": "Day 3", "rate": 86 },
-    { "day": "Day 4", "rate": 80 },
-    { "day": "Day 5", "rate": 89 },
-    { "day": "Day 6", "rate": 83 },
-    { "day": "Day 7", "rate": 85 }
+    { "day": "Apr 6", "rate": 88 },
+    { "day": "Apr 7", "rate": 92 },
+    { "day": "Apr 8", "rate": 86 },
+    { "day": "Apr 9", "rate": 80 },
+    { "day": "Apr 10", "rate": 89 },
+    { "day": "Apr 11", "rate": 83 },
+    { "day": "Apr 12", "rate": 85 }
   ]
 }
 ```
@@ -55,7 +56,7 @@ Get daily pickup success rate (percentage of successful pickups).
 
 ```tsx
 const { data } = await fetch(
-  '/api/v1/operations/pickup-success-rate?period=weekly',
+  `/api/v1/operations/zones/${zoneId}/pickup-success-rate?period=weekly`,
 );
 // Use data array directly in BarChart component
 ```
@@ -381,10 +382,10 @@ const { data } = await fetch(
 
 ## Complete Example Requests
 
-### Get Weekly Success Rate
+### Get Zone Success Rate
 
 ```bash
-curl -X GET "http://localhost:5000/api/v1/operations/pickup-success-rate?period=weekly" \
+curl -X GET "http://localhost:5000/api/v1/operations/zones/<zoneId>/pickup-success-rate?period=weekly" \
   -H "Authorization: Bearer <admin_token>"
 ```
 
@@ -446,7 +447,9 @@ export function AnalyticsDashboard() {
   useEffect(() => {
     // Fetch all analytics data
     Promise.all([
-      fetch('/api/v1/operations/pickup-success-rate?period=weekly'),
+      fetch(
+        `/api/v1/operations/zones/${zoneId}/pickup-success-rate?period=weekly`,
+      ),
       fetch('/api/v1/operations/zone-ranking?period=monthly&limit=5'),
       fetch('/api/v1/operations/top-riders?period=weekly&limit=5'),
     ])

@@ -64,7 +64,12 @@ const getOperationsDashboard = catchAsync(
 );
 
 const getPickupSuccessRate = catchAsync(async (req: Request, res: Response) => {
-  const result = await operationsServices.getPickupSuccessRate(req.query);
+  const result = await operationsServices.getPickupSuccessRate({
+    ...req.query,
+    zoneId:
+      (req.params.zoneId as string | undefined) ??
+      (req.query.zoneId as string | undefined),
+  });
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

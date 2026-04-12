@@ -44,6 +44,13 @@ export interface IPickupSuccessRate {
   rate: number;
 }
 
+export interface IPickupSuccessRateQuery {
+  zoneId?: string;
+  period?: 'weekly' | 'monthly' | 'yearly' | 'all-time';
+  startDate?: string;
+  endDate?: string;
+}
+
 export interface IZoneRanking {
   rank: number;
   zone: string;

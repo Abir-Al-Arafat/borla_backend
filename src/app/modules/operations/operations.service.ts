@@ -7,6 +7,7 @@ import {
   ICompletionRate,
   IZoneHealth,
   IPickupSuccessRate,
+  IPickupSuccessRateQuery,
   IZoneRanking,
   ITopRider,
   IRankingQuery,
@@ -18,6 +19,167 @@ import {
   IRiderListItem,
   IRiderListQuery,
 } from './operations.interface';
+
+const MONTH_LABELS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+const startOfDay = (date: Date) => {
+  const result = new Date(date);
+  result.setHours(0, 0, 0, 0);
+  return result;
+};
+
+const startOfMonth = (date: Date) => {
+  const result = new Date(date);
+  result.setDate(1);
+  result.setHours(0, 0, 0, 0);
+  return result;
+};
+
+const addDays = (date: Date, days: number) => {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+};
+
+const addMonths = (date: Date, months: number) => {
+  const result = new Date(date);
+  result.setMonth(result.getMonth() + months);
+  return result;
+};
+
+const getDateKey = (date: Date, granularity: 'day' | 'month') => {
+  if (granularity === 'month') {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
+
+const getDateLabel = (date: Date, granularity: 'day' | 'month') => {
+  if (granularity === 'month') {
+    return `${MONTH_LABELS[date.getMonth()]} ${date.getFullYear()}`;
+  }
+
+  return `${MONTH_LABELS[date.getMonth()]} ${date.getDate()}`;
+};
+
+const resolvePickupSuccessRateWindow = async (
+  query: IPickupSuccessRateQuery,
+) => {
+  const { period = 'all-time', startDate, endDate, zoneId } = query;
+  const now = new Date();
+  const resolvedEnd = endDate ? new Date(endDate) : now;
+
+  if (startDate) {
+    return {
+      start: new Date(startDate),
+      end: resolvedEnd,
+      granularity:
+        period === 'weekly' || period === 'monthly' ? 'day' : 'month',
+    } as const;
+  }
+
+  if (period === 'weekly') {
+    return {
+      start: startOfDay(addDays(resolvedEnd, -6)),
+      end: resolvedEnd,
+      granularity: 'day' as const,
+    };
+  }
+
+  if (period === 'monthly') {
+    return {
+      start: startOfDay(addDays(resolvedEnd, -29)),
+      end: resolvedEnd,
+      granularity: 'day' as const,
+    };
+  }
+
+  if (period === 'yearly') {
+    return {
+      start: startOfMonth(addMonths(resolvedEnd, -11)),
+      end: resolvedEnd,
+      granularity: 'month' as const,
+    };
+  }
+
+  const earliestBooking = await prisma.booking.findFirst({
+    where: {
+      status: {
+        not: bookingStatus.cancelled,
+      },
+      ...(zoneId
+        ? {
+            rider: {
+              zoneId,
+            },
+          }
+        : {}),
+    },
+    orderBy: {
+      requestedAt: 'asc',
+    },
+    select: {
+      requestedAt: true,
+    },
+  });
+
+  return {
+    start: earliestBooking?.requestedAt
+      ? startOfMonth(earliestBooking.requestedAt)
+      : startOfMonth(resolvedEnd),
+    end: resolvedEnd,
+    granularity: 'month' as const,
+  };
+};
+
+const buildPickupSuccessBuckets = (
+  start: Date,
+  end: Date,
+  granularity: 'day' | 'month',
+) => {
+  const buckets: Array<{
+    key: string;
+    day: string;
+    total: number;
+    completed: number;
+  }> = [];
+
+  const cursor =
+    granularity === 'month' ? startOfMonth(start) : startOfDay(start);
+  const final = granularity === 'month' ? startOfMonth(end) : startOfDay(end);
+
+  while (cursor <= final) {
+    buckets.push({
+      key: getDateKey(cursor, granularity),
+      day: getDateLabel(cursor, granularity),
+      total: 0,
+      completed: 0,
+    });
+
+    if (granularity === 'month') {
+      cursor.setMonth(cursor.getMonth() + 1);
+      cursor.setDate(1);
+    } else {
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  }
+
+  return buckets;
+};
 
 // Get pickups per hour
 const getPickupsPerHour = async (query: IDashboardQuery) => {
@@ -453,70 +615,62 @@ const getOperationsDashboard = async (query: IDashboardQuery) => {
   };
 };
 
-// Get pickup success rate by day
-const getPickupSuccessRate = async (query: IRankingQuery) => {
-  const { period = 'weekly', startDate, endDate } = query;
+// Get pickup success rate by zone and period
+const getPickupSuccessRate = async (query: IPickupSuccessRateQuery) => {
+  const { zoneId } = query;
+  const { start, end, granularity } =
+    await resolvePickupSuccessRateWindow(query);
 
-  const now = new Date();
-  let start: Date;
-  let end: Date = endDate ? new Date(endDate) : now;
+  const whereConditions: any = {
+    requestedAt: {
+      gte: start,
+      lte: end,
+    },
+    status: {
+      not: bookingStatus.cancelled,
+    },
+  };
 
-  if (startDate) {
-    start = new Date(startDate);
-  } else {
-    // Default to 7 days for weekly view
-    start = new Date(now);
-    start.setDate(now.getDate() - 7);
+  if (zoneId) {
+    whereConditions.rider = {
+      zoneId,
+    };
   }
 
-  // Get all bookings in date range
   const bookings = await prisma.booking.findMany({
-    where: {
-      requestedAt: {
-        gte: start,
-        lte: end,
-      },
-      status: {
-        not: bookingStatus.cancelled,
-      },
-    },
+    where: whereConditions,
     select: {
       requestedAt: true,
       status: true,
     },
   });
 
-  // Group by day and calculate success rate
-  const dayMap = new Map<string, { total: number; completed: number }>();
+  const buckets = buildPickupSuccessBuckets(start, end, granularity);
+  const bucketMap = new Map(buckets.map(bucket => [bucket.key, bucket]));
 
   bookings.forEach(booking => {
     const date = new Date(booking.requestedAt);
-    const dayKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    const key = getDateKey(date, granularity);
+    const bucket = bucketMap.get(key);
 
-    if (!dayMap.has(dayKey)) {
-      dayMap.set(dayKey, { total: 0, completed: 0 });
-    }
+    if (bucket) {
+      bucket.total++;
 
-    const dayData = dayMap.get(dayKey)!;
-    dayData.total++;
-    if (booking.status === bookingStatus.completed) {
-      dayData.completed++;
+      if (booking.status === bookingStatus.completed) {
+        bucket.completed++;
+      }
     }
   });
 
-  // Convert to array and calculate rates
   const successRates: IPickupSuccessRate[] = [];
-  const sortedDays = Array.from(dayMap.keys()).sort();
-
-  sortedDays.forEach((dayKey, index) => {
-    const dayData = dayMap.get(dayKey)!;
+  buckets.forEach(bucket => {
     const rate =
-      dayData.total > 0
-        ? Math.round((dayData.completed / dayData.total) * 100)
+      bucket.total > 0
+        ? Math.round((bucket.completed / bucket.total) * 100)
         : 0;
 
     successRates.push({
-      day: `Day ${index + 1}`,
+      day: bucket.day,
       rate,
     });
   });

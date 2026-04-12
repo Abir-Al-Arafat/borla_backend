@@ -43,11 +43,18 @@ router.get(
   operationsControllers.getZoneHealth,
 );
 
-// Pickup success rate by day
+// Pickup success rate by zone
 router.get(
   '/pickup-success-rate',
   auth('admin', 'supper_admin'),
-  validateRequest(operationsValidations.rankingQueryZodSchema),
+  validateRequest(operationsValidations.pickupSuccessRateZodSchema),
+  operationsControllers.getPickupSuccessRate,
+);
+
+router.get(
+  '/zones/:zoneId/pickup-success-rate',
+  auth('admin', 'supper_admin'),
+  validateRequest(operationsValidations.pickupSuccessRateZodSchema),
   operationsControllers.getPickupSuccessRate,
 );
 
