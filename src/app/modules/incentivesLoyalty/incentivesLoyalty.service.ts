@@ -1,6 +1,9 @@
 import { bookingStatus } from '@prisma/client';
 import prisma from 'app/shared/prisma';
 import {
+  ICustomerLoyaltyBadge,
+  ICustomerLoyaltyEntry,
+  ICustomerLoyaltyQuery,
   IRiderLoyaltyCard,
   IZoneRiderLoyaltyCardsQuery,
 } from './incentivesLoyalty.interface';
@@ -187,6 +190,207 @@ const getZoneRiderLoyaltyCards = async (query: IZoneRiderLoyaltyCardsQuery) => {
     : sortedCards;
 };
 
+const getCustomerLoyalty = async (query: ICustomerLoyaltyQuery) => {
+  const { search, page: pageParam = 1, limit: limitParam = 10 } = query;
+
+  const page =
+    typeof pageParam === 'string' ? parseInt(pageParam, 10) : pageParam;
+  const limit =
+    typeof limitParam === 'string' ? parseInt(limitParam, 10) : limitParam;
+
+  const whereUsers: any = {
+    role: 'user',
+    isDeleted: false,
+  };
+
+  if (search) {
+    whereUsers.OR = [
+      {
+        name: {
+          contains: search,
+          mode: 'insensitive',
+        },
+      },
+      {
+        email: {
+          contains: search,
+          mode: 'insensitive',
+        },
+      },
+      {
+        phoneNumber: {
+          contains: search,
+          mode: 'insensitive',
+        },
+      },
+    ];
+  }
+
+  const customers = await prisma.user.findMany({
+    where: whereUsers,
+    select: {
+      id: true,
+      name: true,
+      profilePicture: true,
+    },
+  });
+
+  if (!customers.length) {
+    return {
+      data: [] as ICustomerLoyaltyEntry[],
+      pagination: {
+        total: 0,
+        page,
+        limit,
+        totalPage: 0,
+      },
+    };
+  }
+
+  const customerIds = customers.map(customer => customer.id);
+
+  const [createdBookings, completedBookings, ratings] = await Promise.all([
+    prisma.booking.groupBy({
+      by: ['userId'],
+      where: {
+        userId: {
+          in: customerIds,
+        },
+      },
+      _count: {
+        id: true,
+      },
+    }),
+    prisma.booking.groupBy({
+      by: ['userId'],
+      where: {
+        userId: {
+          in: customerIds,
+        },
+        status: bookingStatus.completed,
+      },
+      _count: {
+        id: true,
+      },
+    }),
+    prisma.rating.findMany({
+      where: {
+        booking: {
+          userId: {
+            in: customerIds,
+          },
+          status: bookingStatus.completed,
+        },
+      },
+      select: {
+        rating: true,
+        booking: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+    }),
+  ]);
+
+  const createdMap = new Map(
+    createdBookings.map(item => [item.userId, item._count.id]),
+  );
+
+  const completedMap = new Map(
+    completedBookings.map(item => [item.userId, item._count.id]),
+  );
+
+  const ratingSummaryMap = new Map<string, { sum: number; count: number }>();
+
+  ratings.forEach(item => {
+    const customerId = item.booking.userId;
+    const current = ratingSummaryMap.get(customerId) || { sum: 0, count: 0 };
+
+    ratingSummaryMap.set(customerId, {
+      sum: current.sum + item.rating,
+      count: current.count + 1,
+    });
+  });
+
+  const rankedCustomers = customers
+    .map(customer => {
+      const totalBookingsCreated = createdMap.get(customer.id) || 0;
+      const completedCount = completedMap.get(customer.id) || 0;
+      const ratingSummary = ratingSummaryMap.get(customer.id);
+
+      const rating = ratingSummary
+        ? Number((ratingSummary.sum / ratingSummary.count).toFixed(1))
+        : 0;
+
+      const points = completedCount * 10 + totalBookingsCreated;
+
+      const badges: ICustomerLoyaltyBadge[] = [];
+      if (completedCount >= 100) {
+        badges.push({
+          label: '100 Rides',
+          variant: 'info',
+        });
+      }
+
+      return {
+        id: customer.id,
+        name: customer.name,
+        profilePicture: customer.profilePicture,
+        completedBookings: completedCount,
+        totalBookingsCreated,
+        points,
+        rating,
+        badges,
+      };
+    })
+    .filter(customer => customer.totalBookingsCreated > 0)
+    .sort(
+      (a, b) =>
+        b.completedBookings - a.completedBookings ||
+        b.totalBookingsCreated - a.totalBookingsCreated,
+    )
+    .map((customer, index) => {
+      const rank = index + 1;
+
+      const badges = [...customer.badges];
+      if (rank === 1) {
+        badges.unshift({
+          label: 'Top Performer',
+          variant: 'primary',
+        });
+      }
+
+      return {
+        id: customer.id,
+        rank,
+        name: customer.name,
+        profilePicture: customer.profilePicture,
+        points: customer.points,
+        rides: customer.completedBookings,
+        rating: customer.rating,
+        badges,
+        totalBookingsCreated: customer.totalBookingsCreated,
+        completedBookings: customer.completedBookings,
+      } as ICustomerLoyaltyEntry;
+    });
+
+  const total = rankedCustomers.length;
+  const totalPage = total > 0 ? Math.ceil(total / limit) : 0;
+  const skip = (page - 1) * limit;
+
+  return {
+    data: rankedCustomers.slice(skip, skip + limit),
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPage,
+    },
+  };
+};
+
 export const incentivesLoyaltyServices = {
   getZoneRiderLoyaltyCards,
+  getCustomerLoyalty,
 };

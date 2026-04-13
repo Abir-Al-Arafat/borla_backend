@@ -325,6 +325,71 @@ const { data } = await fetch('/api/v1/incentives-loyalty/rider-cards');
 // Use each object directly with RiderCard props
 ```
 
+### Customer Loyalty Leaderboard
+
+Get customers ranked by completed bookings, then by total bookings created.
+
+**Endpoint:** `GET /api/v1/incentives-loyalty/customer-loyalty`
+
+**Query Parameters:**
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| search | string | No | - | Search by customer name, email, or phone |
+| page | number | No | 1 | Page number |
+| limit | number | No | 10 | Items per page |
+
+**Ranking Rules:**
+
+1. Higher `completedBookings` ranks first.
+2. Tie-breaker is higher `totalBookingsCreated`.
+
+**Points Calculation:**
+
+- `points = (completedBookings * 10) + totalBookingsCreated`
+- Completed bookings carry higher weight, while all created bookings add a smaller bonus.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Customer loyalty leaderboard retrieved successfully",
+  "data": [
+    {
+      "id": "69c77b0ef058fb1dabe66053",
+      "rank": 1,
+      "name": "John Smith",
+      "points": 2450,
+      "rides": 245,
+      "rating": 5,
+      "badges": [
+        { "label": "Top Performer", "variant": "primary" },
+        { "label": "100 Rides", "variant": "info" }
+      ],
+      "totalBookingsCreated": 260,
+      "completedBookings": 245
+    }
+  ],
+  "meta": {
+    "total": 20,
+    "page": 1,
+    "limit": 10,
+    "totalPage": 2
+  }
+}
+```
+
+**Frontend Integration (React):**
+
+```tsx
+const response = await fetch(
+  '/api/v1/incentives-loyalty/customer-loyalty?search=john&page=1&limit=10',
+);
+const payload = await response.json();
+const rows = payload.data;
+const pagination = payload.meta;
+```
+
 ---
 
 ## 4. Zone Comparison

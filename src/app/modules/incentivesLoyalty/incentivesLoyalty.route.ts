@@ -13,4 +13,11 @@ router.get(
   incentivesLoyaltyControllers.getZoneRiderLoyaltyCards,
 );
 
+router.get(
+  '/customer-loyalty',
+  auth('admin', 'supper_admin'),
+  validateRequest(incentivesLoyaltyValidations.customerLoyaltyZodSchema),
+  incentivesLoyaltyControllers.getCustomerLoyalty,
+);
+
 export const incentivesLoyaltyRoutes = router;

@@ -11,6 +11,18 @@ const zoneRiderLoyaltyCardsZodSchema = z.object({
     .default({}),
 });
 
+const customerLoyaltyZodSchema = z.object({
+  query: z
+    .object({
+      search: z.string().optional(),
+      page: z.string().optional(),
+      limit: z.string().optional(),
+    })
+    .optional()
+    .default({}),
+});
+
 export const incentivesLoyaltyValidations = {
   zoneRiderLoyaltyCardsZodSchema,
+  customerLoyaltyZodSchema,
 };

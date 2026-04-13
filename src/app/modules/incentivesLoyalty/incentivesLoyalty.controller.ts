@@ -19,6 +19,19 @@ const getZoneRiderLoyaltyCards = catchAsync(
   },
 );
 
+const getCustomerLoyalty = catchAsync(async (req: Request, res: Response) => {
+  const result = await incentivesLoyaltyServices.getCustomerLoyalty(req.query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Customer loyalty leaderboard retrieved successfully',
+    data: result.data,
+    meta: result.pagination,
+  });
+});
+
 export const incentivesLoyaltyControllers = {
   getZoneRiderLoyaltyCards,
+  getCustomerLoyalty,
 };
