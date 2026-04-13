@@ -91,6 +91,14 @@ const requestRiderWithdrawal = async (
   amount: number,
   channel: string,
 ) => {
+  console.log(
+    'Requesting withdrawal with userId:',
+    userId,
+    'amount:',
+    amount,
+    'channel:',
+    channel,
+  );
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: { wallet: true },
