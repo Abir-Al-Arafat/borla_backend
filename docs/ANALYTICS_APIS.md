@@ -263,6 +263,68 @@ const { data } = await fetch(
 // Use data directly in table rows: rank, name, zone, trips, earnings, rating
 ```
 
+### Incentives & Loyalty Rider Cards (Zone)
+
+Get rider card data for incentives and loyalty by rider assigned zone.
+
+**Endpoint:** `GET /api/v1/incentives-loyalty/rider-cards`
+
+**Query Parameters:**
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| zoneId | string | No | - | Optional zone ID filter |
+| zoneName | string | No | - | Optional zone name filter |
+| limit | number | No | all riders | Optional maximum number of cards |
+
+**Business Rules:**
+
+1. Only `bookingStatus.completed` counts as a ride.
+2. Daily target is `25` rides.
+3. Bonus eligibility is based on completed rides in the current day.
+4. `extraRidesCompleted` is computed as `todayRides - 25`.
+
+**Response (Card-friendly):**
+
+```json
+{
+  "success": true,
+  "message": "Rider incentives and loyalty cards retrieved successfully",
+  "data": [
+    {
+      "name": "Kwame Mensah",
+      "initials": "KM",
+      "rideCount": 260,
+      "rating": 4.9,
+      "todayRides": 28,
+      "totalRides": 25,
+      "extraRidesCompleted": 3,
+      "status": "bonus-eligible"
+    },
+    {
+      "name": "Ama Serwaa",
+      "initials": "AS",
+      "rideCount": 190,
+      "rating": 4.7,
+      "todayRides": 17,
+      "totalRides": 25,
+      "extraRidesCompleted": -8,
+      "status": "in-progress"
+    }
+  ]
+}
+```
+
+**Frontend Integration (React):**
+
+```tsx
+const { data } = await fetch('/api/v1/incentives-loyalty/rider-cards');
+// or filter by zone id
+// const { data } = await fetch(`/api/v1/incentives-loyalty/rider-cards?zoneId=${zoneId}`);
+// or filter by zone name
+// const { data } = await fetch('/api/v1/incentives-loyalty/rider-cards?zoneName=Central Zone');
+// Use each object directly with RiderCard props
+```
+
 ---
 
 ## 4. Zone Comparison
