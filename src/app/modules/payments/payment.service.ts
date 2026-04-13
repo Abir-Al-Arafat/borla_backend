@@ -149,7 +149,7 @@ const initiateBookingPayment = async (
  * URL: https://refund-api.hubtel.com/refund/{Hubtel_POS_Sales_ID}/order/{orderId}
  */
 const processRefund = async (
-  orderId: string, // This is the SalesInvoiceId from your callback Data
+  orderId: string, // This is the CheckoutId from your callback Data
   reason: string, // Description for the refund
 ) => {
   console.log(
