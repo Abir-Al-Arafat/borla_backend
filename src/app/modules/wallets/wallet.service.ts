@@ -126,14 +126,14 @@ const requestRiderWithdrawal = async (
     ClientReference: clientReference,
   };
 
-  // const url = `https://smp.hubtel.com/api/merchants/${config.HUBTEL_PREPAID_ID}/send/mobilemoney`; //
-  // const response = await axios.post(url, payload, {
-  //   headers: { Authorization: `Basic ${auth}` },
-  // });
-  const url = `https://webhook.site/a1779570-ea58-4b91-8d08-8b922f0f75ab`; //
+  const url = `https://smp.hubtel.com/api/merchants/${config.HUBTEL_PREPAID_ID}/send/mobilemoney`; //
   const response = await axios.post(url, payload, {
     headers: { Authorization: `Basic ${auth}` },
   });
+  // const url = `https://webhook.site/a1779570-ea58-4b91-8d08-8b922f0f75ab`; //
+  // const response = await axios.post(url, payload, {
+  //   headers: { Authorization: `Basic ${auth}` },
+  // });
 
   // Log the pending withdrawal
   await prisma.transaction.create({
