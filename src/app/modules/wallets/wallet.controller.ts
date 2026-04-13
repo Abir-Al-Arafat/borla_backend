@@ -174,7 +174,7 @@ const handleSendCallback = catchAsync(async (req: Request, res: Response) => {
       where: { clientReference: ClientReference },
       data: { status: 'success', hubtelId: Data.TransactionId },
     });
-
+    console.log('Matching transaction updated in DB:', transaction);
     console.log(`transaction.status: ${transaction.status}`);
     console.log(`transaction.hubtelId ${transaction.hubtelId}`);
     // Note: We already deducted the balance when the rider clicked "Withdraw"
@@ -208,6 +208,10 @@ const handleSendCallback = catchAsync(async (req: Request, res: Response) => {
       );
       console.log(
         `Wallet credited for Rider updatedWallet.balance: ${updatedWallet.balance}`,
+      );
+      console.log(
+        `updatedTransaction: ${JSON.stringify(updatedTransaction, null, 2)}`,
+        `updatedWallet: ${JSON.stringify(updatedWallet, null, 2)}`,
       );
     }
   }
