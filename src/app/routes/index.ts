@@ -18,6 +18,7 @@ import { realtimeMonitorRoutes } from '@app/modules/realtime monitor/realtimeMon
 import { specialAccessRoutes } from '@app/modules/specialAccess/specialAccess.route';
 import { contentPagesRoutes } from '@app/modules/contentPages/contentPages.route';
 import { notificationRoutes } from '@app/modules/notifications/notification.route';
+import { incentivesLoyaltyRoutes } from '@app/modules/incentivesLoyalty/incentivesLoyalty.route';
 
 import { Router } from 'express';
 
@@ -102,6 +103,10 @@ const moduleRoutes = [
   {
     path: '/notifications',
     route: notificationRoutes,
+  },
+  {
+    path: '/incentives-loyalty',
+    route: incentivesLoyaltyRoutes,
   },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));
