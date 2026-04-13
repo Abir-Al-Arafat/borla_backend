@@ -121,7 +121,7 @@ const requestRiderWithdrawal = async (
     RecipientMsisdn: user.phoneNumber,
     Channel: channel,
     Amount: amount,
-    PrimaryCallbackURL: `${config.server_url}/api/v1/payments/send-callback`,
+    PrimaryCallbackURL: `${config.server_url}/api/v1/wallets/send-callback`,
     Description: `Rider Withdrawal: ${user.name}`,
     ClientReference: clientReference,
   };
