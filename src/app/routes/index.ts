@@ -19,6 +19,7 @@ import { specialAccessRoutes } from '@app/modules/specialAccess/specialAccess.ro
 import { contentPagesRoutes } from '@app/modules/contentPages/contentPages.route';
 import { notificationRoutes } from '@app/modules/notifications/notification.route';
 import { incentivesLoyaltyRoutes } from '@app/modules/incentivesLoyalty/incentivesLoyalty.route';
+import { earningsRoutes } from '@app/modules/earnings/earnings.route';
 
 import { Router } from 'express';
 
@@ -107,6 +108,10 @@ const moduleRoutes = [
   {
     path: '/incentives-loyalty',
     route: incentivesLoyaltyRoutes,
+  },
+  {
+    path: '/earnings',
+    route: earningsRoutes,
   },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));
