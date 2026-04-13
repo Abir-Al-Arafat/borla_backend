@@ -135,8 +135,11 @@ const requestRiderWithdrawal = async (
   //   headers: { Authorization: `Basic ${auth}` },
   // });
 
+  console.log('Withdrawal response:', response);
+  console.log('Withdrawal response.data:', response.data);
+
   // Log the pending withdrawal
-  await prisma.transaction.create({
+  const transaction = await prisma.transaction.create({
     data: {
       userId,
       amount: Number(amount),
@@ -146,6 +149,8 @@ const requestRiderWithdrawal = async (
       status: 'pending',
     },
   });
+
+  console.log('Withdrawal transaction created in DB:', transaction);
 
   return response.data; // ResponseCode 0001 means "Accepted for Processing" [cite: 917]
 };
