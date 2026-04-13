@@ -10,7 +10,9 @@ import {
   IPickupSuccessRateQuery,
   IZoneRanking,
   ITopRider,
+  IZoneTopPerformingRider,
   IRankingQuery,
+  IZoneTopPerformingRidersQuery,
   IZoneDetails,
   IZoneTrendPoint,
   IZoneQuery,
@@ -959,6 +961,142 @@ const getTopRiders = async (query: IRankingQuery) => {
   return topRiders;
 };
 
+const getZoneTopPerformingRiders = async (
+  query: IZoneTopPerformingRidersQuery,
+) => {
+  const {
+    zoneId,
+    period = 'weekly',
+    startDate,
+    endDate,
+    limit: limitParam = 5,
+  } = query;
+
+  const limit =
+    typeof limitParam === 'string' ? parseInt(limitParam, 10) : limitParam;
+
+  const zone = await prisma.zone.findUnique({
+    where: {
+      id: zoneId,
+    },
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
+  if (!zone) {
+    throw new Error('Zone not found');
+  }
+
+  const now = new Date();
+  let start: Date;
+  let end: Date = endDate ? new Date(endDate) : now;
+
+  if (startDate) {
+    start = new Date(startDate);
+  } else {
+    switch (period) {
+      case 'daily':
+        start = new Date(now);
+        start.setHours(0, 0, 0, 0);
+        break;
+      case 'weekly':
+        start = new Date(now);
+        start.setDate(now.getDate() - 7);
+        break;
+      case 'monthly':
+        start = new Date(now);
+        start.setDate(now.getDate() - 30);
+        break;
+      default:
+        start = new Date(now);
+        start.setDate(now.getDate() - 7);
+    }
+  }
+
+  const riders = await prisma.user.findMany({
+    where: {
+      riderVerified: true,
+      role: 'rider',
+      isDeleted: false,
+      zoneId,
+    },
+    include: {
+      bookingsAsRider: {
+        where: {
+          status: bookingStatus.completed,
+          completedAt: {
+            gte: start,
+            lte: end,
+          },
+        },
+        select: {
+          id: true,
+          price: true,
+        },
+      },
+    },
+  });
+
+  const riderMetrics = await Promise.all(
+    riders.map(async rider => {
+      const trips = rider.bookingsAsRider.length;
+      const earnings = rider.bookingsAsRider.reduce(
+        (sum, booking) => sum + (booking.price || 0),
+        0,
+      );
+
+      const bookingIds = rider.bookingsAsRider.map(b => b.id);
+      const ratings = await prisma.rating.findMany({
+        where: {
+          bookingId: {
+            in: bookingIds,
+          },
+        },
+        select: {
+          rating: true,
+        },
+      });
+
+      const averageRating =
+        ratings.length > 0
+          ? ratings.reduce((sum, rating) => sum + rating.rating, 0) /
+            ratings.length
+          : 0;
+
+      return {
+        name: rider.name,
+        zone: zone.name,
+        trips,
+        earnings,
+        rating: Number(averageRating.toFixed(1)),
+      };
+    }),
+  );
+
+  const sortedRiders = riderMetrics
+    .filter(rider => rider.trips > 0)
+    .sort(
+      (a, b) =>
+        b.trips - a.trips || b.earnings - a.earnings || b.rating - a.rating,
+    )
+    .slice(0, limit);
+
+  const topPerformingRiders: IZoneTopPerformingRider[] = sortedRiders.map(
+    (rider, index) => ({
+      rank: index + 1,
+      name: rider.name,
+      zone: rider.zone,
+      trips: rider.trips,
+      earnings: rider.earnings,
+      rating: rider.rating,
+    }),
+  );
+
+  return topPerformingRiders;
+};
+
 // Get zone details with KPIs
 const getZoneDetails = async (query: IZoneQuery) => {
   const { zoneId, period = 'monthly', startDate, endDate } = query;
@@ -1445,6 +1583,7 @@ export const operationsServices = {
   getPickupSuccessRate,
   getZoneRanking,
   getTopRiders,
+  getZoneTopPerformingRiders,
   getZoneDetails,
   getZoneTrends,
   getZoneComparison,

@@ -71,11 +71,24 @@ export interface ITopRider {
   rating: number;
 }
 
+export interface IZoneTopPerformingRider {
+  rank: number;
+  name: string;
+  zone: string;
+  trips: number;
+  earnings: number;
+  rating: number;
+}
+
 export interface IRankingQuery {
   period?: 'daily' | 'weekly' | 'monthly';
   startDate?: string;
   endDate?: string;
   limit?: number | string; // String from query params, converted to number in service
+}
+
+export interface IZoneTopPerformingRidersQuery extends IRankingQuery {
+  zoneId: string;
 }
 
 export interface IZoneDetails {

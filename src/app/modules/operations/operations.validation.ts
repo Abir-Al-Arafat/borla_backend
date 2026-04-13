@@ -42,6 +42,21 @@ const pickupSuccessRateZodSchema = z.object({
     .default({}),
 });
 
+const zoneTopPerformingRidersZodSchema = z.object({
+  params: z.object({
+    zoneId: z.string().min(1, 'Zone ID is required'),
+  }),
+  query: z
+    .object({
+      period: z.enum(['daily', 'weekly', 'monthly']).optional(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+      limit: z.string().optional(),
+    })
+    .optional()
+    .default({}),
+});
+
 const zoneQueryZodSchema = z.object({
   params: z.object({
     zoneId: z.string().min(1, 'Zone ID is required'),
@@ -73,6 +88,7 @@ export const operationsValidations = {
   dashboardQueryZodSchema,
   rankingQueryZodSchema,
   pickupSuccessRateZodSchema,
+  zoneTopPerformingRidersZodSchema,
   zoneQueryZodSchema,
   riderListQueryZodSchema,
 };

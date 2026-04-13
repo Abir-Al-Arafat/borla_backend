@@ -74,6 +74,13 @@ router.get(
   operationsControllers.getTopRiders,
 );
 
+router.get(
+  '/zones/:zoneId/top-performing-riders',
+  auth('admin', 'supper_admin'),
+  validateRequest(operationsValidations.zoneTopPerformingRidersZodSchema),
+  operationsControllers.getZoneTopPerformingRiders,
+);
+
 // Zone comparison (all zones revenue and pickups)
 router.get(
   '/zone-comparison',

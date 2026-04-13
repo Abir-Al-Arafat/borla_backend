@@ -205,6 +205,64 @@ const { data } = await fetch(
 // Map data to table rows with Avatar, name, zone, trips, earnings, rating
 ```
 
+### Top Performing Riders By Zone
+
+Get top riders for a specific zone ranked by trips, earnings, and rating.
+
+**Endpoint:** `GET /zones/:zoneId/top-performing-riders`
+
+**Query Parameters:**
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| zoneId | string | Yes | - | Zone ID in the URL path |
+| period | enum | No | weekly | Time period: `daily`, `weekly`, `monthly` |
+| startDate | string | No | - | Start date (ISO format) |
+| endDate | string | No | now | End date (ISO format) |
+| limit | number | No | 5 | Number of riders to return |
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Zone top performing riders retrieved successfully",
+  "data": [
+    {
+      "rank": 1,
+      "name": "Kwame Mensah",
+      "zone": "Central Zone",
+      "trips": 87,
+      "earnings": 12450,
+      "rating": 4.9
+    },
+    {
+      "rank": 2,
+      "name": "Ama Serwaa",
+      "zone": "Central Zone",
+      "trips": 82,
+      "earnings": 11680,
+      "rating": 4.8
+    }
+  ]
+}
+```
+
+**Ranking Logic:**
+
+1. Primary sort: Number of trips (descending)
+2. Secondary sort: Total earnings (descending)
+3. Third sort: Average rating (descending)
+4. Only riders with at least 1 completed trip are included
+
+**Frontend Integration (React):**
+
+```tsx
+const { data } = await fetch(
+  `/api/v1/operations/zones/${zoneId}/top-performing-riders?period=weekly&limit=5`,
+);
+// Use data directly in table rows: rank, name, zone, trips, earnings, rating
+```
+
 ---
 
 ## 4. Zone Comparison

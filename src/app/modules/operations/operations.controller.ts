@@ -101,6 +101,22 @@ const getTopRiders = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getZoneTopPerformingRiders = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await operationsServices.getZoneTopPerformingRiders({
+      ...req.query,
+      zoneId: req.params.zoneId as string,
+    });
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Zone top performing riders retrieved successfully',
+      data: result,
+    });
+  },
+);
+
 const getZoneDetails = catchAsync(async (req: Request, res: Response) => {
   const result = await operationsServices.getZoneDetails({
     zoneId: req.params.zoneId as string,
@@ -172,6 +188,7 @@ export const operationsControllers = {
   getPickupSuccessRate,
   getZoneRanking,
   getTopRiders,
+  getZoneTopPerformingRiders,
   getZoneDetails,
   getZoneTrends,
   getZoneComparison,
