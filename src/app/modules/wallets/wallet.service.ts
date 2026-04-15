@@ -228,7 +228,8 @@ const assignBonusToRider = async (
 
     console.log('Bonus assignment response:', response);
     console.log('Bonus assignment response.data:', response.data);
-
+    console.log('Number(amount)', Number(amount));
+    console.log('Number(amount)', typeof Number(amount));
     // Track the bonus in your database
     const transaction = await prisma.transaction.create({
       data: {
