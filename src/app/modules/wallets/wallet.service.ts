@@ -209,7 +209,7 @@ const assignBonusToRider = async (
     RecipientMsisdn: formattedPhone,
     CustomerEmail: rider.email,
     Channel: 'tigo-gh', // Defaulting to Tigo-GH or make dynamic based on rider data
-    Amount: amount,
+    Amount: Number(amount),
     PrimaryCallbackURL: `${config.server_url}/api/v1/wallets/bonus-callback`,
     Description: `Bonus: ${reason}`,
     ClientReference: clientReference,
@@ -233,7 +233,7 @@ const assignBonusToRider = async (
     const transaction = await prisma.transaction.create({
       data: {
         userId: riderId,
-        amount,
+        amount: Number(amount),
         type: 'BONUS',
         status: 'pending',
         clientReference,
