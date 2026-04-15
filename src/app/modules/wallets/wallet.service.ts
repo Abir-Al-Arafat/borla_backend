@@ -193,7 +193,7 @@ const assignBonusToRider = async (
   }
 
   const auth = Buffer.from(
-    `${config.HUBTEL_CLIENT_ID}:${config.HUBTEL_CLIENT_SECRET}`,
+    `${config.HUBTEL_API_ID}:${config.HUBTEL_API_KEY}`,
   ).toString('base64');
 
   // Format phone to international 233 format without '+'
