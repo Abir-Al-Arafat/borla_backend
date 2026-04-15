@@ -166,6 +166,7 @@ const getZoneRiderLoyaltyCards = async (query: IZoneRiderLoyaltyCardsQuery) => {
 
     return {
       name: rider.name,
+      riderId: rider.id,
       initials: getInitials(rider.name),
       rideCount,
       rating,
