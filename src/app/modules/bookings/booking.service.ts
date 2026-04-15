@@ -18,6 +18,7 @@ import {
   calculateDistance,
   calculateEstimatedPrice,
 } from './../riders/rider.utils';
+import { commissionServices } from '../commissions/commission.service';
 import { emitToUser } from '../../utils/socket';
 import { notificationService } from '../notifications/notification.service';
 
@@ -680,6 +681,8 @@ const getBookingById = async (bookingId: string, userId: string) => {
           email: true,
           phoneNumber: true,
           profilePicture: true,
+          location: true,
+          locationName: true,
         },
       },
     },
@@ -879,6 +882,14 @@ const acceptBooking = async (bookingId: string, riderId: string) => {
     userId: updatedBooking.userId,
     status: updatedBooking.status,
     message: `${updatedBooking.rider?.name || 'A rider'} accepted your booking.`,
+  });
+
+  emitToUser(updatedBooking.userId, 'booking:tracking:started', {
+    bookingId: updatedBooking.id,
+    riderId,
+    userId: updatedBooking.userId,
+    status: updatedBooking.status,
+    message: 'Live tracking has started for your booking.',
   });
 
   return updatedBooking;
@@ -1138,13 +1149,15 @@ const markPaymentCollectedAtPickup = async (
 
   if (transaction) {
     const totalAmount = Number(transaction.amount);
-    const riderShare = totalAmount * 0.8; // Borla Split: 80% to Rider
+    const commissionRate =
+      await commissionServices.getActiveCommissionRateValue();
+    const riderShare = totalAmount * (1 - commissionRate / 100);
     const updatedTransaction = await prisma.transaction.update({
       where: { id: transaction.id },
       data: {
         status: 'success',
         commission: totalAmount - riderShare,
-        comissionPercentage: 20, // 20% commission for Borla
+        comissionPercentage: commissionRate,
         riderEarnings: riderShare,
       },
     });

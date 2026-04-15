@@ -2,11 +2,31 @@ import { Server as HttpServer } from 'http';
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import config from 'app/config';
+import prisma from 'app/shared/prisma';
 
 type IJwtSocketPayload = {
   userId: string;
   role: string;
 };
+
+type IBookingLocationPayload = {
+  bookingId: string;
+  latitude: number;
+  longitude: number;
+  heading?: number;
+  speed?: number;
+  accuracy?: number;
+  timestamp?: string;
+};
+
+const ADMIN_SOCKET_ROLES = [
+  'admin',
+  'sub_admin',
+  'supper_admin',
+  'super_admin',
+] as const;
+
+const REALTIME_MONITOR_ADMINS_ROOM = 'admins:realtime-monitor';
 
 let io: Server | null = null;
 
@@ -49,6 +69,19 @@ const getSocketToken = (socket: any): string | null => {
   return null;
 };
 
+const isValidCoordinate = (value: unknown, min: number, max: number) => {
+  return (
+    typeof value === 'number' &&
+    Number.isFinite(value) &&
+    value >= min &&
+    value <= max
+  );
+};
+
+const isAdminSocketRole = (role: unknown) => {
+  return typeof role === 'string' && ADMIN_SOCKET_ROLES.includes(role as any);
+};
+
 export const initializeSocket = (server: HttpServer) => {
   if (io) return io;
 
@@ -85,12 +118,17 @@ export const initializeSocket = (server: HttpServer) => {
 
   io.on('connection', socket => {
     const userId = String(socket.user?._id || '');
+    const socketRole = String(socket.user?.role || '');
     console.log(`User connected to socket: ${userId}`);
     if (userId) {
       socket.join(`user:${userId}`);
       emitOperationSuccess(socket, 'socket:connection', {
         userId,
       });
+    }
+
+    if (isAdminSocketRole(socketRole)) {
+      socket.join(REALTIME_MONITOR_ADMINS_ROOM);
     }
 
     socket.on('chat:join', (chatId: string) => {
@@ -169,6 +207,169 @@ export const initializeSocket = (server: HttpServer) => {
             {
               chatId: payload?.chatId || null,
             },
+          );
+        }
+      },
+    );
+
+    socket.on(
+      'booking:location:update',
+      async (payload: IBookingLocationPayload) => {
+        try {
+          if (socket.user?.role !== 'rider') {
+            emitOperationFailure(
+              socket,
+              'booking:location:update',
+              'Only riders can send booking location updates',
+            );
+            return;
+          }
+
+          if (!payload?.bookingId || !String(payload.bookingId).trim()) {
+            emitOperationFailure(
+              socket,
+              'booking:location:update',
+              'bookingId is required',
+            );
+            return;
+          }
+
+          if (
+            !isValidCoordinate(payload.latitude, -90, 90) ||
+            !isValidCoordinate(payload.longitude, -180, 180)
+          ) {
+            emitOperationFailure(
+              socket,
+              'booking:location:update',
+              'Valid latitude and longitude are required',
+            );
+            return;
+          }
+
+          const booking = await prisma.booking.findUnique({
+            where: { id: payload.bookingId },
+            select: {
+              id: true,
+              userId: true,
+              riderId: true,
+              status: true,
+            },
+          });
+
+          if (!booking) {
+            emitOperationFailure(
+              socket,
+              'booking:location:update',
+              'Booking not found',
+              { bookingId: payload.bookingId },
+            );
+            return;
+          }
+
+          if (booking.riderId !== userId) {
+            emitOperationFailure(
+              socket,
+              'booking:location:update',
+              'You are not assigned to this booking',
+              { bookingId: payload.bookingId },
+            );
+            return;
+          }
+
+          if (
+            ![
+              'accepted',
+              'arrived_pickup',
+              'payment_collected',
+              'heading_to_station',
+              'in_progress',
+              'awaiting_payment',
+            ].includes(booking.status)
+          ) {
+            emitOperationFailure(
+              socket,
+              'booking:location:update',
+              `Cannot send location update for booking status: ${booking.status}`,
+              { bookingId: payload.bookingId, status: booking.status },
+            );
+            return;
+          }
+
+          emitToUser(booking.userId, 'booking:location:update', {
+            bookingId: booking.id,
+            riderId: userId,
+            userId: booking.userId,
+            status: booking.status,
+            location: {
+              type: 'Point',
+              coordinates: [payload.longitude, payload.latitude],
+            },
+            latitude: payload.latitude,
+            longitude: payload.longitude,
+            heading:
+              typeof payload.heading === 'number' &&
+              Number.isFinite(payload.heading)
+                ? payload.heading
+                : null,
+            speed:
+              typeof payload.speed === 'number' &&
+              Number.isFinite(payload.speed)
+                ? payload.speed
+                : null,
+            accuracy:
+              typeof payload.accuracy === 'number' &&
+              Number.isFinite(payload.accuracy)
+                ? payload.accuracy
+                : null,
+            timestamp: payload.timestamp || new Date().toISOString(),
+          });
+
+          const rider = await prisma.user.update({
+            where: { id: userId },
+            data: {
+              location: {
+                type: 'Point',
+                coordinates: [payload.longitude, payload.latitude],
+              },
+              onlineStatus: 'online',
+            },
+            select: {
+              id: true,
+              name: true,
+              profilePicture: true,
+            },
+          });
+
+          const realtimeTimestamp =
+            payload.timestamp || new Date().toISOString();
+
+          getIO()
+            .to(REALTIME_MONITOR_ADMINS_ROOM)
+            .emit('realtime:rider:location:update', {
+              id: rider.id,
+              name: rider.name,
+              avatar: rider.profilePicture || null,
+              status: 'Busy',
+              mapStatus: 'active',
+              latitude: payload.latitude,
+              longitude: payload.longitude,
+              bookingId: booking.id,
+              bookingStatus: booking.status,
+              timestamp: realtimeTimestamp,
+            });
+
+          emitOperationSuccess(socket, 'booking:location:update', {
+            bookingId: booking.id,
+            userId: booking.userId,
+            riderId: userId,
+            status: booking.status,
+          });
+        } catch (_error) {
+          emitOperationFailure(
+            socket,
+            'booking:location:update',
+            'Failed to send booking location update',
+            { bookingId: payload?.bookingId || null },
           );
         }
       },
