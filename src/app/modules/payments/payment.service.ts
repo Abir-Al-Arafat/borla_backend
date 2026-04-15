@@ -101,7 +101,7 @@ const initiateBookingPayment = async (
         type: 'RIDE_PAYMENT',
         clientReference: payload.clientReference,
         bookingId: booking.id,
-        reference: pendingReference,
+        reference: payload.clientReference,
         status: 'pending',
       },
     });

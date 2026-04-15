@@ -81,7 +81,7 @@ const handleBookingCallback = catchAsync(
         return res.sendStatus(200);
       }
       const transaction = await prisma.transaction.findUnique({
-        where: { clientReference: clientReference },
+        where: { reference: clientReference },
         include: { booking: true },
       });
 
@@ -107,7 +107,7 @@ const handleBookingCallback = catchAsync(
           await prisma.$transaction([
             // Update Transaction status and store Hubtel's reference
             prisma.transaction.update({
-              where: { clientReference: clientReference },
+              where: { reference: clientReference },
               data: {
                 status: 'success',
                 hubtelId: Data.SalesInvoiceId || Data.CheckoutId,
@@ -175,7 +175,7 @@ const handleBookingCallback = catchAsync(
       console.warn(`Payment failed for ${clientReference}: ${Message}`);
       if (clientReference) {
         const failedTransaction = await prisma.transaction.update({
-          where: { clientReference: clientReference },
+          where: { reference: clientReference },
           data: { status: 'failed' },
           include: {
             booking: {
