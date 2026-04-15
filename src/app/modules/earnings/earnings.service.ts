@@ -50,6 +50,14 @@ const getEarnings = async (query: IEarningsListQuery) => {
     },
   };
 
+  const now = new Date();
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const startOfLast30Days = new Date(now);
+  startOfLast30Days.setDate(startOfLast30Days.getDate() - 29);
+  startOfLast30Days.setHours(0, 0, 0, 0);
+
   if (search) {
     where.OR = [
       {
@@ -95,7 +103,13 @@ const getEarnings = async (query: IEarningsListQuery) => {
     ];
   }
 
-  const [transactions, total] = await Promise.all([
+  const [
+    transactions,
+    total,
+    revenueLast30Days,
+    todayRevenueAgg,
+    todayRateAgg,
+  ] = await Promise.all([
     prisma.transaction.findMany({
       where,
       skip,
@@ -129,7 +143,56 @@ const getEarnings = async (query: IEarningsListQuery) => {
       },
     }),
     prisma.transaction.count({ where }),
+    prisma.transaction.aggregate({
+      where: {
+        bookingId: {
+          not: null,
+        },
+        status: 'success',
+        createdAt: {
+          gte: startOfLast30Days,
+          lte: now,
+        },
+      },
+      _sum: {
+        amount: true,
+      },
+    }),
+    prisma.transaction.aggregate({
+      where: {
+        bookingId: {
+          not: null,
+        },
+        status: 'success',
+        createdAt: {
+          gte: startOfToday,
+          lte: now,
+        },
+      },
+      _sum: {
+        amount: true,
+      },
+    }),
+    prisma.transaction.aggregate({
+      where: {
+        bookingId: {
+          not: null,
+        },
+        status: 'success',
+        createdAt: {
+          gte: startOfToday,
+          lte: now,
+        },
+      },
+      _avg: {
+        comissionPercentage: true,
+      },
+    }),
   ]);
+
+  const totalRevenueLast30Days = Number(revenueLast30Days._sum.amount || 0);
+  const todayRevenue = Number(todayRevenueAgg._sum.amount || 0);
+  const averageRateValue = Number(todayRateAgg._avg.comissionPercentage || 0);
 
   const data: IEarningRow[] = transactions.map((transaction, index) => ({
     key: transaction.id,
@@ -160,6 +223,9 @@ const getEarnings = async (query: IEarningsListQuery) => {
       page,
       limit,
       totalPage: Math.ceil(total / limit),
+      totalRevenueLast30Days,
+      todayRevenue,
+      averageRate: `${averageRateValue}%`,
     },
   };
 };

@@ -5,6 +5,7 @@ type TMeta = {
   page: number;
   total: number;
   totalPage: number;
+  [key: string]: unknown;
   stats?: {
     active: number;
     resolvedToday: number;
