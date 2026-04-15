@@ -38,6 +38,9 @@ const formatBookingStatus = (status?: string | null) => {
 const getEarnings = async (query: IEarningsListQuery) => {
   const { search, page: pageParam = 1, limit: limitParam = 12 } = query;
 
+  const normalizedSearch =
+    typeof search === 'string' ? search.trim() : undefined;
+
   const page =
     typeof pageParam === 'string' ? parseInt(pageParam, 10) : pageParam;
   const limit =
@@ -58,49 +61,56 @@ const getEarnings = async (query: IEarningsListQuery) => {
   startOfLast30Days.setDate(startOfLast30Days.getDate() - 29);
   startOfLast30Days.setHours(0, 0, 0, 0);
 
-  if (search) {
-    where.OR = [
-      {
-        booking: {
-          user: {
+  if (normalizedSearch) {
+    const matchedUsers = await prisma.user.findMany({
+      where: {
+        OR: [
+          {
             name: {
-              contains: search,
+              contains: normalizedSearch,
               mode: 'insensitive',
             },
           },
-        },
-      },
-      {
-        booking: {
-          user: {
+          {
             email: {
-              contains: search,
+              contains: normalizedSearch,
               mode: 'insensitive',
             },
           },
-        },
+        ],
       },
-      {
-        booking: {
-          rider: {
-            name: {
-              contains: search,
-              mode: 'insensitive',
+      select: {
+        id: true,
+      },
+    });
+
+    const matchedUserIds = matchedUsers.map(user => user.id);
+
+    const matchedBookings = await prisma.booking.findMany({
+      where: {
+        OR: [
+          {
+            userId: {
+              in: matchedUserIds,
             },
           },
-        },
-      },
-      {
-        booking: {
-          rider: {
-            email: {
-              contains: search,
-              mode: 'insensitive',
+          {
+            riderId: {
+              in: matchedUserIds,
             },
           },
-        },
+        ],
       },
-    ];
+      select: {
+        id: true,
+      },
+    });
+
+    const matchedBookingIds = matchedBookings.map(booking => booking.id);
+
+    where.bookingId = {
+      in: matchedBookingIds,
+    };
   }
 
   const [
