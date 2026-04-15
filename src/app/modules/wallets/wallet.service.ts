@@ -163,8 +163,112 @@ const requestRiderWithdrawal = async (
   return response.data; // ResponseCode 0001 means "Accepted for Processing" [cite: 917]
 };
 
+/**
+ * assignBonusToRider
+ * Strictly follows Hubtel Direct Send Money API
+ * URL: https://smp.hubtel.com/api/merchants/{MerchantID}/send/mobilemoney
+ */
+const assignBonusToRider = async (
+  riderId: string,
+  amount: number,
+  reason: string,
+) => {
+  console.log(
+    'Assigning bonus with riderId:',
+    riderId,
+    'amount:',
+    amount,
+    'reason:',
+    reason,
+  );
+  const rider = await prisma.user.findUnique({
+    where: { id: riderId },
+    include: { wallet: true },
+  });
+
+  console.log('Rider found for bonus assignment:', rider);
+
+  if (!rider || rider.role !== 'rider') {
+    throw new AppError(httpStatus.NOT_FOUND, 'Rider not found');
+  }
+
+  const auth = Buffer.from(
+    `${config.HUBTEL_CLIENT_ID}:${config.HUBTEL_CLIENT_SECRET}`,
+  ).toString('base64');
+
+  // Format phone to international 233 format without '+'
+  const formattedPhone = rider.phoneNumber?.replace('+', '') || '';
+
+  console.log('Formatted phone number for Hubtel:', formattedPhone);
+
+  // ClientReference must be unique and max 36 chars
+  const clientReference = `BNS-${riderId.slice(-8)}-${Date.now()}`.slice(0, 36);
+
+  const payload = {
+    RecipientName: rider.name,
+    RecipientMsisdn: formattedPhone,
+    CustomerEmail: rider.email,
+    Channel: 'tigo-gh', // Defaulting to Tigo-GH or make dynamic based on rider data
+    Amount: amount,
+    PrimaryCallbackURL: `${config.server_url}/api/v1/wallets/bonus-callback`,
+    Description: `Bonus: ${reason}`,
+    ClientReference: clientReference,
+  };
+
+  // Endpoint uses the MerchantID (Prepaid ID)
+  const url = `https://smp.hubtel.com/api/merchants/${config.HUBTEL_PREPAID_ID}/send/mobilemoney`;
+
+  try {
+    const response = await axios.post(url, payload, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Basic ${auth}`,
+      },
+    });
+
+    console.log('Bonus assignment response:', response);
+    console.log('Bonus assignment response.data:', response.data);
+
+    // Track the bonus in your database
+    const transaction = await prisma.transaction.create({
+      data: {
+        userId: riderId,
+        amount,
+        type: 'BONUS',
+        status: 'pending',
+        clientReference,
+        reference: clientReference,
+        description: reason,
+      },
+    });
+
+    console.log('Bonus transaction created in DB:', transaction);
+
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      // Check for 4075: Insufficient prepaid balance
+      const errorMessage =
+        error.response.data.message || 'Bonus initiation failed';
+      console.error(
+        'Hubtel Bonus Error:',
+        JSON.stringify(error.response.data, null, 2),
+      );
+      throw new AppError(
+        error.response.status,
+        `Bonus Failed: ${errorMessage}`,
+      );
+    }
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'Hubtel SMP Service Unreachable',
+    );
+  }
+};
+
 export const walletServices = {
   initiateRiderTopUp,
   requestRiderWithdrawal,
   getWallet,
+  assignBonusToRider,
 };

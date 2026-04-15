@@ -229,11 +229,69 @@ const getWallet = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const assignBonusToRider = catchAsync(async (req: Request, res: Response) => {
+  const { riderId, amount, reason } = req.body;
+  const response = await walletServices.assignBonusToRider(
+    riderId,
+    amount,
+    reason,
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Bonus assigned successfully',
+    data: response,
+  });
+});
+
+const handleBonusCallback = catchAsync(async (req: Request, res: Response) => {
+  console.log('Received Bonus Callback:', JSON.stringify(req.body, null, 2));
+
+  const { ResponseCode, Data, Message } = req.body;
+  const clientReference = Data?.ClientReference;
+
+  console.log('clientReference:', clientReference);
+  console.log('ResponseCode:', ResponseCode);
+  console.log('Data:', Data);
+  console.log('Message:', Message);
+
+  if (ResponseCode === '0000' && clientReference) {
+    // Bonus successfully reached the rider's phone
+    const transaction = await prisma.transaction.update({
+      where: { reference: clientReference },
+      data: { status: 'success' },
+    });
+    console.log(
+      `Bonus successfully disbursed for ClientReference: ${clientReference}, Transaction ID: ${transaction.id}`,
+    );
+    console.log(`transaction: ${JSON.stringify(transaction, null, 2)}`);
+    console.log(
+      `Bonus successfully disbursed for reference: ${clientReference}`,
+    );
+  } else {
+    // Log the failure reason (e.g., Network timeout, wrong number)
+    console.warn(`Bonus disbursement failed [${ResponseCode}]: ${Message}`);
+    if (clientReference) {
+      const transaction = await prisma.transaction.update({
+        where: { reference: clientReference },
+        data: { status: 'failed' },
+      });
+      console.log(
+        `Failed transaction logged: ${JSON.stringify(transaction, null, 2)}`,
+      );
+    }
+  }
+
+  res.sendStatus(200);
+});
+
 export const walletControllers = {
   topUp,
   withdraw,
   getWallet,
+  assignBonusToRider,
   // handleReceiveCallback,
   handleTopUpCallback,
   handleSendCallback,
+  handleBonusCallback,
 };

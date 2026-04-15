@@ -47,4 +47,18 @@ router.post(
 // router.post('/receive-callback', walletControllers.handleReceiveCallback);
 router.post('/send-callback', walletControllers.handleSendCallback);
 
+// Route for assigning bonuses to Riders
+router.post(
+  '/assign-bonus',
+  upload.none(),
+  auth(USER_ROLE.admin),
+  walletControllers.assignBonusToRider,
+);
+
+router.post(
+  '/bonus-callback',
+  upload.none(),
+  walletControllers.handleBonusCallback,
+);
+
 export const walletRoutes = router;
