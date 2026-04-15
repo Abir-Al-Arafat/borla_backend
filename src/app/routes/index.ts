@@ -20,6 +20,7 @@ import { contentPagesRoutes } from '@app/modules/contentPages/contentPages.route
 import { notificationRoutes } from '@app/modules/notifications/notification.route';
 import { incentivesLoyaltyRoutes } from '@app/modules/incentivesLoyalty/incentivesLoyalty.route';
 import { earningsRoutes } from '@app/modules/earnings/earnings.route';
+import { commissionRoutes } from '@app/modules/commissions/commission.route';
 
 import { Router } from 'express';
 
@@ -112,6 +113,10 @@ const moduleRoutes = [
   {
     path: '/earnings',
     route: earningsRoutes,
+  },
+  {
+    path: '/commissions',
+    route: commissionRoutes,
   },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));

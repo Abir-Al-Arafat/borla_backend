@@ -276,6 +276,15 @@ model Transaction {
   @@map("transactions")
 }
 
+model CommissionRate {
+  id        String   @id @default("global") @map("_id")
+  rate      Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("commission_rates")
+}
+
 enum TransactionType {
   TOPUP
   WITHDRAWAL
