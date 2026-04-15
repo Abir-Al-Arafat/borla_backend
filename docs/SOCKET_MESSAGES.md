@@ -92,6 +92,8 @@ Current acknowledgement events:
 - `chat:leave:failure`
 - `chat:typing:success`
 - `chat:typing:failure`
+- `booking:location:update:success`
+- `booking:location:update:failure`
 - `socket:disconnect:success`
 
 ## 5. Server Listeners (`socket.on`)
@@ -166,6 +168,66 @@ Ack emits to sender:
 - Success: `chat:typing:success`
 - Failure: `chat:typing:failure` (e.g. missing `chatId`)
 
+### `booking:location:update`
+
+Rider sends current booking location to backend for realtime user tracking.
+
+Client payload:
+
+```ts
+{
+  bookingId: string;
+  latitude: number;
+  longitude: number;
+  heading?: number;
+  speed?: number;
+  accuracy?: number;
+  timestamp?: string;
+}
+```
+
+Server validation:
+
+- Socket user must be a rider.
+- `bookingId` must be present.
+- `latitude` and `longitude` must be valid.
+- Rider must be assigned to the booking.
+- Booking status must allow tracking (`accepted`, `arrived_pickup`, `payment_collected`, `heading_to_station`, `in_progress`, `awaiting_payment`).
+
+Server emit target:
+
+- `user:{booking.userId}`
+
+Server emit event to booking user:
+
+- `booking:location:update`
+
+Server emit payload:
+
+```ts
+{
+  bookingId: string;
+  riderId: string;
+  userId: string;
+  status: string;
+  location: {
+    type: 'Point';
+    coordinates: [number, number];
+  }
+  latitude: number;
+  longitude: number;
+  heading: number | null;
+  speed: number | null;
+  accuracy: number | null;
+  timestamp: string;
+}
+```
+
+Ack emits to rider:
+
+- Success: `booking:location:update:success`
+- Failure: `booking:location:update:failure`
+
 ## 6. Server Emit Helpers
 
 Defined in `src/app/utils/socket.ts`.
@@ -210,6 +272,20 @@ Payload includes:
 - `user`
 
 This event is what the rider dashboard listens to for new available work.
+
+### `booking:tracking:started`
+
+Emitted to booking user immediately after rider accepts a booking.
+
+Payload includes:
+
+- `bookingId`
+- `riderId`
+- `userId`
+- `status`
+- `message`
+
+This event tells the customer app to begin listening for `booking:location:update`.
 
 ## 8. Message Events Emitted From Backend
 
@@ -263,7 +339,7 @@ Payload:
 
 - `result.message` from `messageServices.replySupportMessageByAdmin(...)`
 
-## 8. Frontend Integration Checklist
+## 9. Frontend Integration Checklist
 
 1. Connect socket with JWT token in `auth.token`.
 2. Listen for `connect_error` to catch unauthorized token issues.
@@ -274,15 +350,19 @@ Payload:
 
 - `message:new`
 - `chat:typing`
+- `booking:new`
+- `booking:tracking:started`
+- `booking:location:update`
 
 7. Listen for acknowledgement events:
 
 - `chat:join:success` / `chat:join:failure`
 - `chat:leave:success` / `chat:leave:failure`
 - `chat:typing:success` / `chat:typing:failure`
+- `booking:location:update:success` / `booking:location:update:failure`
 - `socket:connection:success`
 
-## 9. Minimal Client Example
+## 10. Minimal Client Example
 
 ```ts
 import { io } from 'socket.io-client';

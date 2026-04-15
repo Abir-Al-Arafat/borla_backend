@@ -102,14 +102,18 @@ In the same Socket.IO tab, subscribe/listen to:
 
 1. `message:new`
 2. `booking:new`
-3. `chat:typing`
-4. `chat:join:success`
-5. `chat:join:failure`
-6. `chat:leave:success`
-7. `chat:leave:failure`
-8. `chat:typing:success`
-9. `chat:typing:failure`
-10. `socket:connection:success`
+3. `booking:tracking:started`
+4. `booking:location:update`
+5. `chat:typing`
+6. `chat:join:success`
+7. `chat:join:failure`
+8. `chat:leave:success`
+9. `chat:leave:failure`
+10. `chat:typing:success`
+11. `chat:typing:failure`
+12. `booking:location:update:success`
+13. `booking:location:update:failure`
+14. `socket:connection:success`
 
 Keep this tab open.
 
@@ -214,7 +218,49 @@ If `chatId` is empty:
 
 - `chat:leave:failure`
 
-## 9. Quick Troubleshooting
+## 9. Test Live Booking Tracking
+
+### Step A: Start tracking from booking accept
+
+1. Connect customer socket tab with customer token.
+2. Connect rider socket tab with assigned rider token.
+3. Rider calls `PATCH /bookings/:bookingId/accept` via HTTP.
+4. Expect customer socket to receive:
+
+- Event: `booking:tracking:started`
+- Payload includes `bookingId`, `riderId`, `userId`, `status`.
+
+### Step B: Send rider location updates
+
+From rider socket tab, emit:
+
+- Event: `booking:location:update`
+- Data:
+
+```json
+{
+  "bookingId": "<BOOKING_ID>",
+  "latitude": 5.6813,
+  "longitude": -0.1754,
+  "heading": 120,
+  "speed": 10.5,
+  "accuracy": 8,
+  "timestamp": "2026-04-15T10:20:00.000Z"
+}
+```
+
+Expected result:
+
+1. Customer socket receives `booking:location:update`.
+2. Rider socket receives `booking:location:update:success`.
+
+Expected failure cases:
+
+- Wrong role or unassigned rider -> `booking:location:update:failure`
+- Invalid/missing coordinates -> `booking:location:update:failure`
+- Invalid booking status -> `booking:location:update:failure`
+
+## 10. Quick Troubleshooting
 
 1. Connection fails immediately:
 
@@ -247,10 +293,23 @@ If `chatId` is empty:
 - Confirm the rider belongs to the zone that contains the booking pickup location.
 - Confirm the booking was created after the socket connection was established.
 
-## 10. Recommended Test Sequence
+7. You do not see `booking:tracking:started`:
+
+- Confirm rider accepted the booking through `PATCH /bookings/:id/accept`.
+- Confirm the customer socket is connected before accept is called.
+
+8. You get `booking:location:update:failure`:
+
+- Confirm booking is assigned to the same rider token used by socket.
+- Confirm coordinates are valid decimal values.
+- Confirm booking status is still trackable.
+
+## 11. Recommended Test Sequence
 
 1. Open Socket.IO tab as user A, connect, join chat.
 2. Open Socket.IO tab as user B, connect, join same chat.
 3. Emit `chat:typing` from A, verify B receives.
 4. Send message HTTP request as A, verify B receives `message:new`.
 5. Send message HTTP request as B, verify A receives `message:new`.
+6. Rider accepts a booking and verify customer receives `booking:tracking:started`.
+7. Rider emits `booking:location:update` and verify customer receives live location payload.
