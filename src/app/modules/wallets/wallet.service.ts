@@ -246,6 +246,9 @@ const assignBonusToRider = async (
 
     return response.data;
   } catch (error: any) {
+    console.error('Hubtel Bonus Assignment Error:', error);
+    console.error('error.response?.data:', error.response?.data);
+    console.error('error.message:', error.message);
     if (error.response) {
       // Check for 4075: Insufficient prepaid balance
       const errorMessage =
