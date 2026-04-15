@@ -19,7 +19,11 @@ export interface IEarningRow {
 }
 
 export interface IEarningDetails {
-  id: string;
+  transactionId: string;
+  hubtelId: string;
+  salesInvoiceId: string;
+  checkoutId: string;
+  id?: string;
   passengerName: string;
   riderName: string;
   passengerEmail: string;

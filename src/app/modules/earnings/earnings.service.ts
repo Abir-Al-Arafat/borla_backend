@@ -276,7 +276,10 @@ const getEarningDetailsById = async (id: string) => {
   }
 
   const details: IEarningDetails = {
-    id: transaction.id,
+    transactionId: transaction.id,
+    hubtelId: transaction.hubtelId || '',
+    salesInvoiceId: transaction.salesInvoiceId || '',
+    checkoutId: transaction.checkoutId || '',
     passengerName: transaction.booking?.user?.name || 'N/A',
     riderName: transaction.booking?.rider?.name || 'N/A',
     passengerEmail: transaction.booking?.user?.email || 'N/A',
