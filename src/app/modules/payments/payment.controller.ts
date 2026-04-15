@@ -7,6 +7,7 @@ import { paymentServices } from './payment.service';
 import { emitToUser } from '../../utils/socket';
 import { notificationService } from '../notifications/notification.service';
 import AppError from '../../error/AppError';
+import { commissionServices } from '../commissions/commission.service';
 
 const initiatePayment = catchAsync(async (req: Request, res: Response) => {
   console.log('req.body:', req.body);
@@ -95,8 +96,12 @@ const handleBookingCallback = catchAsync(
       // 2. Prevent double-processing
       if (transaction && transaction.status === 'pending') {
         const totalAmount = Number(transaction.amount);
-        const riderShare = totalAmount * 0.8; // Borla Split: 80% to Rider
-
+        const commissionRate =
+          await commissionServices.getActiveCommissionRateValue();
+        const riderShare = totalAmount * (1 - commissionRate / 100);
+        console.log(
+          `commissionRate: ${commissionRate}, riderShare: ${riderShare}`,
+        );
         // 3. Atomically update all records
         const [updatedTransaction, updatedWallet, updatedBooking] =
           await prisma.$transaction([
@@ -109,7 +114,7 @@ const handleBookingCallback = catchAsync(
                 salesInvoiceId: Data.SalesInvoiceId,
                 checkoutId: Data.CheckoutId,
                 commission: totalAmount - riderShare,
-                comissionPercentage: 20, // 20% commission for Borla
+                comissionPercentage: commissionRate,
                 riderEarnings: riderShare,
               },
             }),
@@ -331,6 +336,5 @@ export const paymentControllers = {
   handleBookingCallback,
   initiateRefund,
   handleRefundCallback,
-
   initiateBookingPaymentCash,
 };
