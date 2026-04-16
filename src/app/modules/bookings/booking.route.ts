@@ -67,7 +67,8 @@ router.patch(
 // Decline a booking (rider declines the ride request)
 router.patch(
   '/:id/decline',
-  auth(USER_ROLE.rider),
+  upload.none(),
+  auth(USER_ROLE.rider, USER_ROLE.user),
   bookingControllers.declineBooking,
 );
 

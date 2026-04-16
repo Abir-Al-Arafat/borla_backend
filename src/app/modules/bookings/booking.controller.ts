@@ -117,9 +117,11 @@ const acceptBooking = catchAsync(async (req: Request, res: Response) => {
 
 // Decline booking (Rider)
 const declineBooking = catchAsync(async (req: Request, res: Response) => {
+  const reason = req.body.reason || 'No reason provided';
   const result = await bookingServices.declineBooking(
     req.params.id as string,
     req.user.userId,
+    reason,
   );
 
   sendResponse(res, {

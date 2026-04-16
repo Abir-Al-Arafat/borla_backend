@@ -957,7 +957,11 @@ const updateBookingStatus = async (
 };
 
 // Decline booking (Rider)
-const declineBooking = async (bookingId: string, riderId: string) => {
+const declineBooking = async (
+  bookingId: string,
+  riderId: string,
+  reason?: string,
+) => {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
   });
@@ -967,12 +971,21 @@ const declineBooking = async (bookingId: string, riderId: string) => {
   }
 
   // Riders can only decline pending bookings that are not yet assigned
-  if (booking.status !== 'pending') {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      'Can only decline pending bookings',
-    );
-  }
+  // if (booking.status !== 'pending' && booking.status === 'accepted') {
+  //   throw new AppError(
+  //     httpStatus.BAD_REQUEST,
+  //     'Can only decline pending bookings',
+  //   );
+  // }
+
+  await prisma.booking.update({
+    where: { id: bookingId },
+    data: {
+      status: 'cancelled',
+      cancelledAt: new Date(),
+      cancellationReason: reason,
+    },
+  });
 
   // Just return success - the booking remains available for other riders
   return { message: 'Booking declined successfully' };

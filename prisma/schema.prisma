@@ -342,10 +342,11 @@ enum placeType {
 
 // Booking model for waste collection requests
 model Booking {
-  id      String        @id @default(auto()) @map("_id") @db.ObjectId
-  userId  String        @db.ObjectId
-  riderId String?       @db.ObjectId
-  status  bookingStatus @default(pending)
+  id                 String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId             String        @db.ObjectId
+  riderId            String?       @db.ObjectId
+  status             bookingStatus @default(pending)
+  cancellationReason String?
 
   // Waste details
   wasteCategory wasteCategory
