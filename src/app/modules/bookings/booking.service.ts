@@ -510,7 +510,7 @@ const getMyBookings = async (userId: string, query: IGetBookingsQuery) => {
     prisma.booking.findMany({
       where: whereCondition,
       skip,
-      take: limit,
+      take: Number(limit),
       include: {
         user: {
           select: {
@@ -569,8 +569,8 @@ const getMyBookings = async (userId: string, query: IGetBookingsQuery) => {
   return {
     bookings: bookingsWithStats,
     meta: {
-      page,
-      limit,
+      page: Number(page),
+      limit: Number(limit),
       total,
       totalPage: Math.ceil(total / limit),
     },
@@ -602,7 +602,7 @@ const getRiderBookings = async (riderId: string, query: IGetBookingsQuery) => {
     prisma.booking.findMany({
       where: whereCondition,
       skip,
-      take: limit,
+      take: Number(limit),
       include: {
         user: {
           select: {
@@ -652,8 +652,8 @@ const getRiderBookings = async (riderId: string, query: IGetBookingsQuery) => {
   return {
     bookings: bookingsWithStats,
     meta: {
-      page,
-      limit,
+      page: Number(page),
+      limit: Number(limit),
       total,
       totalPage: Math.ceil(total / limit),
     },
