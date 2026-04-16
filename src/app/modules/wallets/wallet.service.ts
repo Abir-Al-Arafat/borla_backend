@@ -121,7 +121,7 @@ const requestRiderWithdrawal = async (
   const clientReference = `WDL-${Date.now()}`;
   const reference = `WDL-INIT-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
   const auth = Buffer.from(
-    `${config.HUBTEL_CLIENT_ID}:${config.HUBTEL_CLIENT_SECRET}`,
+    `${config.HUBTEL_API_ID}:${config.HUBTEL_API_KEY}`,
   ).toString('base64');
 
   const payload = {
@@ -153,7 +153,7 @@ const requestRiderWithdrawal = async (
       amount: Number(amount),
       type: 'WITHDRAWAL',
       clientReference,
-      reference,
+      reference: clientReference,
       status: 'pending',
     },
   });
