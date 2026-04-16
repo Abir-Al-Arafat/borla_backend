@@ -42,3 +42,26 @@ export interface IEarningDetails {
   clientReference: string;
   paymentStatus: string;
 }
+
+export interface IRiderEarningsSummary {
+  totalEarnings: number;
+  ridesCompleted: number;
+  totalCommission: number;
+  cashReceived: number;
+}
+
+export interface IRiderEarningsTransaction {
+  key: string;
+  serial: number;
+  userName: string;
+  date: string;
+  paymentMethod: string;
+  amount: string;
+  commission: string;
+  riderEarnings: string;
+}
+
+export interface IRiderEarningsResponse {
+  summary: IRiderEarningsSummary;
+  transactions: IRiderEarningsTransaction[];
+}

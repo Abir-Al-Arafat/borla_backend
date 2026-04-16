@@ -20,4 +20,11 @@ router.get(
   earningsControllers.getEarningDetailsById,
 );
 
+router.get(
+  '/rider/my-earnings',
+  auth('rider'),
+  validateRequest(earningsValidations.riderEarningsZodSchema),
+  earningsControllers.getRiderEarnings,
+);
+
 export const earningsRoutes = router;

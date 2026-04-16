@@ -17,7 +17,19 @@ const earningDetailsZodSchema = z.object({
   }),
 });
 
+const riderEarningsZodSchema = z.object({
+  query: z
+    .object({
+      filter: z.enum(['today', 'weekly', 'monthly']).default('monthly'),
+      page: z.string().optional(),
+      limit: z.string().optional(),
+    })
+    .optional()
+    .default({}),
+});
+
 export const earningsValidations = {
   earningsListZodSchema,
   earningDetailsZodSchema,
+  riderEarningsZodSchema,
 };

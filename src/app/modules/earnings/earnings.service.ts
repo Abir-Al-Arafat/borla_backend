@@ -310,7 +310,134 @@ const getEarningDetailsById = async (id: string) => {
   return details;
 };
 
+const getRiderEarnings = async (
+  riderId: string,
+  filter: 'today' | 'weekly' | 'monthly' = 'monthly',
+  page: number = 1,
+  limit: number = 12,
+) => {
+  const skip = (page - 1) * limit;
+  const now = new Date();
+
+  // Calculate date range based on filter
+  let startDate = new Date(now);
+  startDate.setHours(0, 0, 0, 0);
+
+  if (filter === 'today') {
+    // Today only
+  } else if (filter === 'weekly') {
+    // Last 7 days
+    startDate.setDate(startDate.getDate() - 6);
+  } else if (filter === 'monthly') {
+    // Last 30 days
+    startDate.setDate(startDate.getDate() - 29);
+  }
+
+  const transactionWhere: any = {
+    bookingId: {
+      not: null,
+    },
+    status: 'success',
+    createdAt: {
+      gte: startDate,
+      lte: now,
+    },
+    booking: {
+      is: {
+        riderId: riderId,
+        status: 'completed',
+      },
+    },
+  };
+
+  const bookingWhere: any = {
+    riderId: riderId,
+    status: 'completed',
+    createdAt: {
+      gte: startDate,
+      lte: now,
+    },
+  };
+
+  // Get transactions
+  const [transactions, totalCount, stats] = await Promise.all([
+    prisma.transaction.findMany({
+      where: transactionWhere,
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        booking: {
+          select: {
+            paymentMethod: true,
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+    prisma.transaction.count({ where: transactionWhere }),
+    prisma.booking.aggregate({
+      where: bookingWhere,
+      _count: true,
+    }),
+  ]);
+
+  // Calculate totals
+  const totalEarnings = transactions.reduce((sum, trans) => {
+    return sum + (trans.amount || 0);
+  }, 0);
+
+  const totalCommission = transactions.reduce((sum, trans) => {
+    const commission =
+      ((trans.amount || 0) * (trans.comissionPercentage || 0)) / 100;
+    return sum + commission;
+  }, 0);
+
+  const cashReceived = transactions.reduce((sum, trans) => {
+    return sum + (trans.riderEarnings || 0);
+  }, 0);
+
+  const ridesCompleted = stats._count;
+
+  // Format transaction list
+  const transactionList = transactions.map((transaction, index) => ({
+    transactionId: transaction.id,
+    serial: skip + index + 1,
+    userName: transaction.booking?.user?.name || 'N/A',
+    date: formatDate(transaction.createdAt),
+    paymentMethod: transaction.booking?.paymentMethod || 'N/A',
+    amount: String(transaction.amount ?? 0),
+    commission: String(transaction.comissionPercentage ?? 0),
+    riderEarnings: String(transaction.riderEarnings ?? 0),
+  }));
+
+  return {
+    data: {
+      summary: {
+        totalEarnings: Number(totalEarnings.toFixed(2)),
+        ridesCompleted,
+        totalCommission: Number(totalCommission.toFixed(2)),
+        cashReceived: Number(cashReceived.toFixed(2)),
+      },
+      transactions: transactionList,
+    },
+    pagination: {
+      total: totalCount,
+      page,
+      limit,
+      totalPage: Math.ceil(totalCount / limit),
+    },
+  };
+};
+
 export const earningsServices = {
   getEarnings,
   getEarningDetailsById,
+  getRiderEarnings,
 };

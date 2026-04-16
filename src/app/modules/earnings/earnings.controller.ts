@@ -31,7 +31,31 @@ const getEarningDetailsById = catchAsync(
   },
 );
 
+const getRiderEarnings = catchAsync(async (req: Request, res: Response) => {
+  const riderId = (req.user as any)?.id;
+  const filter =
+    (req.query.filter as 'today' | 'weekly' | 'monthly') || 'monthly';
+  const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+  const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 12;
+
+  const result = await earningsServices.getRiderEarnings(
+    riderId,
+    filter,
+    page,
+    limit,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Rider earnings retrieved successfully',
+    data: result.data,
+    meta: result.pagination,
+  });
+});
+
 export const earningsControllers = {
   getEarnings,
   getEarningDetailsById,
+  getRiderEarnings,
 };
