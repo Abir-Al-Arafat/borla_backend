@@ -1005,7 +1005,7 @@ const markArrivedAtPickup = async (bookingId: string, riderId: string) => {
     );
   }
 
-  if (booking.status !== 'accepted') {
+  if (booking.status !== 'accepted' && booking.status !== 'arrived_pickup') {
     throw new AppError(
       httpStatus.BAD_REQUEST,
       `Cannot mark arrived from status: ${booking.status}`,
