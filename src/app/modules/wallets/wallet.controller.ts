@@ -163,18 +163,26 @@ const withdraw = catchAsync(async (req: Request, res: Response) => {
 
 const handleSendCallback = catchAsync(async (req: Request, res: Response) => {
   // Callback for Withdrawals (Direct Send Money) [cite: 786, 791]
-  const { ResponseCode, ClientReference, Data } = req.body;
+  const { ResponseCode, Data, Message } = req.body;
+  const clientReference = Data?.ClientReference;
   console.log('Received Hubtel send callback req.body:', req.body);
-  console.log('ClientReference:', ClientReference);
+  // console.log('ClientReference:', ClientReference);
+  console.log('ClientReference:', clientReference);
   console.log('ResponseCode:', ResponseCode);
   console.log('Data:', Data);
+  console.log('Message:', Message);
+
+  if (!clientReference) {
+    console.error('No ClientReference found in callback Data');
+    return res.sendStatus(200); // Still return 200 to prevent retries
+  }
   if (ResponseCode === '0000') {
     console.log(
       'Successful withdrawal callback received from Hubtel for ClientReference:',
-      ClientReference,
+      clientReference,
     );
     const transaction = await prisma.transaction.update({
-      where: { reference: ClientReference },
+      where: { reference: clientReference },
       data: { status: 'success', hubtelId: Data.TransactionId },
     });
     console.log('Matching transaction updated in DB:', transaction);
@@ -185,11 +193,11 @@ const handleSendCallback = catchAsync(async (req: Request, res: Response) => {
   } else {
     console.log(
       'Failed withdrawal callback received from Hubtel for ClientReference:',
-      ClientReference,
+      clientReference,
     );
     // If the withdrawal fails at the Hubtel/Network level, REFUND the rider's wallet
     const transaction = await prisma.transaction.findUnique({
-      where: { reference: ClientReference },
+      where: { reference: clientReference },
     });
     console.log(
       'Matching transaction found in DB for failed withdrawal:',
@@ -198,7 +206,7 @@ const handleSendCallback = catchAsync(async (req: Request, res: Response) => {
     if (transaction && transaction.status === 'pending') {
       const [updatedTransaction, updatedWallet] = await prisma.$transaction([
         prisma.transaction.update({
-          where: { reference: ClientReference },
+          where: { reference: clientReference },
           data: { status: 'failed' },
         }),
         prisma.wallet.update({
