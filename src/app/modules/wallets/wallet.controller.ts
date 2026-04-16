@@ -105,62 +105,6 @@ const withdraw = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// const handleReceiveCallback = catchAsync(
-//   async (req: Request, res: Response) => {
-//     // Hubtel sends ResponseCode "0000" for a successful PIN entry [cite: 283, 477]
-//     const { ResponseCode, ClientReference, Data } = req.body;
-//     console.log('Received Hubtel callback req.body:', req.body);
-//     if (ResponseCode === '0000') {
-//       console.log(
-//         'Successful top-up callback received from Hubtel for ClientReference:',
-//         ClientReference,
-//       );
-//       const transaction = await prisma.transaction.findUnique({
-//         where: { clientReference: ClientReference },
-//       });
-//       console.log('Matching transaction found in DB:', transaction);
-//       // Only update if the transaction is still pending to avoid double-crediting
-//       if (transaction && transaction.status === 'pending') {
-//         console.log(
-//           'Updating transaction status to success and crediting wallet...',
-//         );
-//         const [updatedTransaction, updatedWallet] = await prisma.$transaction([
-//           prisma.transaction.update({
-//             where: { clientReference: ClientReference },
-//             data: { status: 'success', hubtelId: Data.TransactionId },
-//           }),
-//           prisma.wallet.update({
-//             where: { userId: transaction.userId },
-//             data: { balance: { increment: transaction.amount } },
-//           }),
-//         ]);
-//         console.log(
-//           `Wallet credited for Rider transaction.userId: ${transaction.userId}`,
-//         );
-
-//         console.log(`transaction.status: ${updatedTransaction.status}`);
-//         console.log(`transaction.hubtelId ${updatedTransaction.hubtelId}`);
-
-//         console.log(`updatedWallet.balance: ${updatedWallet.balance}`);
-//       }
-//     } else {
-//       // Log failed attempts (e.g., wrong PIN or insufficient funds) [cite: 483-492]
-//       console.log(
-//         'Failed top-up callback received from Hubtel for ClientReference:',
-//         ClientReference,
-//       );
-//       const transaction = await prisma.transaction.update({
-//         where: { clientReference: ClientReference },
-//         data: { status: 'failed' },
-//       });
-//       console.log(`transaction.status: ${transaction.status}`);
-//     }
-
-//     // Always send 200 OK back to Hubtel so they stop retrying [cite: 247, 420]
-//     res.sendStatus(200);
-//   },
-// );
-
 const handleSendCallback = catchAsync(async (req: Request, res: Response) => {
   // Callback for Withdrawals (Direct Send Money) [cite: 786, 791]
   const { ResponseCode, Data, Message } = req.body;
