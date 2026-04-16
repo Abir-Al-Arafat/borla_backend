@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Booking Payment Failed</title>
+    <style>
+      :root {
+        --bg: #fff5f4;
+        --card: #ffffff;
+        --text: #221313;
+        --muted: #785d5d;
+        --accent: #d64545;
+        --accent-soft: #ffe4e4;
+        --border: #f1cccc;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: radial-gradient(
+          circle at top,
+          #fff9f9 0%,
+          var(--bg) 55%,
+          #ffecec 100%
+        );
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        color: var(--text);
+      }
+
+      .card {
+        width: min(560px, 100%);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        box-shadow: 0 24px 60px rgba(95, 25, 25, 0.12);
+        padding: 32px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-weight: 700;
+        font-size: 14px;
+      }
+
+      h1 {
+        margin: 18px 0 10px;
+        font-size: 30px;
+        line-height: 1.1;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .grid {
+        margin-top: 24px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: #fff9f9;
+        border: 1px solid #f3dddd;
+      }
+
+      .label {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .value {
+        font-weight: 700;
+        text-align: right;
+        word-break: break-word;
+      }
+
+      .actions {
+        margin-top: 28px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 18px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .btn-secondary {
+        background: #f6f0f0;
+        color: #442121;
+      }
+
+      @media (max-width: 520px) {
+        .card {
+          padding: 24px;
+        }
+
+        h1 {
+          font-size: 24px;
+        }
+
+        .row {
+          flex-direction: column;
+        }
+
+        .value {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="badge">Payment failed</div>
+      <h1>Booking payment was not completed</h1>
+      <p><%= message || 'Please try the payment again.' %></p>
+
+      <section class="grid">
+        <div class="row">
+          <span class="label">Checkout ID</span>
+          <span class="value"><%= checkoutId || 'N/A' %></span>
+        </div>
+      </section>
+
+      <!-- <div class="actions">
+        <a class="btn btn-primary" href="<%= clientUrl %>">Back to app</a>
+        <a class="btn btn-secondary" href="/">API home</a>
+      </div> -->
+    </main>
+  </body>
+</html>

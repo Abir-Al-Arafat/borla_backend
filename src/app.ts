@@ -4,6 +4,9 @@ import cors from 'cors';
 import router from './app/routes';
 import globalErrorHandler from './app/middleware/globalErrorhandler';
 import notFound from './app/middleware/notfound';
+import prisma from './app/shared/prisma';
+import config from './app/config';
+import catchAsync from './app/utils/catchAsync';
 
 const app: Application = express();
 app.use(express.static('public'));
@@ -34,6 +37,52 @@ app.get('/', (req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+app.get(
+  '/booking/success',
+  catchAsync(async (req: Request, res: Response) => {
+    const checkoutId = String(req.query.checkoutid || '');
+
+    const transaction = checkoutId
+      ? await prisma.transaction.findFirst({
+          where: {
+            checkoutId,
+          },
+          include: {
+            booking: {
+              select: {
+                id: true,
+                status: true,
+                paymentMethod: true,
+              },
+            },
+          },
+        })
+      : null;
+
+    res.status(200).render('bookingSuccess', {
+      checkoutId,
+      clientUrl: config.client_Url || '/',
+      transaction,
+    });
+  }),
+);
+
+app.get(
+  '/booking/failed',
+  catchAsync(async (req: Request, res: Response) => {
+    const checkoutId = String(req.query.checkoutid || '');
+    const message = String(
+      req.query.message || 'Payment was cancelled or failed.',
+    );
+
+    res.status(200).render('bookingFailed', {
+      checkoutId,
+      clientUrl: config.client_Url || '/',
+      message,
+    });
+  }),
+);
 
 app.use(globalErrorHandler);
 
