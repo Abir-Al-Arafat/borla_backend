@@ -89,12 +89,12 @@ const handleTopUpCallback = catchAsync(async (req: Request, res: Response) => {
 
 // 2. Initiate Withdrawal (Rider)
 const withdraw = catchAsync(async (req: Request, res: Response) => {
-  const { amount } = req.body;
+  const { amount, channel } = req.body;
   const userId = req.user.userId;
   const result = await walletServices.requestRiderWithdrawal(
     userId,
     amount,
-    req.body.channel,
+    channel,
   );
 
   sendResponse(res, {
