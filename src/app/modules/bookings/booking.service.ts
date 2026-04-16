@@ -528,6 +528,8 @@ const getMyBookings = async (userId: string, query: IGetBookingsQuery) => {
             email: true,
             phoneNumber: true,
             profilePicture: true,
+            location: true,
+            locationName: true,
           },
         },
       },
