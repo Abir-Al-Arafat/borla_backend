@@ -251,8 +251,13 @@ const handleRefundCallback = catchAsync(async (req: Request, res: Response) => {
 
     // Find the original transaction using the SalesInvoiceId (orderId)
     const transaction = await prisma.transaction.findFirst({
-      where: { salesInvoiceId: orderId },
+      where: { checkoutId: orderId },
     });
+
+    if(!transaction) {
+      console.error(`No transaction found for Order ID: ${orderId}`);
+      return res.sendStatus(200); // Still return 200 to prevent retries
+    }
 
     if (transaction) {
       const [updatedTransaction, updatedBooking] = await prisma.$transaction([
