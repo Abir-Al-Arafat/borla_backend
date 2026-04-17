@@ -301,7 +301,7 @@ const initiateBookingPaymentCash = async (bookingId: string) => {
   return booking;
 };
 
-// payment.service.ts
+// verify initiateBookingPayment's payment status with Hubtel and update records accordingly
 
 const syncTransactionStatus = async (clientReference: string) => {
   const auth = Buffer.from(
