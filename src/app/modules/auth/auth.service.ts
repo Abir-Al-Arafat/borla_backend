@@ -429,6 +429,8 @@ const forgotPassword = async (email: string) => {
   const otp = generateOtp(4);
   const expiresAt = moment(currentTime).add(3, 'minute');
 
+  console.log('otp', otp);
+
   await prisma.user.update({
     where: { id: user.id },
     data: {
