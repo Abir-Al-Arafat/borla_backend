@@ -307,7 +307,9 @@ const syncTransactionStatus = async (clientReference: string) => {
   const auth = Buffer.from(
     `${config.HUBTEL_API_ID}:${config.HUBTEL_API_KEY}`,
   ).toString('base64');
+
   const url = `https://api-txnstatus.hubtel.com/transactions/${config.HUBTEL_POS_ID}/status?clientReference=${clientReference}`;
+
   try {
     const response = await axios.get(url, {
       headers: { Authorization: `Basic ${auth}` },
@@ -360,10 +362,41 @@ const syncTransactionStatus = async (clientReference: string) => {
         return { success: true, status: 'Paid' };
       }
     }
-    return { success: false, status: hubtelData?.status || 'Unpaid' };
-  } catch (error) {
+    return {
+      success: false,
+      status: hubtelData?.status || 'Unpaid',
+      data: hubtelData,
+    };
+  } catch (error: any) {
+    let errorMessage = 'Status Check Failed';
+    let hubtelResponse = null;
+
     console.error('Error syncing transaction status:', error);
-    return { success: false, status: 'Unpaid' };
+
+    if (error.response) {
+      // Extract specific message from Hubtel [cite: 880, 149]
+      hubtelResponse = error.response.data;
+      errorMessage =
+        hubtelResponse.message || `Hubtel Error: ${error.response.status}`;
+
+      // Detailed Console Log for Debugging
+      console.log('\n--- HUBTEL STATUS CHECK ERROR ---');
+      console.log(`URL: ${url}`);
+      console.log(`Status Code: ${error.response.status}`);
+      console.log(`Hubtel Message: ${errorMessage}`);
+      console.log(
+        `Payload Returned: ${JSON.stringify(hubtelResponse, null, 2)}`,
+      );
+      console.log('---------------------------------\n');
+    }
+
+    // Return structured error to the controller
+    return {
+      success: false,
+      status: 'Error',
+      message: errorMessage,
+      hubtelRaw: hubtelResponse,
+    };
   }
 };
 

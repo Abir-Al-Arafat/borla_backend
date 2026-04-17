@@ -344,6 +344,16 @@ const verifyPaymentStatus = catchAsync(async (req: Request, res: Response) => {
     clientReference as string,
   );
 
+  // If there was an error communicating with Hubtel, show it clearly
+  if (result.status === 'Error') {
+    return sendResponse(res, {
+      statusCode: httpStatus.NOT_FOUND,
+      success: false,
+      message: result.message,
+      data: result.hubtelRaw,
+    });
+  }
+
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
