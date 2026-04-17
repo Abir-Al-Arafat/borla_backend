@@ -270,9 +270,75 @@ const assignBonusToRider = async (
   }
 };
 
+/**
+ * syncWithdrawalOrBonusStatus
+ * Checks status for outbound transactions (Withdrawals/Bonuses)
+ * URL: https://smrsc.hubtel.com/api/merchants/{PrepaidID}/transactions/status
+ */
+const syncWithdrawalOrBonusStatus = async (clientReference: string) => {
+  const auth = Buffer.from(
+    `${config.HUBTEL_API_ID}:${config.HUBTEL_API_KEY}`,
+  ).toString('base64');
+
+  const prepaidId = config.HUBTEL_PREPAID_ID;
+  const url = `https://smrsc.hubtel.com/api/merchants/${prepaidId}/transactions/status?clientReference=${clientReference}`;
+
+  try {
+    const response = await axios.get(url, {
+      headers: { Authorization: `Basic ${auth}` },
+    });
+
+    console.log('Status check response:', response);
+    console.log('Status check response.data:', response.data);
+
+    const hubtelData = response.data.data;
+
+    // "success" is the transactionStatus for completed outbound transfers [cite: 926]
+    if (hubtelData?.transactionStatus === 'success') {
+      const transaction = await prisma.transaction.findUnique({
+        where: { reference: clientReference },
+      });
+
+      console.log('Transaction found for status sync:', transaction);
+
+      if (transaction && transaction.status === 'pending') {
+        const updatedTransaction = await prisma.transaction.update({
+          where: { reference: clientReference },
+          data: {
+            status: 'success',
+            hubtelId: hubtelData.TransactionId,
+          },
+        });
+        console.log('Transaction updated for status sync:', updatedTransaction);
+        return { success: true, status: 'success', data: hubtelData };
+      }
+    }
+
+    // If it failed at the network level, we need to handle the refund
+    if (hubtelData?.transactionStatus === 'failed') {
+      // Logic to refund rider's virtual wallet if it was a withdrawal
+      // ... existing refund logic from your handleSendCallback ...
+    }
+
+    return {
+      success: false,
+      status: hubtelData?.transactionStatus || 'pending',
+      data: hubtelData,
+    };
+  } catch (error: any) {
+    console.error('Withdrawal Status Check Error:', error);
+    console.error(
+      `Withdrawal Status Check Failed:`,
+      error.response?.data || error.message,
+    );
+    return { success: false, status: 'error', message: error.message };
+  }
+};
+
 export const walletServices = {
   initiateRiderTopUp,
   requestRiderWithdrawal,
   getWallet,
   assignBonusToRider,
+  syncWithdrawalOrBonusStatus,
 };
