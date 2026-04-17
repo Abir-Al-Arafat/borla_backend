@@ -254,7 +254,7 @@ const handleRefundCallback = catchAsync(async (req: Request, res: Response) => {
       where: { checkoutId: orderId },
     });
 
-    if(!transaction) {
+    if (!transaction) {
       console.error(`No transaction found for Order ID: ${orderId}`);
       return res.sendStatus(200); // Still return 200 to prevent retries
     }
@@ -336,10 +336,29 @@ const initiateBookingPaymentCash = catchAsync(
   },
 );
 
+// payment.controller.ts
+const verifyPaymentStatus = catchAsync(async (req: Request, res: Response) => {
+  const { clientReference } = req.params;
+  console.log('Verifying payment status for clientReference:', clientReference);
+  const result = await paymentServices.syncTransactionStatus(
+    clientReference as string,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: result.success
+      ? 'Payment verified and updated.'
+      : `Current status: ${result.status}`,
+    data: result,
+  });
+});
+
 export const paymentControllers = {
   initiatePayment,
   handleBookingCallback,
   initiateRefund,
   handleRefundCallback,
   initiateBookingPaymentCash,
+  verifyPaymentStatus,
 };

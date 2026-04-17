@@ -36,4 +36,14 @@ router.post(
   paymentControllers.initiateBookingPaymentCash,
 );
 
+/**
+ * Manual Status Verification (User-Triggered)
+ * Path: /api/v1/payments/verify/:clientReference
+ */
+router.get(
+  '/verify/:clientReference',
+  auth(USER_ROLE.user, USER_ROLE.rider),
+  paymentControllers.verifyPaymentStatus,
+);
+
 export const paymentRoutes = router;
