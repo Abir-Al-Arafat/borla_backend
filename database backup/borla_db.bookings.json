@@ -1,0 +1,1732 @@
+[{
+  "_id": {
+    "$oid": "699ac4f548262f5e64c38c23"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "completed",
+  "wasteCategory": "plastic",
+  "wasteImages": [],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.187,
+      5.6037
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "dropoffAddress": "1901 Thornridge Road, Accra",
+  "vehicleType": "Tri Cycle",
+  "estimatedDistance": 22,
+  "estimatedTime": "22 min",
+  "paymentMethod": "hubtel",
+  "price": 50,
+  "requestedAt": {
+    "$date": "2026-02-22T08:57:25.842Z"
+  },
+  "createdAt": {
+    "$date": "2026-02-22T08:57:25.842Z"
+  },
+  "updatedAt": {
+    "$date": "2026-03-05T05:07:34.183Z"
+  },
+  "riderId": {
+    "$oid": "69968f5efb2e660be3506019"
+  },
+  "acceptedAt": {
+    "$date": "2026-03-05T02:49:25.838Z"
+  },
+  "arrivedAtPickup": {
+    "$date": "2026-03-05T02:51:47.217Z"
+  },
+  "arrivedAtDropoff": {
+    "$date": "2026-03-05T02:52:43.586Z"
+  },
+  "isPaid": true,
+  "paidAt": {
+    "$date": "2026-03-05T05:07:34.180Z"
+  },
+  "completedAt": {
+    "$date": "2026-03-05T05:07:34.180Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "699ac54348262f5e64c38c24"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "completed",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "C:\\WORK\\cleopasowusu675  Borla Borla pro Application  $5,500 USD  App_Cake\\borla_backend\\public\\uploads\\waste-images\\Frame_2147241426-1771750723130-360157353.png",
+    "C:\\WORK\\cleopasowusu675  Borla Borla pro Application  $5,500 USD  App_Cake\\borla_backend\\public\\uploads\\waste-images\\Frame_2147241426-1771750723134-614505350.png"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.187,
+      5.6037
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "dropoffAddress": "1901 Thornridge Road, Accra",
+  "vehicleType": "Tri Cycle",
+  "estimatedDistance": 22,
+  "estimatedTime": "22 min",
+  "paymentMethod": "cash",
+  "price": 50,
+  "requestedAt": {
+    "$date": "2026-02-22T08:58:43.231Z"
+  },
+  "createdAt": {
+    "$date": "2026-02-22T08:58:43.231Z"
+  },
+  "updatedAt": {
+    "$date": "2026-02-23T05:10:56.227Z"
+  },
+  "riderId": {
+    "$oid": "69968f5efb2e660be3506019"
+  },
+  "acceptedAt": {
+    "$date": "2026-02-23T02:27:36.614Z"
+  },
+  "arrivedAtPickup": {
+    "$date": "2026-02-23T04:48:50.900Z"
+  },
+  "arrivedAtDropoff": {
+    "$date": "2026-02-23T04:55:05.459Z"
+  },
+  "isPaid": true,
+  "paidAt": {
+    "$date": "2026-02-23T05:10:56.224Z"
+  },
+  "completedAt": {
+    "$date": "2026-02-23T05:10:56.224Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69ae4773eb7b75978b519d25"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "completed",
+  "wasteCategory": "plastic",
+  "wasteImages": [],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "dropoffAddress": "1901 Thornridge Road, Accra",
+  "vehicleType": "Tri Cycle",
+  "estimatedDistance": 22,
+  "estimatedTime": "22 min",
+  "paymentMethod": "cash",
+  "price": 50,
+  "isPaid": true,
+  "requestedAt": {
+    "$date": "2026-03-09T04:07:15.671Z"
+  },
+  "createdAt": {
+    "$date": "2026-03-09T04:07:15.671Z"
+  },
+  "updatedAt": {
+    "$date": "2026-03-12T02:44:42.799Z"
+  },
+  "riderId": {
+    "$oid": "69ae30d7c5036d3c18f8586f"
+  },
+  "acceptedAt": {
+    "$date": "2026-03-12T02:09:37.437Z"
+  },
+  "arrivedAtPickup": {
+    "$date": "2026-03-12T02:13:59.343Z"
+  },
+  "paymentCollectedAt": {
+    "$date": "2026-03-12T02:23:17.280Z"
+  },
+  "headingToStationAt": {
+    "$date": "2026-03-12T02:35:37.479Z"
+  },
+  "stationId": {
+    "$oid": "69abe5846a1a30911bed1e2a"
+  },
+  "completedAt": {
+    "$date": "2026-03-12T02:44:42.797Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69b279b2888b35770ffb0135"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "arrived_pickup",
+  "wasteCategory": "plastic",
+  "wasteImages": [],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "price": 14769.08,
+  "isPaid": false,
+  "requestedAt": {
+    "$date": "2026-03-12T08:30:42.507Z"
+  },
+  "createdAt": {
+    "$date": "2026-03-12T08:30:42.507Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-02T05:55:12.466Z"
+  },
+  "riderId": {
+    "$oid": "69ae30d7c5036d3c18f8586f"
+  },
+  "estimatedDistance": 4218.287939354889,
+  "estimatedTime": "210h 55m",
+  "acceptedAt": {
+    "$date": "2026-04-02T05:54:23.837Z"
+  },
+  "arrivedAtPickup": {
+    "$date": "2026-04-02T05:55:12.464Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69b27abab88c19e6cfc72dc7"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "arrived_pickup",
+  "wasteCategory": "plastic",
+  "wasteImages": [],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "requestedAt": {
+    "$date": "2026-03-12T08:35:06.835Z"
+  },
+  "createdAt": {
+    "$date": "2026-03-12T08:35:06.835Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-02T10:48:57.054Z"
+  },
+  "riderId": {
+    "$oid": "69ae30d7c5036d3c18f8586f"
+  },
+  "estimatedDistance": 4218.287939354889,
+  "estimatedTime": "210h 55m",
+  "price": 14769.08,
+  "acceptedAt": {
+    "$date": "2026-04-02T10:42:18.129Z"
+  },
+  "arrivedAtPickup": {
+    "$date": "2026-04-02T10:48:57.052Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69b27c5129f105d30ef38480"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "pending",
+  "wasteCategory": "plastic",
+  "wasteImages": [],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isScheduled": true,
+  "requestedAt": {
+    "$date": "2026-03-12T08:41:53.967Z"
+  },
+  "createdAt": {
+    "$date": "2026-03-12T08:41:53.967Z"
+  },
+  "updatedAt": {
+    "$date": "2026-03-12T08:41:53.967Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69b27cb329f105d30ef38481"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "accepted",
+  "wasteCategory": "plastic",
+  "wasteImages": [],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isScheduled": true,
+  "scheduledFor": {
+    "$date": "2026-03-20T14:30:00.000Z"
+  },
+  "scheduledDate": "March 20, 2026",
+  "requestedAt": {
+    "$date": "2026-03-12T08:43:31.497Z"
+  },
+  "createdAt": {
+    "$date": "2026-03-12T08:43:31.497Z"
+  },
+  "updatedAt": {
+    "$date": "2026-03-12T08:58:29.220Z"
+  },
+  "riderId": {
+    "$oid": "69ae30d7c5036d3c18f8586f"
+  },
+  "estimatedDistance": 8.783518202212912,
+  "estimatedTime": "27 min",
+  "acceptedAt": {
+    "$date": "2026-03-12T08:58:29.216Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69ca40e8e181fa23d0ea07a4"
+  },
+  "userId": {
+    "$oid": "69c77b0ef058fb1dabe66053"
+  },
+  "status": "arrived_pickup",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "C:\\WORK\\cleopasowusu675  Borla Borla pro Application  $5,500 USD  App_Cake\\borla_backend\\public\\uploads\\waste-images\\havn_ss2-1774862567914-574811297.png"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-03-30T09:22:48.043Z"
+  },
+  "createdAt": {
+    "$date": "2026-03-30T09:22:48.043Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-02T05:43:51.211Z"
+  },
+  "riderId": {
+    "$oid": "69ae30d7c5036d3c18f8586f"
+  },
+  "estimatedDistance": 4218.287939354889,
+  "estimatedTime": "210h 55m",
+  "price": 14769.08,
+  "acceptedAt": {
+    "$date": "2026-04-01T10:41:24.153Z"
+  },
+  "arrivedAtPickup": {
+    "$date": "2026-04-02T05:43:51.207Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69cb96cd8b6572b0762d912f"
+  },
+  "userId": {
+    "$oid": "69c77b0ef058fb1dabe66053"
+  },
+  "status": "pending",
+  "wasteCategory": "organic",
+  "wasteImages": [
+    "C:\\WORK\\cleopasowusu675  Borla Borla pro Application  $5,500 USD  App_Cake\\borla_backend\\public\\uploads\\waste-images\\image_picker_E3ABBC9B-0CB0-47B1-AFDF-CB3E3720E605-2821-0000061A2EB2B41C-1774950093448-949865592.jpg"
+  ],
+  "binSize": "medium (120L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 10,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      12.4964,
+      41.9028
+    ]
+  },
+  "pickupAddress": "Piazza della Repubblica, I Municipio, Rome, Rome, Lazio, Italy",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-03-31T09:41:33.520Z"
+  },
+  "createdAt": {
+    "$date": "2026-03-31T09:41:33.520Z"
+  },
+  "updatedAt": {
+    "$date": "2026-03-31T09:41:33.520Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69ccb43dd1f20387f9929f77"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "arrived_pickup",
+  "wasteCategory": "plastic",
+  "wasteImages": [],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-01T05:59:25.775Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-01T05:59:25.775Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-02T06:48:24.298Z"
+  },
+  "riderId": {
+    "$oid": "69ae30d7c5036d3c18f8586f"
+  },
+  "estimatedDistance": 4218.287939354889,
+  "estimatedTime": "210h 55m",
+  "price": 14769.08,
+  "acceptedAt": {
+    "$date": "2026-04-02T06:48:05.570Z"
+  },
+  "arrivedAtPickup": {
+    "$date": "2026-04-02T06:48:24.292Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69ccb44cd1f20387f9929f78"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "arrived_pickup",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "C:\\WORK\\cleopasowusu675  Borla Borla pro Application  $5,500 USD  App_Cake\\borla_backend\\public\\uploads\\waste-images\\WhatsApp_Image_2026-02-23_at_14-1775023180863-456998930.jpeg"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-01T05:59:40.920Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-01T05:59:40.920Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-06T05:32:18.550Z"
+  },
+  "riderId": {
+    "$oid": "69ae30d7c5036d3c18f8586f"
+  },
+  "estimatedDistance": 4218.287939354889,
+  "estimatedTime": "210h 55m",
+  "price": 14769.08,
+  "acceptedAt": {
+    "$date": "2026-04-06T04:52:29.728Z"
+  },
+  "arrivedAtPickup": {
+    "$date": "2026-04-06T05:32:18.544Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69ccb5738c514a7e43bf78a5"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "completed",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "C:\\WORK\\cleopasowusu675  Borla Borla pro Application  $5,500 USD  App_Cake\\borla_backend\\public\\uploads\\waste-images\\WhatsApp_Image_2026-02-23_at_14-1775023475166-242049735.jpeg"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": true,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-01T06:04:35.217Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-01T06:04:35.217Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-11T09:39:30.862Z"
+  },
+  "riderId": {
+    "$oid": "69ae30d7c5036d3c18f8586f"
+  },
+  "estimatedDistance": 4218.287939354889,
+  "estimatedTime": "210h 55m",
+  "price": 14769.08,
+  "acceptedAt": {
+    "$date": "2026-04-01T10:09:41.179Z"
+  },
+  "arrivedAtPickup": {
+    "$date": "2026-04-11T06:17:13.745Z"
+  },
+  "paidAt": {
+    "$date": "2026-04-11T09:12:19.306Z"
+  },
+  "paymentCollectedAt": {
+    "$date": "2026-04-11T09:12:19.306Z"
+  },
+  "headingToStationAt": {
+    "$date": "2026-04-11T09:33:10.255Z"
+  },
+  "stationId": {
+    "$oid": "69abe5846a1a30911bed1e2a"
+  },
+  "completedAt": {
+    "$date": "2026-04-11T09:39:30.860Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69ccb623c78ae8b52bcb69f7"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "payment_collected",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "public/uploads/waste-images/WhatsApp_Image_2026-02-23_at_14-1775023651141-390612026.jpeg"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": true,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-01T06:07:31.189Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-01T06:07:31.189Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-11T05:19:58.044Z"
+  },
+  "riderId": {
+    "$oid": "69ae30d7c5036d3c18f8586f"
+  },
+  "estimatedDistance": 4218.287939354889,
+  "estimatedTime": "210h 55m",
+  "price": 14769.08,
+  "acceptedAt": {
+    "$date": "2026-04-01T09:53:08.407Z"
+  },
+  "arrivedAtPickup": {
+    "$date": "2026-04-02T05:26:39.893Z"
+  },
+  "paidAt": {
+    "$date": "2026-04-11T05:19:58.040Z"
+  },
+  "paymentCollectedAt": {
+    "$date": "2026-04-11T05:19:58.040Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69d382a6d8431b0a7155c433"
+  },
+  "userId": {
+    "$oid": "69c77b0ef058fb1dabe66053"
+  },
+  "status": "pending",
+  "wasteCategory": "metal",
+  "wasteImages": [
+    "public/uploads/waste-images/scaled_1000000140-1775469222425-826814782.png"
+  ],
+  "binSize": "medium (120L)",
+  "binQuantity": {
+    "$numberLong": "3"
+  },
+  "wasteSize": 50,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      90.4075879,
+      23.7808903
+    ]
+  },
+  "pickupAddress": "Aqua Tower, Dhaka, Dhaka District, Dhaka Division, Bangladesh",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isScheduled": true,
+  "requestedAt": {
+    "$date": "2026-04-06T09:53:42.481Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-06T09:53:42.481Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-06T09:53:42.481Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db11694d49f52c49dc6a11"
+  },
+  "userId": {
+    "$oid": "69c77b0ef058fb1dabe66053"
+  },
+  "status": "pending",
+  "wasteCategory": "general",
+  "wasteImages": [
+    "public/uploads/waste-images/scaled_19-1775964521602-788925771.jpg"
+  ],
+  "binSize": "large (240L)",
+  "binQuantity": {
+    "$numberLong": "3"
+  },
+  "wasteSize": 9,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -122.084,
+      37.4219983
+    ]
+  },
+  "pickupAddress": "1600 Amphitheatre Pkwy, Mountain View, Santa Clara County, California, United States",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T03:28:41.665Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T03:28:41.665Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T03:28:41.665Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db30ab047de83157a0fd57"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "pending",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "public/uploads/waste-images/WhatsApp_Image_2026-02-23_at_14-1775972523390-898609872.jpeg"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T05:42:03.455Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T05:42:03.455Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T05:42:03.455Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db312e047de83157a0fd58"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "pending",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "public/uploads/waste-images/WhatsApp_Image_2026-02-23_at_14-1775972654715-71563434.jpeg"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T05:44:14.770Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T05:44:14.770Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T05:44:14.770Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db3217047de83157a0fd59"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "pending",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "public/uploads/waste-images/WhatsApp_Image_2026-02-23_at_14-1775972887173-377914379.jpeg"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.184,
+      5.67
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T05:48:07.220Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T05:48:07.220Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T05:48:07.220Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db3a8d9ad2b5b541158a1f"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "pending",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "public/uploads/waste-images/WhatsApp_Image_2026-02-23_at_14-1775975053346-4408468.jpeg"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      5.681234,
+      -0.175432
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T06:24:13.672Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T06:24:13.672Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T06:24:13.672Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db3aef9ad2b5b541158a20"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "pending",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "public/uploads/waste-images/WhatsApp_Image_2026-02-23_at_14-1775975151193-949708201.jpeg"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      5.681234,
+      -0.175432
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T06:25:51.249Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T06:25:51.249Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T06:25:51.249Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db3b139ad2b5b541158a21"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "pending",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "public/uploads/waste-images/WhatsApp_Image_2026-02-23_at_14-1775975187688-919576418.jpeg"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T06:26:27.746Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T06:26:27.746Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T06:26:27.746Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db3b7e9ad2b5b541158a22"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "pending",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "public/uploads/waste-images/WhatsApp_Image_2026-02-23_at_14-1775975294643-465177230.jpeg"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T06:28:14.700Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T06:28:14.700Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T06:28:14.700Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db3c6a3bbdd9ffdb650db7"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "pending",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "public/uploads/waste-images/WhatsApp_Image_2026-02-23_at_14-1775975530779-135250266.jpeg"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T06:32:10.830Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T06:32:10.830Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T06:32:10.830Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db3d5c2991c90f44a32da9"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "pending",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "public/uploads/waste-images/WhatsApp_Image_2026-02-23_at_14-1775975772581-19670698.jpeg"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T06:36:12.634Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T06:36:12.634Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T06:36:12.634Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db54d2a16271c879c46955"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "pending",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "public/uploads/waste-images/WhatsApp_Image_2026-02-23_at_14-1775981778626-164625600.jpeg"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T08:16:18.677Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T08:16:18.677Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T08:16:18.677Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db563d45c6e9d04b85c631"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "pending",
+  "wasteCategory": "plastic",
+  "wasteImages": [
+    "public/uploads/waste-images/WhatsApp_Image_2026-02-23_at_14-1775982141359-288503050.jpeg"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T08:22:21.440Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T08:22:21.440Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T08:22:21.440Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db5b6b45c6e9d04b85c634"
+  },
+  "userId": {
+    "$oid": "69c77b0ef058fb1dabe66053"
+  },
+  "status": "pending",
+  "wasteCategory": "general",
+  "wasteImages": [
+    "public/uploads/waste-images/scaled_18-1775983467214-197309028.jpg"
+  ],
+  "binSize": "large (240L)",
+  "binQuantity": {
+    "$numberLong": "5"
+  },
+  "wasteSize": 400,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -122.084,
+      37.4219983
+    ]
+  },
+  "pickupAddress": "1600 Amphitheatre Pkwy, Mountain View, Santa Clara County, California, United States",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T08:44:27.270Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T08:44:27.270Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T08:44:27.270Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db5ba145c6e9d04b85c635"
+  },
+  "userId": {
+    "$oid": "69c77b0ef058fb1dabe66053"
+  },
+  "status": "pending",
+  "wasteCategory": "general",
+  "wasteImages": [
+    "public/uploads/waste-images/scaled_18-1775983521869-884733391.jpg"
+  ],
+  "binSize": "large (240L)",
+  "binQuantity": {
+    "$numberLong": "5"
+  },
+  "wasteSize": 400,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -122.084,
+      37.4219983
+    ]
+  },
+  "pickupAddress": "1600 Amphitheatre Pkwy, Mountain View, Santa Clara County, California, United States",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T08:45:21.920Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T08:45:21.920Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T08:45:21.920Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db5bcb45c6e9d04b85c636"
+  },
+  "userId": {
+    "$oid": "69c77b0ef058fb1dabe66053"
+  },
+  "status": "pending",
+  "wasteCategory": "general",
+  "wasteImages": [
+    "public/uploads/waste-images/scaled_18-1775983563770-186290264.jpg"
+  ],
+  "binSize": "large (240L)",
+  "binQuantity": {
+    "$numberLong": "5"
+  },
+  "wasteSize": 400,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -122.084,
+      37.4219983
+    ]
+  },
+  "pickupAddress": "1600 Amphitheatre Pkwy, Mountain View, Santa Clara County, California, United States",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T08:46:03.847Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T08:46:03.847Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T08:46:03.847Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db5e0b45c6e9d04b85c637"
+  },
+  "userId": {
+    "$oid": "69c77b0ef058fb1dabe66053"
+  },
+  "status": "pending",
+  "wasteCategory": "organic",
+  "wasteImages": [
+    "public/uploads/waste-images/Screenshot-0411-153214-1775984139880-395707805.png"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.157,
+      5.6737
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T08:55:39.934Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T08:55:39.934Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T08:55:39.934Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db5e2d45c6e9d04b85c638"
+  },
+  "userId": {
+    "$oid": "69c77b0ef058fb1dabe66053"
+  },
+  "status": "pending",
+  "wasteCategory": "organic",
+  "wasteImages": [
+    "public/uploads/waste-images/Screenshot-0411-153214-1775984173703-944222776.png"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      5.6737,
+      -0.157
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T08:56:13.750Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T08:56:13.750Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T08:56:13.750Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db5e7a45c6e9d04b85c639"
+  },
+  "userId": {
+    "$oid": "69c77b0ef058fb1dabe66053"
+  },
+  "status": "pending",
+  "wasteCategory": "organic",
+  "wasteImages": [
+    "public/uploads/waste-images/Screenshot-0411-153214-1775984250662-206081107.png"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      5.6737,
+      -0.157
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T08:57:30.706Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T08:57:30.706Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T08:57:30.706Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db5ec045c6e9d04b85c63a"
+  },
+  "userId": {
+    "$oid": "69c77b0ef058fb1dabe66053"
+  },
+  "status": "pending",
+  "wasteCategory": "organic",
+  "wasteImages": [
+    "public/uploads/waste-images/Screenshot-0411-153214-1775984320275-76884847.png"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.157,
+      5.6737
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T08:58:40.321Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T08:58:40.321Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T08:58:40.321Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db5f2045c6e9d04b85c63b"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "pending",
+  "wasteCategory": "plastic",
+  "wasteImages": [],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T09:00:16.894Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T09:00:16.894Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T09:00:16.894Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db5fed45c6e9d04b85c640"
+  },
+  "userId": {
+    "$oid": "69c77b0ef058fb1dabe66053"
+  },
+  "status": "pending",
+  "wasteCategory": "organic",
+  "wasteImages": [
+    "public/uploads/waste-images/Screenshot-0411-153214-1775984621616-764642464.png"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T09:03:41.672Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T09:03:41.672Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T09:03:41.672Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db601345c6e9d04b85c643"
+  },
+  "userId": {
+    "$oid": "69647e3efd573644c35b2263"
+  },
+  "status": "pending",
+  "wasteCategory": "plastic",
+  "wasteImages": [],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T09:04:19.958Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T09:04:19.958Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T09:04:19.958Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db603545c6e9d04b85c646"
+  },
+  "userId": {
+    "$oid": "69c77b0ef058fb1dabe66053"
+  },
+  "status": "pending",
+  "wasteCategory": "organic",
+  "wasteImages": [
+    "public/uploads/waste-images/Screenshot-0411-153214-1775984693174-81063362.png"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T09:04:53.222Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T09:04:53.222Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T09:04:53.222Z"
+  }
+},
+{
+  "_id": {
+    "$oid": "69db616345c6e9d04b85c64d"
+  },
+  "userId": {
+    "$oid": "69c77b0ef058fb1dabe66053"
+  },
+  "status": "pending",
+  "wasteCategory": "organic",
+  "wasteImages": [
+    "public/uploads/waste-images/Screenshot-0411-153214-1775984995557-456343895.png"
+  ],
+  "binSize": "small (50L)",
+  "binQuantity": {
+    "$numberLong": "2"
+  },
+  "wasteSize": 5,
+  "pickupLocation": {
+    "type": "Point",
+    "coordinates": [
+      -0.175432,
+      5.681234
+    ]
+  },
+  "pickupAddress": "85 Ave, Street Side Road, Accra",
+  "dropoffLocation": null,
+  "vehicleType": "Tri Cycle",
+  "paymentMethod": "cash",
+  "isPaid": false,
+  "isPaidByCustomer": false,
+  "isRefunded": false,
+  "isScheduled": false,
+  "requestedAt": {
+    "$date": "2026-04-12T09:09:55.603Z"
+  },
+  "createdAt": {
+    "$date": "2026-04-12T09:09:55.603Z"
+  },
+  "updatedAt": {
+    "$date": "2026-04-12T09:09:55.603Z"
+  }
+}]
