@@ -308,59 +308,63 @@ const syncTransactionStatus = async (clientReference: string) => {
     `${config.HUBTEL_API_ID}:${config.HUBTEL_API_KEY}`,
   ).toString('base64');
   const url = `https://api-txnstatus.hubtel.com/transactions/${config.HUBTEL_POS_ID}/status?clientReference=${clientReference}`;
-
-  const response = await axios.get(url, {
-    headers: { Authorization: `Basic ${auth}` },
-  });
-  console.log('Transaction status response:', response);
-  const hubtelData = response.data.data;
-
-  // status can be "Paid", "Unpaid", or "Refunded" [cite: 880, 900]
-  if (hubtelData?.status === 'Paid') {
-    const transaction = await prisma.transaction.findUnique({
-      where: { reference: clientReference },
-      include: { booking: true },
+  try {
+    const response = await axios.get(url, {
+      headers: { Authorization: `Basic ${auth}` },
     });
+    console.log('Transaction status response:', response);
+    const hubtelData = response.data.data;
 
-    console.log('Transaction found for status sync:', transaction);
+    // status can be "Paid", "Unpaid", or "Refunded" [cite: 880, 900]
+    if (hubtelData?.status === 'Paid') {
+      const transaction = await prisma.transaction.findUnique({
+        where: { reference: clientReference },
+        include: { booking: true },
+      });
 
-    if (transaction && transaction.status === 'pending') {
-      const totalAmount = Number(transaction.amount);
-      // Assuming a 20% commission rate as per previous logic
-      const riderShare = totalAmount * 0.8;
+      console.log('Transaction found for status sync:', transaction);
 
-      const [updatedTransaction, updatedWallet, updatedBooking] =
-        await prisma.$transaction([
-          prisma.transaction.update({
-            where: { reference: clientReference },
-            data: {
-              status: 'success',
-              hubtelId: hubtelData.transactionId,
-              salesInvoiceId: hubtelData.externalTransactionId,
-            },
-          }),
-          prisma.wallet.update({
-            where: { userId: transaction.booking?.riderId! },
-            data: { balance: { increment: riderShare } },
-          }),
-          prisma.booking.update({
-            where: { id: transaction.bookingId as string },
-            data: { isPaid: true, paidAt: new Date() },
-          }),
-        ]);
-      console.log(
-        `Updated transaction after successful payment updatedTransaction: ${JSON.stringify(updatedTransaction, null, 2)}`,
-      );
-      console.log(
-        `Updated rider wallet after successful payment updatedWallet: ${JSON.stringify(updatedWallet, null, 2)}`,
-      );
-      console.log(
-        `Updated booking after successful payment updatedBooking: ${JSON.stringify(updatedBooking, null, 2)}`,
-      );
-      return { success: true, status: 'Paid' };
+      if (transaction && transaction.status === 'pending') {
+        const totalAmount = Number(transaction.amount);
+        // Assuming a 20% commission rate as per previous logic
+        const riderShare = totalAmount * 0.8;
+
+        const [updatedTransaction, updatedWallet, updatedBooking] =
+          await prisma.$transaction([
+            prisma.transaction.update({
+              where: { reference: clientReference },
+              data: {
+                status: 'success',
+                hubtelId: hubtelData.transactionId,
+                salesInvoiceId: hubtelData.externalTransactionId,
+              },
+            }),
+            prisma.wallet.update({
+              where: { userId: transaction.booking?.riderId! },
+              data: { balance: { increment: riderShare } },
+            }),
+            prisma.booking.update({
+              where: { id: transaction.bookingId as string },
+              data: { isPaid: true, paidAt: new Date() },
+            }),
+          ]);
+        console.log(
+          `Updated transaction after successful payment updatedTransaction: ${JSON.stringify(updatedTransaction, null, 2)}`,
+        );
+        console.log(
+          `Updated rider wallet after successful payment updatedWallet: ${JSON.stringify(updatedWallet, null, 2)}`,
+        );
+        console.log(
+          `Updated booking after successful payment updatedBooking: ${JSON.stringify(updatedBooking, null, 2)}`,
+        );
+        return { success: true, status: 'Paid' };
+      }
     }
+    return { success: false, status: hubtelData?.status || 'Unpaid' };
+  } catch (error) {
+    console.error('Error syncing transaction status:', error);
+    return { success: false, status: 'Unpaid' };
   }
-  return { success: false, status: hubtelData?.status || 'Unpaid' };
 };
 
 export const paymentServices = {
