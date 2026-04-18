@@ -5,10 +5,11 @@ import sendResponse from '../../utils/sendResponse';
 import { messageServices } from './message.service';
 import { IGetChatsQuery, IGetMessagesQuery } from './message.interface';
 import { emitToChat, emitToUser } from '../../utils/socket';
+import { toPublicUploadPath } from '@app/utils/filePathSanitizer';
 
 const sendMessage = catchAsync(async (req: Request, res: Response) => {
   const imagePaths = Array.isArray(req.files)
-    ? req.files.map((file: any) => file.path)
+    ? req.files.map((file: any) => toPublicUploadPath(file.path))
     : [];
 
   const result = await messageServices.sendMessage(req.user.userId, {
