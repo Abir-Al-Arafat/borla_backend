@@ -240,6 +240,22 @@ const handleBonusCallback = catchAsync(async (req: Request, res: Response) => {
   res.sendStatus(200);
 });
 
+const verifyWithdrawalStatus = catchAsync(
+  async (req: Request, res: Response) => {
+    const { clientReference } = req.params;
+    const result = await walletServices.syncWithdrawalOrBonusStatus(
+      clientReference as string,
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: `Withdrawal status check complete. Current status: ${result.status}`,
+      data: result,
+    });
+  },
+);
+
 export const walletControllers = {
   topUp,
   withdraw,
@@ -249,4 +265,5 @@ export const walletControllers = {
   handleTopUpCallback,
   handleSendCallback,
   handleBonusCallback,
+  verifyWithdrawalStatus,
 };

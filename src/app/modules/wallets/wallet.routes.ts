@@ -61,4 +61,10 @@ router.post(
   walletControllers.handleBonusCallback,
 );
 
+router.get(
+  '/verify-withdrawal/:clientReference',
+  // auth(USER_ROLE.admin, USER_ROLE.rider),
+  walletControllers.verifyWithdrawalStatus,
+);
+
 export const walletRoutes = router;

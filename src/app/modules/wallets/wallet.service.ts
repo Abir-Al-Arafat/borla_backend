@@ -317,7 +317,38 @@ const syncWithdrawalOrBonusStatus = async (clientReference: string) => {
     // If it failed at the network level, we need to handle the refund
     if (hubtelData?.transactionStatus === 'failed') {
       // Logic to refund rider's virtual wallet if it was a withdrawal
-      // ... existing refund logic from your handleSendCallback ...
+      const transaction = await prisma.transaction.findUnique({
+        where: { reference: clientReference },
+      });
+
+      // Only refund if the current status is still 'pending' to avoid duplicate credits
+      if (transaction && transaction.status === 'pending') {
+        const [updatedTransaction, updatedWallet] = await prisma.$transaction([
+          // 1. Mark the transaction as failed
+          prisma.transaction.update({
+            where: { reference: clientReference },
+            data: { status: 'failed' },
+          }),
+          // 2. Credit the amount back to the rider's wallet if it was a withdrawal
+          prisma.wallet.update({
+            where: { userId: transaction.userId },
+            data: { balance: { increment: transaction.amount } },
+          }),
+        ]);
+
+        console.log(`--- Withdrawal Sync Failure (Refunded) ---`);
+        console.log(`Transaction ID: ${updatedTransaction.id} set to failed.`);
+        console.log(
+          `Rider ${transaction.userId} wallet incremented by ${transaction.amount}.`,
+        );
+        console.log(`New Balance: ${updatedWallet.balance}`);
+
+        return {
+          success: false,
+          status: 'failed',
+          message: 'Transaction failed and rider refunded.',
+        };
+      }
     }
 
     return {
