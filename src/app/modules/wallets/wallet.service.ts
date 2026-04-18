@@ -358,11 +358,26 @@ const syncWithdrawalOrBonusStatus = async (clientReference: string) => {
     };
   } catch (error: any) {
     console.error('Withdrawal Status Check Error:', error);
-    console.error(
-      `Withdrawal Status Check Failed:`,
-      error.response?.data || error.message,
-    );
-    return { success: false, status: 'error', message: error.message };
+
+    // Structured Error Parsing
+    const hubtelError = error.response?.data;
+    const errorMessage = hubtelError?.Data || error.message;
+    const responseCode = hubtelError?.ResponseCode || 'UNKNOWN_CODE';
+
+    // Readable Console Log
+    console.error(`\n--- HUBTEL STATUS CHECK FAILED ---`);
+    console.error(`ClientRef: ${clientReference}`);
+    console.error(`ResponseCode: ${responseCode}`);
+    console.error(`Message: ${errorMessage}`);
+    console.error(`URL: ${url}`);
+    console.error(`----------------------------------\n`);
+
+    return {
+      success: false,
+      status: 'error',
+      message: errorMessage,
+      code: responseCode,
+    };
   }
 };
 

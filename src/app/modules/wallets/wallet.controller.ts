@@ -247,10 +247,24 @@ const verifyWithdrawalStatus = catchAsync(
       clientReference as string,
     );
 
+    if (!result.success && result.status === 'error') {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST, // Or 404 based on your preference
+        success: false,
+        message: 'Hubtel status check failed',
+        data: {
+          hubtelMessage: result.message,
+          hubtelCode: result.code,
+        },
+      });
+    }
+
     sendResponse(res, {
       statusCode: httpStatus.OK,
-      success: true,
-      message: `Withdrawal status check complete. Current status: ${result.status}`,
+      success: result.success,
+      message: result.success
+        ? 'Sync complete'
+        : 'Sync performed, transaction not found or pending.',
       data: result,
     });
   },
