@@ -34,12 +34,12 @@ const createRating = async (userId: string, payload: ICreateRating) => {
   }
 
   // Check if booking is completed
-  if (booking.status !== 'completed') {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      'Can only rate completed bookings',
-    );
-  }
+  // if (booking.status !== 'completed') {
+  //   throw new AppError(
+  //     httpStatus.BAD_REQUEST,
+  //     'Can only rate completed bookings',
+  //   );
+  // }
 
   // Check if rating already exists
   if (booking.rating) {
