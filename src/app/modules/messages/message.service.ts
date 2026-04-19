@@ -377,7 +377,7 @@ const getBookingMessages = async (
         images: true,
       },
       orderBy: {
-        createdAt: 'asc',
+        createdAt: 'desc',
       },
       skip,
       take: limit,
