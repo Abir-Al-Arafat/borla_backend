@@ -88,7 +88,7 @@ const getMyChats = catchAsync(async (req: Request, res: Response) => {
 const sendSupportMessageByUser = catchAsync(
   async (req: Request, res: Response) => {
     const imagePaths = Array.isArray(req.files)
-      ? req.files.map((file: any) => file.path)
+      ? req.files.map((file: any) => toPublicUploadPath(file.path))
       : [];
 
     const result = await messageServices.sendSupportMessageByUser(
