@@ -18,6 +18,13 @@ const SUPPORT_ADMIN_ROLES = [
   'supper_admin',
 ];
 
+const SUPPORT_CUSTOMER_ROLES = ['user', 'rider'] as const;
+
+const isSupportCustomerRole = (role: string) =>
+  SUPPORT_CUSTOMER_ROLES.includes(
+    role as (typeof SUPPORT_CUSTOMER_ROLES)[number],
+  );
+
 const getBookingAndValidateParticipant = async (
   bookingId: string,
   authUserId: string,
@@ -827,8 +834,8 @@ const getAdminSupportChats = async (query: IGetChatsQuery) => {
   });
 
   let supportChats = chats.filter(chat => {
-    const hasCustomer = chat.participants.some(
-      participant => participant.user.role === 'user',
+    const hasCustomer = chat.participants.some(participant =>
+      isSupportCustomerRole(participant.user.role),
     );
     const hasAdmin = chat.participants.some(participant =>
       SUPPORT_ADMIN_ROLES.includes(participant.user.role),
@@ -838,8 +845,8 @@ const getAdminSupportChats = async (query: IGetChatsQuery) => {
 
   if (searchTerm) {
     supportChats = supportChats.filter(chat => {
-      const customer = chat.participants.find(
-        participant => participant.user.role === 'user',
+      const customer = chat.participants.find(participant =>
+        isSupportCustomerRole(participant.user.role),
       );
 
       const customerName = customer?.user?.name?.toLowerCase() || '';
@@ -964,8 +971,8 @@ const getAdminSupportChats = async (query: IGetChatsQuery) => {
   }
 
   const data = paginatedChats.map(chat => {
-    const customer = chat.participants.find(
-      participant => participant.user.role === 'user',
+    const customer = chat.participants.find(participant =>
+      isSupportCustomerRole(participant.user.role),
     );
     const supportAgent = chat.participants.find(participant =>
       SUPPORT_ADMIN_ROLES.includes(participant.user.role),
@@ -1001,8 +1008,8 @@ const replySupportMessageByAdmin = async (
 ) => {
   const chat = await getSupportChatById(chatId);
 
-  const customer = chat.participants.find(
-    participant => participant.user.role === 'user',
+  const customer = chat.participants.find(participant =>
+    isSupportCustomerRole(participant.user.role),
   );
 
   if (!customer) {
