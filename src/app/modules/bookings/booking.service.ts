@@ -386,6 +386,9 @@ const getAvailableBookingsForRider = async (
       paymentMethod: 1,
       price: 1,
       status: 1,
+      isScheduled: 1,
+      scheduledFor: 1,
+      scheduledDate: 1,
       createdAt: 1,
       updatedAt: 1,
       ...(populateUser
@@ -457,6 +460,9 @@ const getAvailableBookingsForRider = async (
         status: booking.status,
         createdAt: booking.createdAt,
         updatedAt: booking.updatedAt,
+        isScheduled: booking.isScheduled,
+        scheduledFor: booking.scheduledFor,
+        scheduledDate: booking.scheduledDate,
         user:
           populateUser && booking.user
             ? {
