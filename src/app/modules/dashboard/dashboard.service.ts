@@ -202,7 +202,7 @@ const getDashboardStats = async (): Promise<IDashboardStats> => {
 const getUserOverview = async (
   query: IUserOverviewQuery,
 ): Promise<IUserOverviewData[]> => {
-  const { year, userType = 'user' } = query;
+  const { year, userType } = query;
 
   // Use current year if not provided or invalid
   const targetYear =
@@ -216,18 +216,28 @@ const getUserOverview = async (
     throw new Error('Invalid year provided');
   }
 
-  const role = userType.toLowerCase() === 'user' ? 'user' : 'rider';
+  const whereCondition: {
+    isDeleted: boolean;
+    createdAt: {
+      gte: Date;
+      lte: Date;
+    };
+    role?: 'user' | 'rider';
+  } = {
+    isDeleted: false,
+    createdAt: {
+      gte: startOfYear,
+      lte: endOfYear,
+    },
+  };
+
+  if (userType) {
+    whereCondition.role = userType;
+  }
 
   // Get all users created in the specified year
   const users = await prisma.user.findMany({
-    where: {
-      role,
-      isDeleted: false,
-      createdAt: {
-        gte: startOfYear,
-        lte: endOfYear,
-      },
-    },
+    where: whereCondition,
     select: {
       createdAt: true,
     },
