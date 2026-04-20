@@ -9,14 +9,14 @@ const router = Router();
 // Get dashboard statistics (all 8 cards)
 router.get(
   '/stats',
-  auth('admin', 'supper_admin'),
+  auth('admin', 'sub_admin', 'supper_admin'),
   dashboardControllers.getDashboardStats,
 );
 
 // Get user overview chart data
 router.get(
   '/user-overview',
-  auth('admin', 'supper_admin'),
+  auth('admin', 'sub_admin', 'supper_admin'),
   validateRequest(dashboardValidations.userOverviewQueryZodSchema),
   dashboardControllers.getUserOverview,
 );
@@ -24,7 +24,7 @@ router.get(
 // Get revenue chart data
 router.get(
   '/revenue-chart',
-  auth('admin', 'supper_admin'),
+  auth('admin', 'sub_admin', 'supper_admin'),
   validateRequest(dashboardValidations.revenueChartQueryZodSchema),
   dashboardControllers.getRevenueChart,
 );
@@ -32,7 +32,7 @@ router.get(
 // Get zone comparison chart data
 router.get(
   '/zone-comparison',
-  auth('admin', 'supper_admin'),
+  auth('admin', 'sub_admin', 'supper_admin'),
   validateRequest(dashboardValidations.zoneComparisonQueryZodSchema),
   dashboardControllers.getZoneComparison,
 );
@@ -40,7 +40,7 @@ router.get(
 // Get waste distribution data
 router.get(
   '/waste-distribution',
-  auth('admin', 'supper_admin'),
+  auth('admin', 'sub_admin', 'supper_admin'),
   validateRequest(dashboardValidations.wasteDistributionQueryZodSchema),
   dashboardControllers.getWasteDistribution,
 );
@@ -48,7 +48,7 @@ router.get(
 // Get recent accounts list
 router.get(
   '/recent-accounts',
-  auth('admin', 'supper_admin'),
+  auth('admin', 'sub_admin', 'supper_admin'),
   validateRequest(dashboardValidations.recentAccountsQueryZodSchema),
   dashboardControllers.getRecentAccounts,
 );

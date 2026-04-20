@@ -8,14 +8,14 @@ const router = Router();
 
 router.get(
   '/',
-  auth('admin', 'supper_admin'),
+  auth('admin', 'supper_admin', 'sub_admin'),
   validateRequest(earningsValidations.earningsListZodSchema),
   earningsControllers.getEarnings,
 );
 
 router.get(
   '/:id',
-  auth('admin', 'supper_admin'),
+  auth('admin', 'supper_admin', 'sub_admin'),
   validateRequest(earningsValidations.earningDetailsZodSchema),
   earningsControllers.getEarningDetailsById,
 );

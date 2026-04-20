@@ -39,7 +39,11 @@ router.post(
   userController.createUser,
 );
 
-router.get('/', auth(USER_ROLE.admin), userController.getAllUser);
+router.get(
+  '/',
+  auth(USER_ROLE.admin, USER_ROLE.sub_admin, USER_ROLE.super_admin),
+  userController.getAllUser,
+);
 
 router.get(
   '/my-profile',
