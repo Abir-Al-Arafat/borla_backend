@@ -25,7 +25,7 @@ const riderEarningsZodSchema = z.object({
       limit: z.string().optional(),
     })
     .optional()
-    .default({}),
+    .default({ filter: 'monthly' }),
 });
 
 export const earningsValidations = {
