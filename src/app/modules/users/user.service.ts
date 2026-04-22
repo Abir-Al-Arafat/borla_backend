@@ -62,10 +62,20 @@ const create = async (payload: User) => {
 
 const getAll = async (query: Record<string, any>) => {
   const { filters, pagination } = await pickQuery(query);
-  const { latitude, longitude, radius, role } = filters;
+  const normalizedFilters: Record<string, any> = {
+    ...filters,
+    riderVerified:
+      filters.riderVerified === 'true'
+        ? true
+        : filters.riderVerified === 'false'
+          ? false
+          : filters.riderVerified,
+  };
 
+  const { latitude, longitude, radius, role } = normalizedFilters;
+  console.log('Filters received in service:', normalizedFilters);
   // Build where clause from filters
-  const whereClause = buildUserWhereClause(filters);
+  const whereClause = buildUserWhereClause(normalizedFilters);
 
   // Calculate pagination
   const { page, limit, skip, sort } =
@@ -98,6 +108,7 @@ const getAll = async (query: Record<string, any>) => {
       location: true,
       locationName: true,
       onlineStatus: true,
+      riderVerified: true,
     },
   });
 
