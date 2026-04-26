@@ -143,6 +143,14 @@ docker logs -f borla-backend-api
 
 ---
 
+### Push image docker hub repo
+
+```bash
+docker login -u username
+docker tag borla-backend abirwerks/borla-backend:1.0
+docker push abirwerks/borla-backend:1.0
+```
+
 ## ⚠️ Common Issues & Fixes
 
 ---
