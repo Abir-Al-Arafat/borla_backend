@@ -16,6 +16,7 @@ const stripe = {
 
 const admin_credentials = {
   email: process.env.ADMIN_MAIL,
+  password: process.env.ADMIN_PASSWORD,
 };
 
 export default {
