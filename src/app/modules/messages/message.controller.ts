@@ -40,7 +40,6 @@ const getBookingMessages = catchAsync(async (req: Request, res: Response) => {
     req.query as unknown as IGetMessagesQuery,
   );
 
-  console.log('Messages retrieved:', result);
   if (!result.messages || !result.messages.length) {
     console.log('No messages found for this booking.');
     sendResponse(res, {
