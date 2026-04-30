@@ -10,3 +10,5 @@ dist
 package-lock.json
 
 /public/uploads
+
+/k8s/02-secret.yaml
