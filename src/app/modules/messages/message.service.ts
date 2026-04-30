@@ -417,6 +417,60 @@ const getBookingMessages = async (
   };
 };
 
+const getChatMessages = async (authUserId: string, chatId: string) => {
+  const chat = await prisma.chat.findUnique({
+    where: {
+      id: chatId,
+    },
+    include: {
+      participants: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              profilePicture: true,
+              role: true,
+              phoneNumber: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!chat) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Chat not found');
+  }
+
+  const messages = await prisma.messages.findMany({
+    where: {
+      chatId,
+    },
+    include: {
+      images: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return {
+    messages,
+    participants: {
+      user: chat.participants.find((participant) => {
+        return participant.userId !== authUserId;
+      })?.user || {
+      id: '',
+      name: '',
+      profilePicture: '',
+      role: '',
+      phoneNumber: '',
+    }
+    }
+  };
+};
+
 const getMyChats = async (authUserId: string, query: IGetChatsQuery) => {
   const { page, limit, skip } = getPaginationParams(query);
 
