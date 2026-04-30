@@ -7,3 +7,7 @@ node_modules
 
 /src/generated/prisma
 package-lock.json
+
+/dist
+/public
+/k8s/02-secret.yaml
