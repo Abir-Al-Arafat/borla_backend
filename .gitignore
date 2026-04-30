@@ -7,8 +7,6 @@ dist
 /src/generateFolder.ts
 
 /src/generated/prisma
-package-lock.json
-
 
 /dist
 /public
