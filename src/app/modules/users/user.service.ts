@@ -4,9 +4,15 @@ import httpStatus from 'http-status';
 import HashPassword from '../../shared/hashPassword';
 import pickQuery from '../../utils/pickQuery';
 import { paginationHelper } from '../../helpers/pagination.helpers';
-import { Role, User } from '../../../generated/prisma';
+import { User } from '../../../generated/prisma';
 import prisma from '../../shared/prisma';
-import { Prisma } from '@prisma/client';
+import {
+  buildUserWhereClause,
+  buildRiderDetailsPayload,
+  enrichRidersWithStats,
+  filterUsersByRadius,
+  buildSortArray,
+} from './user.helpers';
 
 const create = async (payload: User) => {
   try {
@@ -23,7 +29,7 @@ const create = async (payload: User) => {
       },
     });
 
-    payload['password'] = await HashPassword(payload?.password);
+    payload['password'] = await HashPassword(payload?.password as string);
 
     if (isExist) {
       if (isExist.isDeleted) {
@@ -56,64 +62,29 @@ const create = async (payload: User) => {
 
 const getAll = async (query: Record<string, any>) => {
   const { filters, pagination } = await pickQuery(query);
-
-  const { searchTerm, ...filtersData } = filters;
-
-  // eslint-disable-next-line prefer-const
-  let pipeline: Prisma.UserWhereInput = {
-    AND: {
-      isDeleted: false,
-    },
+  const normalizedFilters: Record<string, any> = {
+    ...filters,
+    riderVerified:
+      filters.riderVerified === 'true'
+        ? true
+        : filters.riderVerified === 'false'
+          ? false
+          : filters.riderVerified,
   };
 
-  // search condition
-  if (searchTerm) {
-    pipeline.OR = ['name', 'email', 'phoneNumber', 'status'].map(field => ({
-      [field]: {
-        contains: searchTerm,
-        mode: 'insensitive',
-      },
-    }));
-  }
+  const { latitude, longitude, radius, role } = normalizedFilters;
+  console.log('Filters received in service:', normalizedFilters);
+  // Build where clause from filters
+  const whereClause = buildUserWhereClause(normalizedFilters);
 
-  // Add filterQuery conditions
-  if (Object.keys(filtersData).length > 0) {
-    const oldAnd = pipeline.AND;
-    const oldAndArray = Array.isArray(oldAnd) ? oldAnd : oldAnd ? [oldAnd] : [];
-
-    pipeline.AND = [
-      {
-        isDeleted: false,
-      },
-      ...oldAndArray,
-      ...Object.entries(filtersData).map(([key, value]) => ({
-        [key]: { equals: value },
-      })),
-    ];
-  }
-
-  // 🚫 exclude admin users
-  pipeline.NOT = {
-    role: 'admin' as Role, // Cast string to enum Role
-  };
-
-  // Sorting condition
+  // Calculate pagination
   const { page, limit, skip, sort } =
     paginationHelper.calculatePagination(pagination);
+  const sortArray = buildSortArray(sort);
 
-  let sortArray: any[] = [];
-  if (sort) {
-    sortArray = sort.split(',').map(field => {
-      const trimmedField = field.trim();
-      if (trimmedField.startsWith('-')) {
-        return { [trimmedField.slice(1)]: 'desc' };
-      }
-      return { [trimmedField]: 'asc' };
-    });
-  }
-
-  const data = await prisma.user.findMany({
-    where: pipeline,
+  // Fetch users from database
+  let users = await prisma.user.findMany({
+    where: whereClause,
     skip,
     take: limit,
     orderBy: sortArray,
@@ -123,7 +94,7 @@ const getAll = async (query: Record<string, any>) => {
       email: true,
       status: true,
       role: true,
-      profile: true,
+      profilePicture: true,
       phoneNumber: true,
       expireAt: false,
       createdAt: true,
@@ -134,20 +105,40 @@ const getAll = async (query: Record<string, any>) => {
         },
       },
       deviceHistory: true,
+      location: true,
+      locationName: true,
+      onlineStatus: true,
+      riderVerified: true,
     },
   });
 
-  const total = await prisma.user.count({
-    where: pipeline,
-  });
+  // Apply location-based filtering if parameters provided
+  if (latitude && longitude && radius) {
+    users = filterUsersByRadius(users, latitude, longitude, parseFloat(radius));
+  }
+
+  // Enrich rider data with statistics
+  if (role === 'rider' && users.length > 0) {
+    users = await enrichRidersWithStats(users);
+  }
+
+  // Count total for metadata
+  const totalCount = await prisma.user.count({ where: whereClause });
+  const total = latitude && longitude && radius ? users.length : totalCount;
 
   return {
-    data,
-    meta: { page, limit, total },
+    users,
+    meta: { page, limit, total, totalPage: Math.ceil(total / limit) },
   };
 };
 
-const getById = async (id: string) => {
+const getById = async (
+  id: string,
+  includeDeviceHistory = false,
+  includeRiderDocuments = false,
+  role?: string,
+  includeRiderDashboard = false,
+) => {
   const result = await prisma.user.findUniqueOrThrow({
     where: {
       id,
@@ -158,8 +149,9 @@ const getById = async (id: string) => {
       name: true,
       email: true,
       status: true,
+      onlineStatus: true,
       role: true,
-      profile: true,
+      profilePicture: true,
       phoneNumber: true,
       createdAt: true,
       verification: {
@@ -167,30 +159,55 @@ const getById = async (id: string) => {
           status: true,
         },
       },
-      deviceHistory: true,
+      deviceHistory: includeDeviceHistory,
+      documents: true,
+      dateOfBirth: true,
+      location: true,
+      locationName: true,
+      ghanaCardId: true,
+      zone: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
     },
   });
+
+  if ((includeRiderDashboard || role === 'rider') && result.role === 'rider') {
+    const riderDetails = await buildRiderDetailsPayload(
+      result.id,
+      result.name,
+      result.status,
+      result.zone,
+    );
+
+    return {
+      ...result,
+      riderDetails,
+    };
+  }
 
   return result;
 };
 
 const update = async (id: string, payload: Partial<User>) => {
-  try {
-    const result = await prisma.user.update({
-      where: { id },
-      data: payload,
-      include: {
-        verification: true,
-        deviceHistory: true,
-      },
-    });
-    return result;
-  } catch (error: any) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      'User update failed: ' + error.message,
-    );
+  // Check if payload has data to update
+  if (!payload || !Object.keys(payload).length) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'No data provided for update');
   }
+
+  // Let Prisma errors bubble up to global error handler
+  const result = await prisma.user.update({
+    where: { id },
+    data: payload,
+    include: {
+      verification: true,
+      deviceHistory: true,
+    },
+  });
+
+  return result;
 };
 
 const deleteUser = async (id: string) => {
@@ -203,10 +220,119 @@ const deleteUser = async (id: string) => {
 
   return result;
 };
+
+const toggleUserStatus = async (userId: string) => {
+  // Get current user status
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { onlineStatus: true, isDeleted: true },
+  });
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (user.isDeleted) {
+    throw new AppError(httpStatus.FORBIDDEN, 'User is deleted');
+  }
+
+  // Toggle the status
+  const newStatus = user.onlineStatus === 'online' ? 'offline' : 'online';
+
+  const result = await prisma.user.update({
+    where: { id: userId },
+    data: { onlineStatus: newStatus },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      onlineStatus: true,
+    },
+  });
+
+  return result;
+};
+
+const toggleAccountStatus = async (userId: string) => {
+  // Get current user status
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { status: true, isDeleted: true },
+  });
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (user.isDeleted) {
+    throw new AppError(httpStatus.FORBIDDEN, 'User is deleted');
+  }
+
+  // Toggle the account status
+  const newStatus = user.status === 'active' ? 'blocked' : 'active';
+
+  const result = await prisma.user.update({
+    where: { id: userId },
+    data: { status: newStatus },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      status: true,
+    },
+  });
+
+  return result;
+};
+
+const updateMyLocation = async (
+  userId: string,
+  payload: { latitude: number; longitude: number; locationName?: string },
+) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isDeleted: true },
+  });
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (user.isDeleted) {
+    throw new AppError(httpStatus.FORBIDDEN, 'User is deleted');
+  }
+
+  // Create GeoJSON Point format
+  const location = {
+    type: 'Point',
+    coordinates: [payload.longitude, payload.latitude],
+  };
+
+  const result = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      location,
+      locationName: payload.locationName || null,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      location: true,
+      locationName: true,
+    },
+  });
+
+  return result;
+};
+
 export const userService = {
   create,
   update,
   getAll,
   getById,
   deleteUser,
+  toggleUserStatus,
+  toggleAccountStatus,
+  updateMyLocation,
 };

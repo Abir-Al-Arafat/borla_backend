@@ -8,7 +8,11 @@ import handleDuplicateError from '../error/DuplicateError';
 import AppError from '../error/AppError';
 import { MulterError } from 'multer';
 import handelMulterError from '../error/MulterError';
-import { Prisma } from '@prisma/index';
+import { Prisma } from '@prisma/client';
+import {
+  PrismaClientKnownRequestError,
+  PrismaClientValidationError,
+} from '../../generated/prisma/runtime/library';
 import handlePrismaValidationError from '@app/error/PrismaValidationError';
 import handlePrismaKnownError from '@app/error/PrismaKnownError';
 
@@ -29,19 +33,19 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
     message = simplifiedError?.message;
     errorSources = simplifiedError?.errorSources;
   } else if (
-    err instanceof Prisma.PrismaClientKnownRequestError &&
+    err instanceof PrismaClientKnownRequestError &&
     err.code === 'P2002'
   ) {
     const simplifiedError = handleDuplicateError(err);
     statusCode = simplifiedError.statusCode;
     message = simplifiedError.message;
     errorSources = simplifiedError.errorSources;
-  } else if (err instanceof Prisma.PrismaClientValidationError) {
+  } else if (err instanceof PrismaClientValidationError) {
     const simplifiedError = handlePrismaValidationError(err);
     statusCode = simplifiedError.statusCode;
     message = simplifiedError.message;
     errorSources = simplifiedError.errorSources;
-  } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
+  } else if (err instanceof PrismaClientKnownRequestError) {
     // Duplicate
     if (err.code === 'P2002') {
       const simplifiedError = handleDuplicateError(err);
@@ -97,24 +101,27 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
     });
     // message = req.t(message);
   }
+
+  // Clean response based on environment
+  const response: any = {
+    success: false,
+    message: message,
+    errorSources: errorSources,
+  };
+
+  // Only include stack trace and error object in development
+  if (config.NODE_ENV === 'development') {
+    response.stack = err?.stack;
+  }
+
   try {
-    res.status(statusCode).json({
-      success: false,
-      message: message,
-      // message: message,
-      errorSources: errorSources,
-      err,
-      stack: config.NODE_ENV === 'development' ? err?.stack : null,
-    });
+    res.status(statusCode).json(response);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (err: any) {
+  } catch (error: any) {
     res.status(statusCode).json({
       success: false,
-      // message: message? req.t(message) : null,
       message: message,
       errorSources,
-      err,
-      stack: config.NODE_ENV === 'development' ? err?.stack : null,
     });
   }
 };

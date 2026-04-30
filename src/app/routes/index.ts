@@ -1,79 +1,31 @@
-import { aboutHeroSectionRoutes } from '@app/modules/aboutHeroSection/aboutHeroSection.route';
-import { aboutSteveDerayRoutes } from '@app/modules/aboutSteveDeray/aboutSteveDeray.route';
-import { associatesRoutes } from '@app/modules/associates/associates.route';
 import { authRoutes } from '@app/modules/auth/auth.route';
-import { blogsRoutes } from '@app/modules/blogs/blogs.route';
-import { bookResourcesRoutes } from '@app/modules/bookResources/bookResources.route';
-import { booksRoutes } from '@app/modules/books/books.route';
 import { contentsRoutes } from '@app/modules/contents/contents.route';
-import { dashboardRoutes } from '@app/modules/dashboard/dashboard.route';
-import { downloadsBookRoutes } from '@app/modules/downloadsBook/downloadsBook.route';
-import { freedomPathPlaningRoutes } from '@app/modules/freedomPathPlaning/freedomPathPlaning.route';
-import { generateReportRoutes } from '@app/modules/generateReport/generateReport.route';
-import { includedServiceRoutes } from '@app/modules/includedService/includedService.route';
 import { otpRoutes } from '@app/modules/otp/otp.routes';
-import serviceRouter from '@app/modules/services/service.routes';
-import { testimonialRoutes } from '@app/modules/testimonial/testimonial.route';
-import { toolResourceRoutes } from '@app/modules/toolResource/toolResource.route';
 import { userRoutes } from '@app/modules/users/users.routes';
-import { whatYourClientGetsRoutes } from '@app/modules/whatYourClientGets/whatYourClientGets.route';
+import { riderVerificationRoutes } from '@app/modules/riderVerification/riderVerification.route';
+import { savedPlaceRoutes } from '@app/modules/savedPlaces/savedPlace.route';
+import { bookingRoutes } from '@app/modules/bookings/booking.route';
+import { paymentRoutes } from '@app/modules/payments/payment.routes';
+import { walletRoutes } from '@app/modules/wallets/wallet.routes';
+import { riderRoutes } from '@app/modules/riders/rider.route';
+import { ratingRoutes } from '@app/modules/ratings/rating.route';
+import { zoneRoutes } from '@app/modules/zones/zone.route';
+import { stationRoutes } from '@app/modules/stations/station.route';
+import { operationsRoutes } from '@app/modules/operations/operations.route';
+import { dashboardRoutes } from '@app/modules/dashboard/dashboard.route';
+import { messageRoutes } from '@app/modules/messages/message.route';
+import { realtimeMonitorRoutes } from '@app/modules/realtime monitor/realtimeMonitor.route';
+import { specialAccessRoutes } from '@app/modules/specialAccess/specialAccess.route';
+import { contentPagesRoutes } from '@app/modules/contentPages/contentPages.route';
+import { notificationRoutes } from '@app/modules/notifications/notification.route';
+import { incentivesLoyaltyRoutes } from '@app/modules/incentivesLoyalty/incentivesLoyalty.route';
+import { earningsRoutes } from '@app/modules/earnings/earnings.route';
+import { commissionRoutes } from '@app/modules/commissions/commission.route';
+
 import { Router } from 'express';
 
 const router = Router();
 const moduleRoutes = [
-  {
-    path: '/downloads-book',
-    route: downloadsBookRoutes,
-  },
-  {
-    path: '/dashboard',
-    route: dashboardRoutes,
-  },
-  {
-    path: '/about-steve-deray',
-    route: aboutSteveDerayRoutes,
-  },
-  {
-    path: '/freedom-path-planning',
-    route: freedomPathPlaningRoutes,
-  },
-  {
-    path: '/about-hero-section',
-    route: aboutHeroSectionRoutes,
-  },
-  {
-    path: '/included-service',
-    route: includedServiceRoutes,
-  },
-  {
-    path: '/what-your-client-gets',
-    route: whatYourClientGetsRoutes,
-  },
-  {
-    path: '/books',
-    route: booksRoutes,
-  },
-  {
-    path: '/blogs',
-    route: blogsRoutes,
-  },
-  {
-    path: '/book-resources',
-    route: bookResourcesRoutes,
-  },
-  {
-    path: '/tool-resource',
-    route: toolResourceRoutes,
-  },
-
-  {
-    path: '/testimonial',
-    route: testimonialRoutes,
-  },
-  {
-    path: '/associates',
-    route: associatesRoutes,
-  },
   {
     path: '/users',
     route: userRoutes,
@@ -91,12 +43,80 @@ const moduleRoutes = [
     route: contentsRoutes,
   },
   {
-    path: '/services',
-    route: serviceRouter,
+    path: '/rider-verification',
+    route: riderVerificationRoutes,
   },
   {
-    path: '/generate-report',
-    route: generateReportRoutes,
+    path: '/saved-places',
+    route: savedPlaceRoutes,
+  },
+  {
+    path: '/bookings',
+    route: bookingRoutes,
+  },
+  {
+    path: '/payments',
+    route: paymentRoutes,
+  },
+  {
+    path: '/wallets',
+    route: walletRoutes,
+  },
+  {
+    path: '/riders',
+    route: riderRoutes,
+  },
+  {
+    path: '/ratings',
+    route: ratingRoutes,
+  },
+  {
+    path: '/zones',
+    route: zoneRoutes,
+  },
+  {
+    path: '/stations',
+    route: stationRoutes,
+  },
+  {
+    path: '/operations',
+    route: operationsRoutes,
+  },
+  {
+    path: '/dashboard',
+    route: dashboardRoutes,
+  },
+  {
+    path: '/messages',
+    route: messageRoutes,
+  },
+  {
+    path: '/realtime-monitor',
+    route: realtimeMonitorRoutes,
+  },
+  {
+    path: '/special-access',
+    route: specialAccessRoutes,
+  },
+  {
+    path: '/content-pages',
+    route: contentPagesRoutes,
+  },
+  {
+    path: '/notifications',
+    route: notificationRoutes,
+  },
+  {
+    path: '/incentives-loyalty',
+    route: incentivesLoyaltyRoutes,
+  },
+  {
+    path: '/earnings',
+    route: earningsRoutes,
+  },
+  {
+    path: '/commissions',
+    route: commissionRoutes,
   },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));

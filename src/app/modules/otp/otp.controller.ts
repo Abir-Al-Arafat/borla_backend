@@ -3,7 +3,9 @@ import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { otpServices } from './otp.service';
 import httpStatus from 'http-status';
-
+interface ResendOtpBody {
+  email: string;
+}
 const verifyOtp = catchAsync(async (req: Request, res: Response) => {
   const token = req?.headers?.token;
 
@@ -16,15 +18,18 @@ const verifyOtp = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const resendOtp = catchAsync(async (req: Request, res: Response) => {
-  const result = await otpServices.resendOtp(req.body.email);
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: 'OTP sent successfully',
-    data: result,
-  });
-});
+const resendOtp = catchAsync(
+  async (req: Request<{}, {}, ResendOtpBody>, res: Response) => {
+    const result = await otpServices.resendOtp(req.body); // Pass entire object
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'OTP sent successfully',
+      data: result,
+    });
+  },
+);
 
 export const otpControllers = {
   verifyOtp,

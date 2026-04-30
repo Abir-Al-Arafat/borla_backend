@@ -3,8 +3,25 @@ export type QueryObject = {
   [key: string]: any;
 };
 
-export type ILogin = {
+export type ISignup = {
+  name: string;
   email: string;
+  phoneNumber: string;
+  role?: 'user' | 'rider';
+  location?: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
+  locationName?: string;
+  dateOfBirth?: string;
+  ghanaCardId?: string[]; // Array of image URLs
+  password: string;
+  confirmPassword: string;
+};
+
+export type ILogin = {
+  email?: string;
+  phoneNumber?: string;
   password: string;
 };
 export type IChangePassword = {
@@ -22,8 +39,17 @@ export interface IJwtPayload {
   role: string;
 }
 
-
 export interface JwtPayload {
   userId: string;
   role: string;
 }
+
+export type ISocialAuth = {
+  email: string;
+  name: string;
+  socialId: string;
+  provider: 'google' | 'apple';
+  phoneNumber?: string;
+  profile?: string;
+  profilePicture?: string;
+};

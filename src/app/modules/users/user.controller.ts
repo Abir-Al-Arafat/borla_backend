@@ -1,17 +1,25 @@
 import { Request, Response } from 'express';
 import catchAsync from '../../utils/catchAsync';
+import { UploadedFiles } from '@app/middleware/uploadMulti';
 import { uploadToS3 } from '../../utils/s3';
 import { userService } from './user.service';
 import sendResponse from '../../utils/sendResponse';
 import httpStatus from 'http-status';
 import { otpServices } from '../otp/otp.service';
+import fs from 'fs';
+import prisma from '../../shared/prisma';
+import path from 'path';
+import { toPublicUploadPath } from '../../utils/filePathSanitizer';
 
 const createUser = catchAsync(async (req: Request, res: Response) => {
   if (req?.file) {
-    req.body.profile = await uploadToS3({
-      file: req.file,
-      fileName: `images/user/profile/${Math.floor(100000 + Math.random() * 900000)}`,
-    });
+    // Local storage - save file path instead of uploading to S3
+    req.body.profilePicture = req.file.path;
+    // Uncomment below to use S3 upload
+    // req.body.profilePicture = await uploadToS3({
+    //   file: req.file,
+    //   fileName: `images/user/profile/${Math.floor(100000 + Math.random() * 900000)}`,
+    // });
   }
   const result = await userService.create(req.body);
   const sendOtp = await otpServices.resendOtp({ email: result?.email });
@@ -34,7 +42,17 @@ const getAllUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getUserById = catchAsync(async (req: Request, res: Response) => {
-  const result = await userService.getById(req.params.id);
+  const includeDeviceHistory = req.query.includeDeviceHistory === 'true';
+  const includeRiderDocuments = req.query.includeRiderDocuments === 'true';
+  const includeRiderDashboard = req.query.includeRiderDashboard === 'true';
+  const role = req.query.role as string | undefined;
+  const result = await userService.getById(
+    req.params.id as string,
+    includeDeviceHistory,
+    includeRiderDocuments,
+    role,
+    includeRiderDashboard,
+  );
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -44,7 +62,13 @@ const getUserById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMyProfile = catchAsync(async (req: Request, res: Response) => {
-  const result = await userService.getById(req?.user?.userId);
+  const includeDeviceHistory = req.query.includeDeviceHistory === 'true';
+  const includeRiderDocuments = req.query.includeRiderDocuments === 'true';
+  const result = await userService.getById(
+    req?.user?.userId,
+    includeDeviceHistory,
+    includeRiderDocuments,
+  );
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -54,14 +78,56 @@ const getMyProfile = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateUser = catchAsync(async (req: Request, res: Response) => {
-  if (req?.file) {
-    req.body.profile = await uploadToS3({
-      file: req.file,
-      fileName: `images/user/profile/${Math.floor(100000 + Math.random() * 900000)}`,
-    });
+  // Get old user data for file cleanup
+  const user = await prisma.user.findUnique({
+    where: { id: req.params.id as string },
+    select: { profilePicture: true, ghanaCardId: true },
+  });
+
+  // Handle multiple file uploads (using upload.fields())
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+  // Handle profile picture upload
+  if (files?.profilePicture && files.profilePicture[0]) {
+    // Delete old profile picture if exists
+    if (user?.profilePicture && fs.existsSync(user.profilePicture)) {
+      fs.unlinkSync(user.profilePicture);
+    }
+
+    // Local storage - save file path
+    req.body.profilePicture = files.profilePicture[0].path;
+    // Uncomment below to use S3 upload
+    // req.body.profilePicture = await uploadToS3({
+    //   file: files.profilePicture[0],
+    //   fileName: `images/user/profile/${Math.floor(100000 + Math.random() * 900000)}`,
+    // });
   }
 
-  const result = await userService.update(req.params.id, req.body);
+  // Handle Ghana card uploads (multiple files)
+  if (files?.ghanaCardId && files.ghanaCardId.length) {
+    // Delete old Ghana card images if exists
+    if (user?.ghanaCardId && Array.isArray(user.ghanaCardId)) {
+      user.ghanaCardId.forEach(cardPath => {
+        if (fs.existsSync(cardPath)) {
+          fs.unlinkSync(cardPath);
+        }
+      });
+    }
+
+    // Save all Ghana card image paths
+    req.body.ghanaCardId = files.ghanaCardId.map(file => file.path);
+    // Uncomment below to use S3 upload
+    // req.body.ghanaCardId = await Promise.all(
+    //   files.ghanaCardId.map(file =>
+    //     uploadToS3({
+    //       file,
+    //       fileName: `images/user/ghana-cards/${Math.floor(100000 + Math.random() * 900000)}`,
+    //     }),
+    //   ),
+    // );
+  }
+
+  const result = await userService.update(req.params.id as string, req.body);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -71,13 +137,89 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
-  if (req?.file) {
-    req.body.profile = await uploadToS3({
-      file: req.file,
-      fileName: `images/user/profile/${Math.floor(100000 + Math.random() * 900000)}`,
-    });
+  // Get old user data for file cleanup
+  const user = await prisma.user.findUnique({
+    where: { id: req.user?.userId },
+    select: { profilePicture: true, ghanaCardId: true },
+  });
+
+  // Handle multiple file uploads (using upload.fields())
+  const files = req.files as UploadedFiles;
+
+  // Handle profile picture upload
+  if (files?.profilePicture && files.profilePicture[0]) {
+    // Delete old profile picture if exists
+    if (user?.profilePicture && fs.existsSync(user.profilePicture)) {
+      fs.unlinkSync(user.profilePicture);
+    }
+
+    // Local storage - save reusable public path
+    req.body.profilePicture = toPublicUploadPath(files.profilePicture[0].path);
+
+    // Uncomment below to use S3 upload
+    // req.body.profilePicture = await uploadToS3({
+    //   file: files.profilePicture[0],
+    //   fileName: `images/user/profile/${Math.floor(100000 + Math.random() * 900000)}`,
+    // });
   }
-  console.log(req.body);
+
+  // Handle Ghana card uploads (multiple files)
+  if (files?.ghanaCardId && files.ghanaCardId.length) {
+    // Delete old Ghana card images if exists
+    if (user?.ghanaCardId && Array.isArray(user.ghanaCardId)) {
+      user.ghanaCardId.forEach(cardPath => {
+        if (fs.existsSync(cardPath)) {
+          fs.unlinkSync(cardPath);
+        }
+      });
+    }
+
+    // Save all Ghana card image paths in reusable public format
+    req.body.ghanaCardId = files.ghanaCardId.map(file =>
+      toPublicUploadPath(file.path),
+    );
+    // Uncomment below to use S3 upload
+    // req.body.ghanaCardId = await Promise.all(
+    //   files.ghanaCardId.map(file =>
+    //     uploadToS3({
+    //       file,
+    //       fileName: `images/user/ghana-cards/${Math.floor(100000 + Math.random() * 900000)}`,
+    //     }),
+    //   ),
+    // );
+  }
+
+  if (!req.body || !Object.keys(req.body).length) {
+    sendResponse(res, {
+      statusCode: httpStatus.BAD_REQUEST,
+      success: false,
+      message: 'No data provided for update. Please send at least one field.',
+      data: null,
+    });
+    return;
+  }
+
+  // Handle location update if coordinates are provided
+  if (req.body.latitude && req.body.longitude) {
+    const latitude =
+      typeof req.body.latitude === 'string'
+        ? parseFloat(req.body.latitude)
+        : req.body.latitude;
+    const longitude =
+      typeof req.body.longitude === 'string'
+        ? parseFloat(req.body.longitude)
+        : req.body.longitude;
+
+    req.body.location = {
+      type: 'Point',
+      coordinates: [longitude, latitude],
+    };
+
+    // Remove the raw coordinates from body
+    delete req.body.latitude;
+    delete req.body.longitude;
+  }
+
   const result = await userService.update(req?.user?.userId, req.body);
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -88,7 +230,7 @@ const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
-  const result = await userService.deleteUser(req.params.id);
+  const result = await userService.deleteUser(req.params.id as string);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -107,6 +249,49 @@ const deleteMYAccount = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const toggleUserStatus = catchAsync(async (req: Request, res: Response) => {
+  const result = await userService.toggleUserStatus(req.params.id as string);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: `User status toggled to ${result.onlineStatus} successfully`,
+    data: result,
+  });
+});
+
+const toggleMyStatus = catchAsync(async (req: Request, res: Response) => {
+  const result = await userService.toggleUserStatus(req.user?.userId as string);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: `Your status is now ${result.onlineStatus}`,
+    data: result,
+  });
+});
+
+const toggleAccountStatus = catchAsync(async (req: Request, res: Response) => {
+  const result = await userService.toggleAccountStatus(req.params.id as string);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: `User account is now ${result.status}`,
+    data: result,
+  });
+});
+
+const updateMyLocation = catchAsync(async (req: Request, res: Response) => {
+  const result = await userService.updateMyLocation(
+    req.user?.userId as string,
+    req.body,
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Location updated successfully',
+    data: result,
+  });
+});
+
 export const userController = {
   createUser,
   getAllUser,
@@ -116,4 +301,8 @@ export const userController = {
   updateMyProfile,
   deleteUser,
   deleteMYAccount,
+  toggleUserStatus,
+  toggleMyStatus,
+  toggleAccountStatus,
+  updateMyLocation,
 };

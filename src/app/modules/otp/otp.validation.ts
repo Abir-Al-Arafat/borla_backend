@@ -5,7 +5,7 @@ const verifyOtpZodSchema = z.object({
     otp: z
       .string()
       .nonempty('otp is required')
-      .length(6, { message: 'otp must be exactly 6 characters long' }),
+      .length(4, { message: 'otp must be exactly 4 characters long' }),
   }),
 });
 
