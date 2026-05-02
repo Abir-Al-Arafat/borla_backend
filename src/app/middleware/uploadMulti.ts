@@ -3,7 +3,7 @@ import { uploadToS3 } from '../utils/s3';
 import catchAsync from '@app/utils/catchAsync';
 import _ from 'lodash';
 
-type UploadedFiles = {
+export type UploadedFiles = {
   [fieldname: string]: Express.Multer.File[];
 };
 

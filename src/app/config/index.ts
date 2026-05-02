@@ -16,6 +16,7 @@ const stripe = {
 
 const admin_credentials = {
   email: process.env.ADMIN_MAIL,
+  password: process.env.ADMIN_PASSWORD,
 };
 
 export default {
@@ -35,6 +36,16 @@ export default {
   socket_port: process.env.SOCKET_PORT,
   stripe_secret: process.env.STRIPE_API_SECRET,
   stripe_key: process.env.STRIPE_API_KEY,
+  TERMII_API_KEY: process.env.TERMII_API_KEY,
+  TERMII_SENDER_ID: process.env.TERMII_SENDER_ID,
+  TERMII_CHANNEL: process.env.TERMII_CHANNEL,
+  HUBTEL_POS_ID: process.env.HUBTEL_POS_ID,
+  HUBTEL_PREPAID_ID: process.env.HUBTEL_PREPAID_ID,
+  HUBTEL_CLIENT_ID: process.env.HUBTEL_CLIENT_ID,
+  HUBTEL_CLIENT_SECRET: process.env.HUBTEL_CLIENT_SECRET,
+  HUBTEL_SENDER_ID: process.env.HUBTEL_SENDER_ID,
+  HUBTEL_API_ID: process.env.HUBTEL_API_ID,
+  HUBTEL_API_KEY: process.env.HUBTEL_API_KEY,
   aws,
   stripe,
   admin_credentials,

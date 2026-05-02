@@ -5,8 +5,9 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  provider      = "prisma-client-js"
+  output        = "../src/generated/prisma"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -14,42 +15,72 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 //contents
 model Contents {
   id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  aboutUs           String?
   termsAndCondition String
-  privacyPolicy     String 
+  privacyPolicy     String
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
- @@map("contents")
+  @@map("contents")
 }
 
 //user schema
 model User {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  email       String   @unique
-  password    String?
-  status      status   @default(active)
-  role        Role     @default(user)
-  profile     String?
-  phoneNumber String?
-  dateOfBirth DateTime?
-  customerId String?
-  expireAt    DateTime? @default(now())
-  isDeleted   Boolean  @default(false)
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  email          String       @unique
+  password       String?
+  status         status       @default(active)
+  onlineStatus   onlineStatus @default(offline)
+  role           Role         @default(user)
+  accountType    AccountType?
+  profilePicture String?
+  phoneNumber    String?      @unique
+  dateOfBirth    DateTime?
+  ghanaCardId    String[]     @default([])
+  customerId     String?
+  riderVerified  Boolean      @default(false) // Admin approval for riders
+  zoneId         String?      @db.ObjectId // Assigned zone for riders
+  expireAt       DateTime?    @default(now())
+  isDeleted      Boolean      @default(false)
 
-  location    Json?    // 👈 GeoJSON Point
+  location     Json? // 👈 GeoJSON Point
+  locationName String?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  verification     Verification? 
-  deviceHistory    DeviceHistory[] 
-  documents        Documents[]
-  Participants        Participants[]
+  verification    Verification?
+  deviceHistory   DeviceHistory[]
+  documents       Documents[]
+  Participants    Participants[]
+  savedPlaces     SavedPlace[]
+  notifications   Notification[]
+  bookingsAsUser  Booking[]       @relation("UserBookings")
+  bookingsAsRider Booking[]       @relation("RiderBookings")
+  wallet          Wallet?
+  zone            Zone?           @relation(fields: [zoneId], references: [id])
+  transactions    Transaction[]
+}
+
+model Notification {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId  String  @db.ObjectId
+  type    String
+  title   String
+  message String
+  data    Json?
+  isRead  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
 }
 
 model DeviceHistory {
@@ -65,109 +96,226 @@ model DeviceHistory {
   user User @relation(fields: [userId], references: [id])
 }
 
-model Verification { 
-  userId    String   @map("_id") @db.ObjectId
+model Verification {
+  userId    String    @map("_id") @db.ObjectId
   otp       Int
   expiredAt DateTime?
-  status    Boolean  @default(false)
+  status    Boolean   @default(false)
 
   user User @relation(fields: [userId], references: [id])
 
   @@id([userId])
 }
- 
-model Documents {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-  userId String @db.ObjectId
-  document String 
-  status documentStatus @default(pending)
-  type documentType @default(idCard)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Documents {
+  id       String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String         @db.ObjectId
+  document String
+  status   documentStatus @default(pending)
+  type     documentType   @default(idCard)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id])
 }
 
 model Zone {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-  zipCode Int 
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  boundary  Json // GeoJSON Polygon for zone boundary
   isDeleted Boolean @default(false)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stations Station[]
+  riders   User[]
+  zipCodes ZipCode[]
+
+  @@map("zones")
 }
 
-/*
-========================
-Chatting models 
-========================
-*/
+model Station {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  zoneId    String  @db.ObjectId
+  name      String
+  address   String
+  location  Json // GeoJSON Point for station location
+  isDeleted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  zone     Zone      @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@map("stations")
+}
+
+model ZipCode {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  zoneId    String  @db.ObjectId
+  zipCode   String
+  areaName  String
+  isDeleted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  zone Zone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  @@unique([zoneId, zipCode])
+  @@map("zip_codes")
+}
+
+model SavedPlace {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String    @db.ObjectId
+  placeType  placeType @default(home)
+  placeTitle String
+  placeName  String
+  address    String
+  location   Json // GeoJSON Point
+  isDeleted  Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("saved_places")
+}
+
+/**
+ * ========================
+ * Chatting models
+ * ========================
+ */
 model Chat {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id     String     @id @default(auto()) @map("_id") @db.ObjectId
   status chatStatus @default(active)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   participants Participants[]
 }
 
 model Participants {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-  chatId String @db.ObjectId
-  userId String @db.ObjectId
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  chatId    String   @db.ObjectId
+  userId    String   @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  chat Chat @relation(fields: [chatId] , references: [id])
+  chat Chat @relation(fields: [chatId], references: [id])
   user User @relation(fields: [userId], references: [id])
 }
 
 model Messages {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-  senderId String @db.ObjectId
-  receiverId String @db.ObjectId
-  chatId String @db.ObjectId
-  text String?
-  seen Boolean @default(false)
+  id         String  @id @default(auto()) @map("_id") @db.ObjectId
+  senderId   String  @db.ObjectId
+  receiverId String  @db.ObjectId
+  chatId     String  @db.ObjectId
+  text       String?
+  seen       Boolean @default(false)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   images Images[]
-  
-
 }
 
 model Images {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-  image String
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  image       String
   referenceId String @db.ObjectId
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   messages Messages? @relation(fields: [referenceId], references: [id])
-  
 }
 
+model Wallet {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @unique @db.ObjectId
+  balance   Float    @default(0.0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("wallets")
+}
+
+model Transaction {
+  id       String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String  @db.ObjectId
+  user     User    @relation(fields: [userId], references: [id])
+  riderId  String? @db.ObjectId // Optional, only for ride payments
+  walletId String? @db.ObjectId // Track which wallet this transaction affected
+
+  bookingId           String?         @db.ObjectId // Optional, only for ride payments
+  booking             Booking?        @relation(fields: [bookingId], references: [id])
+  amount              Float
+  commission          Float? // Optional, for ride payments
+  comissionPercentage Float? // Optional, for ride payments
+  riderEarnings       Float? // Optional, for ride payments
+  type                TransactionType
+  status              String          @default("pending") // pending, success, failed
+  clientReference     String          @unique
+  hubtelId            String?
+  salesInvoiceId      String?
+  checkoutId          String?
+  description         String?
+  reference           String          @unique // Paystack Reference
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@map("transactions")
+}
+
+model CommissionRate {
+  id        String   @id @default("global") @map("_id")
+  rate      Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("commission_rates")
+}
+
+enum TransactionType {
+  TOPUP
+  WITHDRAWAL
+  COMMISSION
+  RIDE_PAYMENT
+  BONUS
+}
 
 enum documentType {
- idCard
- passport
- nid
+  idCard
+  passport
+  nid
 }
+
 enum documentStatus {
   pending
   verified
   rejected
 }
+
 enum status {
   active
   blocked
 }
- 
+
+enum onlineStatus {
+  online
+  offline
+}
+
 enum Role {
   admin
   sub_admin
@@ -176,7 +324,126 @@ enum Role {
   rider
 }
 
- enum chatStatus {
+enum AccountType {
+  support_team
+  sales_lead
+}
+
+enum chatStatus {
   active
   blocked
- }
+}
+
+enum placeType {
+  home
+  office
+  shop
+  hotel
+}
+
+// Booking model for waste collection requests
+model Booking {
+  id                 String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId             String        @db.ObjectId
+  riderId            String?       @db.ObjectId
+  status             bookingStatus @default(pending)
+  cancellationReason String?
+
+  // Waste details
+  wasteCategory wasteCategory
+  wasteImages   String[]      @default([])
+  binSize       String // e.g., "Large (240 L)"
+  binQuantity   Int           @default(1)
+  wasteSize     Float // in kg
+
+  // Location details
+  pickupLocation  Json // GeoJSON Point
+  pickupAddress   String
+  dropoffLocation Json? // GeoJSON Point (optional for now)
+  dropoffAddress  String?
+
+  // Ride details
+  vehicleType       String? // e.g., "Tri Cycle"
+  estimatedDistance Float? // in km
+  estimatedTime     String? // e.g., "30-45 m"
+
+  // Payment details
+  paymentMethod      paymentMethod
+  price              Float?
+  isPaid             Boolean       @default(false)
+  paidAt             DateTime?
+  isPaidByCustomer   Boolean       @default(false) // Track if customer has paid (for cash payments)
+  isPaidByCustomerAt DateTime? // When customer paid (for cash payments)
+  isRefunded         Boolean       @default(false)
+  refundedAt         DateTime?
+
+  // Ride tracking
+  arrivedAtPickup  DateTime?
+  arrivedAtDropoff DateTime?
+
+  // Scheduling
+  isScheduled   Boolean   @default(false)
+  scheduledFor  DateTime? // The date and time when the ride should start
+  scheduledDate String? // For display purposes: "today", "tomorrow", or specific date
+
+  // Timestamps
+  requestedAt        DateTime  @default(now())
+  acceptedAt         DateTime?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  paymentCollectedAt DateTime?
+  headingToStationAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User          @relation("UserBookings", fields: [userId], references: [id])
+  rider        User?         @relation("RiderBookings", fields: [riderId], references: [id])
+  rating       Rating?
+  station      Station?      @relation(fields: [stationId], references: [id])
+  stationId    String?       @db.ObjectId
+  transactions Transaction[]
+
+  @@map("bookings")
+}
+
+// Rating model for booking feedback
+model Rating {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId String  @unique @db.ObjectId
+  rating    Int // 1-5 stars
+  feedback  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("ratings")
+}
+
+enum bookingStatus {
+  pending // Waiting for rider to accept
+  accepted // Rider accepted
+  arrived_pickup // Rider arrived at pickup location
+  payment_collected // Rider collected payment at pickup
+  heading_to_station // Rider is heading to station location
+  in_progress // Rider is collecting/transporting
+  arrived_dropoff // Rider arrived at dropoff location
+  awaiting_payment // Waiting for customer to pay
+  completed // Job completed and paid
+  cancelled // Cancelled by user or rider
+}
+
+enum wasteCategory {
+  organic
+  metal
+  plastic
+  general
+  paper
+}
+
+enum paymentMethod {
+  hubtel
+  cash
+}
