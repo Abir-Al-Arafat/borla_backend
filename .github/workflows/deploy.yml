@@ -59,7 +59,7 @@ jobs:
             # 4. Pull and Run the New Container
             docker pull abirwerks/borla-backend:latest
 
-            # Maps port 5000 and injects your local .env file[cite: 7]
+            # Maps port 5000 and injects your local .env file
             docker run -d \
               --name borla-backend-api \
               --restart always \
