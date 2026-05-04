@@ -30,7 +30,7 @@ app.use('/api/v1', router);
 app.get('/', (req: Request, res: Response) => {
   res.status(200).json({
     success: true,
-    message: 'Borla Backend API is running',
+    message: 'testing cicd mongodb pipeline',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
   });
