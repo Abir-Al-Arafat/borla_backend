@@ -63,7 +63,7 @@ jobs:
             docker run -d \
               --name borla-backend-api \
               --restart always \
-              -p 5000:5000 \
+              --network host \
               --env-file ~/borla_backend/.env \
               abirwerks/borla-backend:latest
 
