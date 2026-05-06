@@ -155,6 +155,7 @@ const approveRider = async (userId: string, zoneId: string) => {
       data: {
         riderVerified: true,
         zoneId: zoneId,
+        onlineStatus: 'online',
       },
       select: {
         id: true,
