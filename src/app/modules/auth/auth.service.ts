@@ -300,12 +300,12 @@ const login = async (payload: ILogin, req: Request) => {
   }
 
   // Check if rider is approved by admin
-  if (user.role === 'rider' && !user.riderVerified) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      'Your rider account is pending admin approval. Please wait for verification.',
-    );
-  }
+  // if (user.role === 'rider' && !user.riderVerified) {
+  //   throw new AppError(
+  //     httpStatus.FORBIDDEN,
+  //     'Your rider account is pending admin approval. Please wait for verification.',
+  //   );
+  // }
 
   const jwtPayload: { userId: string; role: string } = {
     userId: user?.id?.toString() as string,
