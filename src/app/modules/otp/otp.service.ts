@@ -122,11 +122,17 @@ const verifyOtp = async (token: string, otp: string | number) => {
       token,
       config.jwt_access_secret as Secret,
     ) as JwtPayload;
-  } catch (error) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      'Session has expired. Please try to submit OTP within 3 minutes',
-    );
+  } catch (error: any) {
+    console.error('JWT verification failed:', error);
+    if (error.name === 'TokenExpiredError') {
+      throw new AppError(httpStatus.UNAUTHORIZED, 'Session has expired');
+    }
+
+    if (error.name === 'JsonWebTokenError') {
+      throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid token');
+    }
+
+    throw new AppError(httpStatus.UNAUTHORIZED, 'Authentication failed');
   }
 
   const user = await prisma.user.findUnique({
