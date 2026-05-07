@@ -32,7 +32,7 @@ const getEarningDetailsById = catchAsync(
 );
 
 const getRiderEarnings = catchAsync(async (req: Request, res: Response) => {
-  const riderId = (req.user as any)?.id;
+  const riderId = (req.user as any)?.userId;
   const filter =
     (req.query.filter as 'today' | 'weekly' | 'monthly') || 'monthly';
   const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
