@@ -33,7 +33,7 @@ export const uploadToS3 = async (
     const url = `https://${config.aws.bucket}.s3.${config.aws.region}.amazonaws.com/${fileName}`;
 
     return url;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     throw new AppError(httpStatus.BAD_REQUEST, 'File Upload failed');
   }
@@ -108,4 +108,11 @@ export const deleteManyFromS3 = async (keys: string[]) => {
     console.error('Error deleting S3 files:', error);
     throw new AppError(httpStatus.BAD_REQUEST, 'S3 file delete failed');
   }
+};
+
+export const getS3KeyFromUrl = (url: string): string => {
+  // Typical S3 URL: https://bucket.s3.region.amazonaws.com/folder/filename.jpg
+  // This splits by the domain and returns the path
+  const parts = url.split('.com/');
+  return parts.length > 1 ? parts[1] : '';
 };
