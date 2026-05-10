@@ -21,7 +21,8 @@ const auth = (...userRoles: string[]) => {
         token,
         config.jwt_access_secret as string,
       ) as JwtPayload;
-    } catch {
+    } catch (error) {
+      console.error('Token verification failed:', error);
       throw new AppError(httpStatus.UNAUTHORIZED, 'unauthorized');
     }
 
