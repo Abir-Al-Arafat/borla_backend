@@ -50,8 +50,17 @@ router.patch(
   upload.none(),
   auth('admin', 'supper_admin'),
   parseData(),
-  validateRequest(zoneValidations.assignRiderToZoneZodSchema),
+  validateRequest(zoneValidations.riderToZoneZodSchema),
   zoneControllers.assignRiderToZone,
+);
+
+router.patch(
+  '/:zoneId/remove-rider/:riderId',
+  upload.none(),
+  auth('admin', 'supper_admin'),
+  parseData(),
+  validateRequest(zoneValidations.riderToZoneZodSchema),
+  zoneControllers.removeRiderFromZone,
 );
 
 export const zoneRoutes = router;

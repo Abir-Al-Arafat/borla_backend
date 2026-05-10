@@ -105,6 +105,20 @@ const assignRiderToZone = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const removeRiderFromZone = catchAsync(async (req: Request, res: Response) => {
+  const result = await zoneServices.removeRiderFromZone(
+    req.params.zoneId as string,
+    req.params.riderId as string,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Rider removed from zone successfully',
+    data: result,
+  });
+});
+
 export const zoneControllers = {
   createZone,
   getAllZones,
@@ -112,4 +126,5 @@ export const zoneControllers = {
   updateZone,
   deleteZone,
   assignRiderToZone,
+  removeRiderFromZone,
 };

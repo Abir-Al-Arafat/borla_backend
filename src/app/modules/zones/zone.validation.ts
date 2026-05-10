@@ -26,7 +26,7 @@ const updateZoneZodSchema = z.object({
   }),
 });
 
-const assignRiderToZoneZodSchema = z.object({
+const riderToZoneZodSchema = z.object({
   params: z.object({
     zoneId: mongoId,
     riderId: mongoId,
@@ -36,5 +36,5 @@ const assignRiderToZoneZodSchema = z.object({
 export const zoneValidations = {
   createZoneZodSchema,
   updateZoneZodSchema,
-  assignRiderToZoneZodSchema,
+  riderToZoneZodSchema,
 };
