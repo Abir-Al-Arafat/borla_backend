@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { mongoId } from 'app/utils/validations';
 
 const coordinateSchema = z.tuple([z.number(), z.number()]);
 const polygonSchema = z.array(z.array(coordinateSchema));
@@ -25,7 +26,15 @@ const updateZoneZodSchema = z.object({
   }),
 });
 
+const assignRiderToZoneZodSchema = z.object({
+  params: z.object({
+    zoneId: mongoId,
+    riderId: mongoId,
+  }),
+});
+
 export const zoneValidations = {
   createZoneZodSchema,
   updateZoneZodSchema,
+  assignRiderToZoneZodSchema,
 };

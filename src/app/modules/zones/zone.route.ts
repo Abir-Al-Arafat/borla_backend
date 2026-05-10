@@ -45,4 +45,13 @@ router.delete(
   zoneControllers.deleteZone,
 );
 
+router.patch(
+  '/:zoneId/assign-rider/:riderId',
+  upload.none(),
+  auth('admin', 'supper_admin'),
+  parseData(),
+  validateRequest(zoneValidations.assignRiderToZoneZodSchema),
+  zoneControllers.assignRiderToZone,
+);
+
 export const zoneRoutes = router;

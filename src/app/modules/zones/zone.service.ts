@@ -173,10 +173,50 @@ const deleteZone = async (id: string) => {
   return { message: 'Zone deleted successfully' };
 };
 
+const assignRidersToZone = async (zoneId: string, riderId: string) => {
+  const zone = await prisma.zone.findUnique({
+    where: { id: zoneId, isDeleted: false },
+  });
+
+  const rider = await prisma.user.findUnique({
+    where: { id: riderId, isDeleted: false },
+  });
+
+  if (!zone) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Zone not found');
+  }
+  if (!rider) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Rider not found');
+  }
+
+  // Update rider's zone assignment
+  const updatedRider = await prisma.user.update({
+    where: { id: riderId },
+    data: { zoneId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phoneNumber: true,
+      riderVerified: true,
+      zoneId: true,
+      zone: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+
+  return updatedRider;
+};
+
 export const zoneServices = {
   createZone,
   getAllZones,
   getZoneById,
   updateZone,
   deleteZone,
+  assignRidersToZone,
 };
