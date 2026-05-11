@@ -26,6 +26,7 @@ export const uploadToS3 = async (
 
   try {
     const key = await s3Client.send(command);
+    console.log('🚀 ~ uploadToS3 ~ key:', key);
     if (!key) {
       throw new AppError(httpStatus.BAD_REQUEST, 'File Upload failed');
     }
@@ -33,8 +34,8 @@ export const uploadToS3 = async (
     const url = `https://${config.aws.bucket}.s3.${config.aws.region}.amazonaws.com/${fileName}`;
 
     return url;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
+    console.error('🚀 ~ uploadToS3 ~ error:', error);
     throw new AppError(httpStatus.BAD_REQUEST, 'File Upload failed');
   }
 };
@@ -48,7 +49,7 @@ export const deleteFromS3 = async (key: string) => {
     });
     await s3Client.send(command);
   } catch (error) {
-    console.log('🚀 ~ deleteFromS3 ~ error:', error);
+    console.error('🚀 ~ deleteFromS3 ~ error:', error);
     throw new Error('s3 file delete failed');
   }
 };
@@ -85,6 +86,7 @@ export const uploadManyToS3 = async (
     const uploadedUrls = await Promise.all(uploadPromises);
     return uploadedUrls;
   } catch (error) {
+    console.error('🚀 ~ uploadManyToS3 ~ error:', error);
     throw new Error('File Upload failed');
   }
 };
@@ -113,6 +115,7 @@ export const deleteManyFromS3 = async (keys: string[]) => {
 export const getS3KeyFromUrl = (url: string): string => {
   // Typical S3 URL: https://bucket.s3.region.amazonaws.com/folder/filename.jpg
   // This splits by the domain and returns the path
+  if (!url) return '';
   const parts = url.split('.com/');
   return parts.length > 1 ? parts[1] : '';
 };

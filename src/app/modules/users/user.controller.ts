@@ -1,7 +1,12 @@
 import { Request, Response } from 'express';
 import catchAsync from '../../utils/catchAsync';
 import { UploadedFiles } from '@app/middleware/uploadMulti';
-import { uploadToS3 } from '../../utils/s3';
+import {
+  uploadToS3,
+  getS3KeyFromUrl,
+  deleteFromS3,
+  deleteManyFromS3,
+} from '../../utils/s3';
 import { userService } from './user.service';
 import sendResponse from '../../utils/sendResponse';
 import httpStatus from 'http-status';
@@ -140,27 +145,55 @@ const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
   // Get old user data for file cleanup
   const user = await prisma.user.findUnique({
     where: { id: req.user?.userId },
-    select: { profilePicture: true, ghanaCardId: true },
+    select: {
+      profilePicture: true,
+      ghanaCardId: true,
+      profilePictureS3: true,
+      ghanaCardIdS3: true,
+    },
   });
 
   // Handle multiple file uploads (using upload.fields())
   const files = req.files as UploadedFiles;
+  const updateBody = { ...req.body };
 
+  console.log('Files received in updateMyProfile:', files);
   // Handle profile picture upload
   if (files?.profilePicture && files.profilePicture[0]) {
+    const profileFile = files.profilePicture[0];
+    const fileBuffer = fs.readFileSync(profileFile.path); // Read the saved file
     // Delete old profile picture if exists
-    if (user?.profilePicture && fs.existsSync(user.profilePicture)) {
-      fs.unlinkSync(user.profilePicture);
+    console.log('user?.profilePicture:', user?.profilePicture);
+    try {
+      if (user?.profilePicture && fs.existsSync(user.profilePicture)) {
+        fs.unlinkSync(user.profilePicture);
+      }
+    } catch (err) {
+      console.error('Failed to delete old profile picture:', err);
+    }
+
+    // Delete old one from S3 if it exists
+    if (user?.profilePictureS3) {
+      const oldKey = getS3KeyFromUrl(user.profilePictureS3);
+      if (oldKey) {
+        const deletedFromS3 = await deleteFromS3(oldKey);
+        console.log('Deleted old profile picture from S3:', deletedFromS3);
+      }
     }
 
     // Local storage - save reusable public path
-    req.body.profilePicture = toPublicUploadPath(files.profilePicture[0].path);
+    updateBody.profilePicture = toPublicUploadPath(profileFile.path);
+
+    const fileName = `images/user/profile/${Date.now()}-${profileFile.originalname}`;
 
     // Uncomment below to use S3 upload
-    // req.body.profilePicture = await uploadToS3({
-    //   file: files.profilePicture[0],
-    //   fileName: `images/user/profile/${Math.floor(100000 + Math.random() * 900000)}`,
-    // });
+    updateBody.profilePictureS3 = await uploadToS3({
+      file: { ...profileFile, buffer: fileBuffer }, // Pass the buffer manually,
+      fileName,
+      contentType: profileFile.mimetype,
+    });
+
+    console.log('req.body.profilePictureS3:', req.body.profilePictureS3);
   }
 
   // Handle Ghana card uploads (multiple files)
@@ -174,22 +207,36 @@ const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
       });
     }
 
+    // Delete old cards from S3
+    if (user?.ghanaCardIdS3 && Array.isArray(user.ghanaCardIdS3)) {
+      const oldKeys = user.ghanaCardIdS3
+        .map(url => getS3KeyFromUrl(url))
+        .filter(Boolean);
+      if (oldKeys.length) {
+        const deletetedCards = await deleteManyFromS3(oldKeys);
+        console.log('Deleted old Ghana cards from S3:', deletetedCards);
+      }
+    }
+
     // Save all Ghana card image paths in reusable public format
-    req.body.ghanaCardId = files.ghanaCardId.map(file =>
+    updateBody.ghanaCardId = files.ghanaCardId.map(file =>
       toPublicUploadPath(file.path),
     );
+
     // Uncomment below to use S3 upload
-    // req.body.ghanaCardId = await Promise.all(
-    //   files.ghanaCardId.map(file =>
-    //     uploadToS3({
-    //       file,
-    //       fileName: `images/user/ghana-cards/${Math.floor(100000 + Math.random() * 900000)}`,
-    //     }),
-    //   ),
-    // );
+    updateBody.ghanaCardIdS3 = await Promise.all(
+      files.ghanaCardId.map(file => {
+        const fileBuffer = fs.readFileSync(file.path); // Read each file!
+        return uploadToS3({
+          file: { ...file, buffer: fileBuffer }, // Pass the buffer,
+          fileName: `images/user/ghana-cards/${Date.now()}-${file.originalname}`,
+          contentType: file.mimetype,
+        });
+      }),
+    );
   }
 
-  if (!req.body || !Object.keys(req.body).length) {
+  if (!updateBody || !Object.keys(updateBody).length) {
     sendResponse(res, {
       statusCode: httpStatus.BAD_REQUEST,
       success: false,
@@ -200,27 +247,27 @@ const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
   }
 
   // Handle location update if coordinates are provided
-  if (req.body.latitude && req.body.longitude) {
+  if (updateBody.latitude && updateBody.longitude) {
     const latitude =
-      typeof req.body.latitude === 'string'
-        ? parseFloat(req.body.latitude)
-        : req.body.latitude;
+      typeof updateBody.latitude === 'string'
+        ? parseFloat(updateBody.latitude)
+        : updateBody.latitude;
     const longitude =
-      typeof req.body.longitude === 'string'
-        ? parseFloat(req.body.longitude)
-        : req.body.longitude;
+      typeof updateBody.longitude === 'string'
+        ? parseFloat(updateBody.longitude)
+        : updateBody.longitude;
 
-    req.body.location = {
+    updateBody.location = {
       type: 'Point',
       coordinates: [longitude, latitude],
     };
 
     // Remove the raw coordinates from body
-    delete req.body.latitude;
-    delete req.body.longitude;
+    delete updateBody.latitude;
+    delete updateBody.longitude;
   }
 
-  const result = await userService.update(req?.user?.userId, req.body);
+  const result = await userService.update(req?.user?.userId, updateBody);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
