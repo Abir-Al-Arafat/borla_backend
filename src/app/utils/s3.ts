@@ -2,11 +2,13 @@ import {
   DeleteObjectCommand,
   DeleteObjectsCommand,
   PutObjectCommand,
+  GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import httpStatus from 'http-status';
 import AppError from '../error/AppError';
 import config from '../config';
 import { s3Client } from '../constants/aws';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 //upload a single file
 export const uploadToS3 = async (
@@ -118,4 +120,28 @@ export const getS3KeyFromUrl = (url: string): string => {
   if (!url) return '';
   const parts = url.split('.com/');
   return parts.length > 1 ? parts[1] : '';
+};
+
+/**
+ * Generates a temporary URL for a private S3 object
+ * @param key The S3 key (path) of the file
+ * @param expiresIn Time in seconds until the link expires (default 3600s / 1 hour)
+ */
+export const generatePresignedUrl = async (
+  key: string,
+  expiresIn = 3600,
+): Promise<string> => {
+  const command = new GetObjectCommand({
+    Bucket: config.aws.bucket,
+    Key: key,
+  });
+
+  try {
+    // This creates a signed URL that grants temporary access
+    const url = await getSignedUrl(s3Client, command, { expiresIn });
+    return url;
+  } catch (error) {
+    console.error('Error generating presigned URL:', error);
+    throw new Error('Could not generate secure link');
+  }
 };
