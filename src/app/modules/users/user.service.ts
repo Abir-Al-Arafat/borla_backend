@@ -14,6 +14,8 @@ import {
   buildSortArray,
 } from './user.helpers';
 
+import { getS3KeyFromUrl, generatePresignedUrl } from '../../utils/s3';
+
 const create = async (payload: User) => {
   try {
     const isExist = await prisma.user.findFirst({
@@ -152,6 +154,7 @@ const getById = async (
       onlineStatus: true,
       role: true,
       profilePicture: true,
+      profilePictureS3: true,
       phoneNumber: true,
       createdAt: true,
       verification: {
@@ -160,11 +163,12 @@ const getById = async (
         },
       },
       deviceHistory: includeDeviceHistory,
-      documents: true,
+      documents: includeRiderDocuments,
       dateOfBirth: true,
       location: true,
       locationName: true,
       ghanaCardId: true,
+      ghanaCardIdS3: true,
       zone: {
         select: {
           id: true,
@@ -186,6 +190,16 @@ const getById = async (
       ...result,
       riderDetails,
     };
+  }
+
+  if(result.ghanaCardIdS3 && Array.isArray(result.ghanaCardIdS3)) {
+    const ghanaCardPresignedUrls = await Promise.all(
+      result.ghanaCardIdS3.map((url: string) => {
+        const key = getS3KeyFromUrl(url);
+        return generatePresignedUrl(key);
+      })
+    );
+    result.ghanaCardIdS3 = ghanaCardPresignedUrls;
   }
 
   return result;
