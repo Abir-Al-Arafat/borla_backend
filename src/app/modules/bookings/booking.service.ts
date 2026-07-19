@@ -262,6 +262,25 @@ const createBooking = async (userId: string, payload: ICreateBooking) => {
   return booking;
 };
 
+const deleteBooking = async (bookingId: string, userId: string) => {
+  const booking = await prisma.booking.delete({
+    where: { id: bookingId, userId: userId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phoneNumber: true,
+          profilePicture: true,
+        },
+      },
+    },
+  });
+
+  return booking;
+};
+
 // Get available bookings for riders (within their assigned zone)
 const getAvailableBookingsForRider = async (
   riderId: string,
@@ -1526,6 +1545,7 @@ const requestPayment = async (bookingId: string, riderId: string) => {
 
 export const bookingServices = {
   createBooking,
+  deleteBooking,
   getAvailableBookingsForRider,
   getMyBookings,
   getRiderBookings,

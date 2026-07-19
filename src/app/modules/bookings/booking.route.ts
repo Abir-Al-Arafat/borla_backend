@@ -29,6 +29,8 @@ router.post(
   bookingControllers.createBooking,
 );
 
+router.delete('/:id', auth(USER_ROLE.user), bookingControllers.deleteBooking);
+
 // Get my bookings (user's own bookings)
 router.get(
   '/my-bookings',

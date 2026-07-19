@@ -1,3 +1,4 @@
+import fs from 'fs';
 import catchAsync from '../../utils/catchAsync';
 import { Request, Response } from 'express';
 import { bookingServices } from './booking.service';
@@ -21,6 +22,35 @@ const createBooking = catchAsync(async (req: Request, res: Response) => {
     statusCode: httpStatus.CREATED,
     success: true,
     message: 'Booking created successfully. Finding you a nearby rider...',
+    data: result,
+  });
+});
+
+const deleteBooking = catchAsync(async (req: Request, res: Response) => {
+  const result = await bookingServices.deleteBooking(
+    req.params.id as string,
+    req.user.userId,
+  );
+
+  if (!result) {
+    return sendResponse(res, {
+      statusCode: httpStatus.NOT_FOUND,
+      success: false,
+      message: 'Booking not found',
+      data: null,
+    });
+  }
+
+  if (result.wasteImages) {
+    result.wasteImages.forEach((image: string) => {
+      fs.unlinkSync(image);
+    });
+  }
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Booking deleted successfully',
     data: result,
   });
 });
@@ -258,6 +288,7 @@ const requestPayment = catchAsync(async (req: Request, res: Response) => {
 
 export const bookingControllers = {
   createBooking,
+  deleteBooking,
   getAvailableBookings,
   getMyBookings,
   getRiderBookings,
