@@ -216,6 +216,10 @@ const handleBonusCallback = catchAsync(async (req: Request, res: Response) => {
       where: { reference: clientReference },
       data: { status: 'success' },
     });
+    const updatedWallet = await prisma.wallet.update({
+      where: { userId: transaction.userId },
+      data: { balance: { increment: transaction.amount } },
+    });
     console.log(
       `Bonus successfully disbursed for ClientReference: ${clientReference}, Transaction ID: ${transaction.id}`,
     );
@@ -223,6 +227,7 @@ const handleBonusCallback = catchAsync(async (req: Request, res: Response) => {
     console.log(
       `Bonus successfully disbursed for reference: ${clientReference}`,
     );
+    console.log(`updatedWallet: ${JSON.stringify(updatedWallet, null, 2)}`);
   } else {
     // Log the failure reason (e.g., Network timeout, wrong number)
     console.warn(`Bonus disbursement failed [${ResponseCode}]: ${Message}`);
