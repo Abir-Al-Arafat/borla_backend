@@ -11,9 +11,9 @@ dist
 
 
 /dist
-/public
 /public/uploads
 /k8s/02-secret.yaml
 branch_structure.json
 temp_auto_push.bat
 temp_interactive_push.bat
+.gitignore
